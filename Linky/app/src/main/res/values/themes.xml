@@ -1,6 +1,6 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
     <!-- Base application theme. -->
-    <style name="Theme.Linky" parent="Theme.MaterialComponents.DayNight.DarkActionBar">
+    <style name="Theme.Linky" parent="Theme.AppCompat.Light.NoActionBar">
         <!-- Primary brand color. -->
         <item name="colorPrimary">@color/purple_500</item>
         <item name="colorPrimaryVariant">@color/purple_700</item>
@@ -14,6 +14,7 @@
         <!-- Customize your theme here. -->
         <item name="windowActionBar">false</item>
         <item name="windowNoTitle">true</item>
+        <item name="android:navigationBarColor">@color/primary</item>
     </style>
     <style name="Theme.Login" parent="Theme.MaterialComponents.DayNight.DarkActionBar">
         <!-- Status bar color. -->
@@ -21,5 +22,17 @@
         <!-- Customize your theme here. -->
         <item name="windowActionBar">false</item>
         <item name="windowNoTitle">true</item>
+    </style>
+
+    <!-- LinearLayout -->
+    <style name="LinearLayout">
+        <item name="android:gravity">center</item>
+        <item name="android:orientation">vertical</item>
+        <item name="android:paddingBottom">56dp</item>
+    </style>
+    <!-- Primary Button -->
+    <style name="PrimaryButton" parent="Widget.AppCompat.Button">
+        <item name="android:backgroundTint">@color/primary</item>
+        <item name="android:textColor">@color/black</item>
     </style>
 </resources>
