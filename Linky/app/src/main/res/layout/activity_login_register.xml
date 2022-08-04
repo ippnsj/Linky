@@ -13,6 +13,10 @@
         android:layout_height="wrap_content"
         app:srcCompat="@mipmap/linky_logo" />
 
+    <Space
+        android:layout_width="match_parent"
+        android:layout_height="30dp" />
+
     <TextView
         android:id="@+id/textView"
         android:layout_width="wrap_content"
@@ -26,16 +30,16 @@
         android:layout_height="30dp" />
 
     <androidx.appcompat.widget.AppCompatButton
-        android:id="@+id/login_button"
+        android:id="@+id/register_button"
         android:layout_width="250dp"
         android:layout_height="wrap_content"
         android:text="가입하기"
         style="@style/PrimaryButton" />
 
     <androidx.appcompat.widget.AppCompatButton
-        android:id="@+id/register_button"
+        android:id="@+id/login_button"
+        style="@style/PrimaryButton"
         android:layout_width="250dp"
         android:layout_height="wrap_content"
-        android:text="로그인하기"
-        style="@style/PrimaryButton" />
+        android:text="로그인하기" />
 </LinearLayout>
