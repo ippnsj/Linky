@@ -4,6 +4,7 @@ import android.content.Intent
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.util.Log
+import android.view.View
 import org.jsoup.Jsoup
 import org.poolc.linky.databinding.ActivityMainBinding
 import java.util.regex.Pattern
@@ -18,7 +19,14 @@ class MainActivity : AppCompatActivity() {
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
+
         with(binding) {
+            // topbar 설정
+            setSupportActionBar(topbar)
+            supportActionBar?.setDisplayShowTitleEnabled(false)
+            topbarTitle.text = "내 링키"
+            topbarFoldername.visibility = View.INVISIBLE
+
             // 공유하기로부터 온 intent 처리
             if(intent.action == Intent.ACTION_SEND && intent.type != null) {
                 if(intent.type == "text/plain") {
