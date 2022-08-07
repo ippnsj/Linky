@@ -5,6 +5,7 @@ import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.util.Log
 import android.view.View
+import androidx.fragment.app.Fragment
 import org.jsoup.Jsoup
 import org.poolc.linky.databinding.ActivityMainBinding
 import java.util.regex.Pattern
@@ -26,6 +27,29 @@ class MainActivity : AppCompatActivity() {
             supportActionBar?.setDisplayShowTitleEnabled(false)
             topbarTitle.text = "내 링키"
             topbarFoldername.visibility = View.INVISIBLE
+
+            // bottom navigatonbar 설정
+            bottomNavigation.itemIconTintList = null
+            bottomNavigation.setOnItemSelectedListener { item ->
+                changeFragment(
+                    when(item.itemId) {
+                        R.id.linky -> {
+                            LinkyFragment()
+                        }
+                        R.id.search -> {
+                            SearchFragment()
+                        }
+                        R.id.more -> {
+                            MoreFragment()
+                        }
+                        else -> {
+                            LinkyFragment()
+                        }
+                    }
+                )
+                true
+            }
+            bottomNavigation.selectedItemId = R.id.linky
 
             // 공유하기로부터 온 intent 처리
             if(intent.action == Intent.ACTION_SEND && intent.type != null) {
@@ -55,5 +79,12 @@ class MainActivity : AppCompatActivity() {
                 }
             }
         }
+    }
+
+    private fun changeFragment(fragment:Fragment) {
+        supportFragmentManager
+            .beginTransaction()
+            .replace(R.id.container, fragment)
+            .commit()
     }
 }

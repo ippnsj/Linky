@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:android="http://schemas.android.com/apk/res/android">
+    <item
+        android:id="@+id/linky"
+        android:enabled="true"
+        android:icon="@drawable/navi_linky"
+        android:title="@string/navi_linky"
+        app:showAsAction="ifRoom" />
+    <item
+        android:id="@+id/search"
+        android:icon="@drawable/navi_search"
+        android:title="@string/navi_search"
+        app:showAsAction="ifRoom" />
+    <item
+        android:id="@+id/more"
+        android:icon="@drawable/navi_more"
+        android:title="@string/navi_more"
+        app:showAsAction="ifRoom" />
+</menu>
