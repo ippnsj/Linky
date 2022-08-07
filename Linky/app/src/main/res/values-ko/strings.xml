@@ -1,4 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">링키</string>
+    <string name="navi_linky">링키</string>
+    <string name="navi_search">검색</string>
+    <string name="navi_more">더보기</string>
 </resources>
