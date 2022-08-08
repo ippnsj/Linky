@@ -10,6 +10,7 @@
         <entry key="..\:/Users/admin/Desktop/Kotlin/Linky/Linky/app/src/main/res/drawable/navi_search.xml" value="0.1" />
         <entry key="..\:/Users/admin/Desktop/Kotlin/Linky/Linky/app/src/main/res/drawable/round_button.xml" value="0.1" />
         <entry key="..\:/Users/admin/Desktop/Kotlin/Linky/Linky/app/src/main/res/layout/actionbar.xml" value="0.24444444444444444" />
+        <entry key="..\:/Users/admin/Desktop/Kotlin/Linky/Linky/app/src/main/res/layout/activity_add_linky.xml" value="0.1540020263424519" />
         <entry key="..\:/Users/admin/Desktop/Kotlin/Linky/Linky/app/src/main/res/layout/activity_login.xml" value="0.24351851851851852" />
         <entry key="..\:/Users/admin/Desktop/Kotlin/Linky/Linky/app/src/main/res/layout/activity_login_register.xml" value="0.20516304347826086" />
         <entry key="..\:/Users/admin/Desktop/Kotlin/Linky/Linky/app/src/main/res/layout/activity_main.xml" value="0.14209726443768997" />
@@ -19,6 +20,8 @@
         <entry key="..\:/Users/admin/Desktop/Kotlin/Linky/Linky/app/src/main/res/layout/fragment_linky.xml" value="0.24444444444444444" />
         <entry key="..\:/Users/admin/Desktop/Kotlin/Linky/Linky/app/src/main/res/layout/fragment_more.xml" value="0.24444444444444444" />
         <entry key="..\:/Users/admin/Desktop/Kotlin/Linky/Linky/app/src/main/res/layout/fragment_search.xml" value="0.24444444444444444" />
+        <entry key="..\:/Users/admin/Desktop/Kotlin/Linky/Linky/app/src/main/res/layout/fragment_share.xml" value="0.1540020263424519" />
+        <entry key="..\:/Users/admin/Desktop/Kotlin/Linky/Linky/app/src/main/res/menu/menu_add_linky_topbar.xml" value="0.24444444444444444" />
         <entry key="..\:/Users/admin/Desktop/Kotlin/Linky/Linky/app/src/main/res/menu/menu_bottomnavigation.xml" value="0.24444444444444444" />
         <entry key="..\:/Users/admin/Desktop/Kotlin/Linky/Linky/app/src/main/res/menu/menu_topbar.xml" value="0.24444444444444444" />
       </map>
