@@ -1,6 +1,7 @@
 package org.poolc.linky
 
 import android.content.Intent
+import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
@@ -63,6 +64,10 @@ class AddLinkyActivity : AppCompatActivity() {
                             val imageUrl = URL(image)
                             val conn = imageUrl.openConnection() as HttpURLConnection
                             val bitmap = BitmapFactory.decodeStream(conn.inputStream)
+                            var resizedBitmap:Bitmap? = null
+                            if(bitmap != null) {
+                                resizedBitmap = resizeBitmap(1024, bitmap)
+                            }
 
                             runOnUiThread {
                                 veil.visibility = View.INVISIBLE
@@ -75,8 +80,8 @@ class AddLinkyActivity : AppCompatActivity() {
                                 titleTextInput.setText(title ?: "")
 
                                 // 대표이미지
-                                if(bitmap != null) {
-                                    linkImage.setImageBitmap(bitmap)
+                                if(resizedBitmap != null) {
+                                    linkImage.setImageBitmap(resizedBitmap)
                                 }
                             }
                         }
@@ -87,6 +92,17 @@ class AddLinkyActivity : AppCompatActivity() {
                 }
             }
         }
+    }
+
+    // 사진의 사이즈를 조정하는 메서드
+    fun resizeBitmap(targetWidth:Int, img: Bitmap) : Bitmap {
+        // 이미지의 비율을 계산한다.
+        val ratio = targetWidth.toDouble() / img.width.toDouble()
+        // 보정될 세로 길이를 구한다.
+        val targetHeight = (img.height * ratio).toInt()
+        // 크기를 조정한 bitmap 객체를 생성한다.
+        val result = Bitmap.createScaledBitmap(img, targetWidth, targetHeight, false)
+        return result
     }
 
     val spinnerListener = object : AdapterView.OnItemSelectedListener {

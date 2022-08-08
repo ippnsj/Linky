@@ -181,6 +181,7 @@
                 android:id="@+id/linkImage"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:layout_marginTop="20dp"
                 android:paddingLeft="20dp"
                 android:paddingRight="20dp"
                 app:layout_constraintLeft_toLeftOf="parent"
@@ -214,6 +215,7 @@
                 android:layout_height="wrap_content"
                 android:paddingLeft="20dp"
                 android:paddingRight="20dp"
+                android:paddingBottom="20dp"
                 app:hintEnabled="false"
                 app:layout_constraintLeft_toLeftOf="parent"
                 app:layout_constraintRight_toRightOf="parent"
@@ -259,7 +261,8 @@
             android:layout_height="wrap_content"
             android:gravity="center"
             android:text="잠시만 기다려주세요..."
-            android:textAppearance="@style/TextAppearance.AppCompat.Large" />
+            android:textAppearance="@style/TextAppearance.AppCompat.Large"
+            android:textColor="@color/black" />
     </LinearLayout>
 
 </androidx.constraintlayout.widget.ConstraintLayout>
