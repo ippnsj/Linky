@@ -43,6 +43,7 @@ class AddLinkyActivity : AppCompatActivity() {
             // 공유하기로부터 온 intent 처리
             if(intent.action == Intent.ACTION_SEND && intent.type != null) {
                 if(intent.type == "text/plain") {
+                    veil.visibility = View.VISIBLE
                     val txt = intent.getStringExtra(Intent.EXTRA_TEXT).toString()
                     val pattern = Pattern.compile("((https?|ftp|gopher|telnet|file):((//)|(\\\\))+[\\w\\d:#@%/;$()~_?\\+-=\\\\\\.&]*)", Pattern.CASE_INSENSITIVE)
                     val matcher = pattern.matcher(txt)
@@ -64,6 +65,8 @@ class AddLinkyActivity : AppCompatActivity() {
                             val bitmap = BitmapFactory.decodeStream(conn.inputStream)
 
                             runOnUiThread {
+                                veil.visibility = View.INVISIBLE
+
                                 // 링크주소
                                 linkAddressTextInput.setText(url)
                                 linkAddressTextInput.isEnabled = false
