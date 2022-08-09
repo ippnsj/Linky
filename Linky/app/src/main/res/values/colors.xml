@@ -9,4 +9,5 @@
     <color name="white">#FFFFFFFF</color>
     <!-- app colors -->
     <color name="primary">#D6F9F7</color>
+    <color name="icon">#5E5E5E</color>
 </resources>

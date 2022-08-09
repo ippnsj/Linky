@@ -13,8 +13,7 @@ import android.util.Log
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
-import android.widget.AdapterView
-import android.widget.ArrayAdapter
+import android.widget.*
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import org.jsoup.Jsoup
@@ -189,6 +188,28 @@ class AddLinkyActivity : AppCompatActivity() {
 
     override fun onCreateOptionsMenu(menu: Menu?): Boolean {
         menuInflater.inflate(R.menu.menu_add_linky_topbar, menu)
+
+        val item = menu?.findItem(R.id.add_private)
+        val relaLayout = item?.actionView as RelativeLayout
+        val switch = relaLayout.findViewById<Switch>(R.id.add_private)
+
+        val switchListener = object : CompoundButton.OnCheckedChangeListener {
+            override fun onCheckedChanged(buttonView: CompoundButton?, isChecked: Boolean) {
+                when(buttonView?.id) {
+                    R.id.add_private -> {
+                        if(isChecked) {
+                            buttonView.setText("공개")
+                        }
+                        else {
+                            buttonView.setText("비공개")
+                        }
+                    }
+                }
+            }
+        }
+
+        switch.setOnCheckedChangeListener(switchListener)
+
         return true
     }
 

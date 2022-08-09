@@ -3,6 +3,11 @@
     xmlns:android="http://schemas.android.com/apk/res/android">
 
     <item
+        android:id="@+id/add_private"
+        android:title="switch"
+        app:actionLayout="@layout/switch_item"
+        app:showAsAction="ifRoom" ></item>
+    <item
         android:id="@+id/add_link"
         android:icon="@drawable/add"
         android:title="링크추가"
