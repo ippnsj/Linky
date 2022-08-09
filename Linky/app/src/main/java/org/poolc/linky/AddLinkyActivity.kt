@@ -66,7 +66,8 @@ class AddLinkyActivity : AppCompatActivity() {
                             val bitmap = BitmapFactory.decodeStream(conn.inputStream)
                             var resizedBitmap:Bitmap? = null
                             if(bitmap != null) {
-                                resizedBitmap = resizeBitmap(1024, bitmap)
+                                // resizedBitmap = resizeBitmap(1024, bitmap)
+                                resizedBitmap = resizeBitmap(resources.displayMetrics.widthPixels - 100, bitmap)
                             }
 
                             runOnUiThread {
