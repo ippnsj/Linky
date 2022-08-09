@@ -58,8 +58,6 @@ class AddLinkyActivity : AppCompatActivity() {
                                 doc.select("meta[property=og:title]").first()?.attr("content");
                             val image =
                                 doc.select("meta[property=og:image]").get(0).attr("content")
-                            Log.d("test-title", title!!)
-                            Log.d("test-imageUrl", image)
 
                             val imageUrl = URL(image)
                             val conn = imageUrl.openConnection() as HttpURLConnection
@@ -134,7 +132,13 @@ class AddLinkyActivity : AppCompatActivity() {
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         when(item?.itemId) {
             R.id.add_link -> {
+                // 키워드가 설정되어 있지 않다는 것을 확인시켜주는 문자메세지 필요
 
+                // 키워드가 있다면
+                val intent = Intent(this, MainActivity::class.java)
+                intent.putExtra("from", "add")
+                intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)
+                startActivity(intent)
             }
         }
         return super.onOptionsItemSelected(item)

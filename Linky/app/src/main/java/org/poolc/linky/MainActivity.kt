@@ -4,6 +4,7 @@ import android.content.Intent
 import android.os.Bundle
 import android.util.Log
 import android.view.View
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.Fragment
 import org.jsoup.Jsoup
@@ -56,6 +57,13 @@ class MainActivity : AppCompatActivity() {
                 true
             }
             bottomNavigation.selectedItemId = R.id.linky
+
+            // add_linky로부터 온 intent
+            Log.d("test", intent.getStringExtra("from").toString())
+            if(intent.getStringExtra("from") == "add") {
+                val toast = Toast.makeText(this@MainActivity, "새로운 링키가 추가되었습니다~!", Toast.LENGTH_SHORT)
+                toast.show()
+            }
         }
     }
 
