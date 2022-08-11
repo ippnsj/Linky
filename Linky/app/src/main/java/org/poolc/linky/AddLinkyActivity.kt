@@ -5,17 +5,20 @@ import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.ImageDecoder
+import android.graphics.Rect
 import android.os.Build
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.provider.MediaStore
 import android.util.Log
+import android.view.KeyEvent
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
 import android.widget.*
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.recyclerview.widget.RecyclerView
 import org.jsoup.Jsoup
 import org.poolc.linky.databinding.ActivityAddLinkyBinding
 import java.net.HttpURLConnection
@@ -27,7 +30,9 @@ class AddLinkyActivity : AppCompatActivity() {
 
     private lateinit var binding : ActivityAddLinkyBinding
     private var folders = arrayOf("선택안함", "음식", "고양이", "직접입력")
-    private lateinit var albumResultLauncher: ActivityResultLauncher<Intent>
+    private val keywords = ArrayList<String>()
+    private lateinit var keywordAdapter : KeywordAdapter
+    private lateinit var albumResultLauncher : ActivityResultLauncher<Intent>
     private val permission_list = arrayOf(
         Manifest.permission.READ_EXTERNAL_STORAGE,
         Manifest.permission.ACCESS_MEDIA_LOCATION
@@ -37,6 +42,8 @@ class AddLinkyActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         binding = ActivityAddLinkyBinding.inflate(layoutInflater)
         setContentView(binding.root)
+
+        keywordAdapter = KeywordAdapter(keywords)
 
         albumResultLauncher = registerForActivityResult(
             ActivityResultContracts.StartActivityForResult()) { result ->
@@ -85,7 +92,30 @@ class AddLinkyActivity : AppCompatActivity() {
             folderSpinner.onItemSelectedListener = spinnerListener
             folderTextInput.isEnabled = false
 
+            // image listener 설정
             linkImage.setOnClickListener(imageListener)
+
+            // keyword textinput 키보드 이벤트 설정
+            tagTextInput.setOnKeyListener(keywordKeyListener)
+
+            // keyword recyclerview adapter 설정
+            keywordRecycler.adapter = keywordAdapter
+
+            // keyword recyclerview item 간격 설정
+            keywordRecycler.addItemDecoration(object : RecyclerView.ItemDecoration() {
+                override fun getItemOffsets(
+                    outRect: Rect,
+                    view: View,
+                    parent: RecyclerView,
+                    state: RecyclerView.State
+                ) {
+                    val pos = parent.getChildAdapterPosition(view)
+
+                    if(pos != 0) {
+                        outRect.left = 20
+                    }
+                }
+            })
 
             // 공유하기로부터 온 intent 처리
             if(intent.action == Intent.ACTION_SEND && intent.type != null) {
@@ -183,6 +213,33 @@ class AddLinkyActivity : AppCompatActivity() {
             albumIntent.putExtra(Intent.EXTRA_MIME_TYPES, mimeType)
 
             albumResultLauncher.launch(albumIntent)
+        }
+    }
+
+    val keywordKeyListener = object : View.OnKeyListener {
+        override fun onKey(v: View?, keyCode: Int, event: KeyEvent?): Boolean {
+            var result = false
+
+            if (event?.action == KeyEvent.ACTION_DOWN) {
+                when (keyCode) {
+                    KeyEvent.KEYCODE_ENTER -> {
+                        val word: String? = binding.tagTextInput.text.toString()
+                        if (word != "") {
+                            if (!keywords.contains(word)) {
+                                keywords.add(word!!)
+                                keywordAdapter.notifyItemInserted(keywords.size - 1)
+                                binding.tagTextInput.setText("")
+                            } else {
+                                // 이미 존재하는 키워드입니다
+                                Log.d("test exist", "이미 존재하는 키워드 입니다.")
+                            }
+                        }
+                        result = true
+                    }
+                }
+            }
+
+            return result
         }
     }
 

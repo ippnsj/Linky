@@ -4,4 +4,6 @@
     <string name="navi_linky">링키</string>
     <string name="navi_search">검색</string>
     <string name="navi_more">더보기</string>
+
+    <string name="helper_keyword">키워드 입력 후, 엔터를 누르면 키워드가 추가됩니다.</string>
 </resources>

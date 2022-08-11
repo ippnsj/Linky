@@ -63,6 +63,8 @@
                 android:layout_height="wrap_content"
                 android:paddingLeft="20dp"
                 android:paddingRight="20dp"
+                app:helperText="@string/helper_keyword"
+                app:helperTextEnabled="true"
                 app:hintEnabled="false"
                 app:layout_constraintLeft_toLeftOf="parent"
                 app:layout_constraintRight_toRightOf="parent"
@@ -76,13 +78,26 @@
 
             </com.google.android.material.textfield.TextInputLayout>
 
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/keyword_recycler"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_marginTop="10dp"
+                android:orientation="horizontal"
+                android:paddingLeft="20dp"
+                android:paddingRight="20dp"
+                app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
+                app:layout_constraintLeft_toLeftOf="parent"
+                app:layout_constraintRight_toRightOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/tagLayout" />
+
             <Space
                 android:id="@+id/space1"
                 android:layout_width="0dp"
                 android:layout_height="20dp"
                 app:layout_constraintLeft_toLeftOf="parent"
                 app:layout_constraintRight_toRightOf="parent"
-                app:layout_constraintTop_toBottomOf="@id/tagLayout" />
+                app:layout_constraintTop_toBottomOf="@id/keyword_recycler" />
 
             <TextView
                 android:id="@+id/folderLabel"
