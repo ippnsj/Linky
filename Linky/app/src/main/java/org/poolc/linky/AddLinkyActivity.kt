@@ -56,6 +56,7 @@ class AddLinkyActivity : AppCompatActivity() {
                 builder.setPositiveButton("삭제") { dialogInterface: DialogInterface, i: Int ->
                     keywords.removeAt(pos)
                     keywordAdapter.notifyItemRemoved(pos)
+                    binding.tagTextInput.error = null
                 }
 
                 builder.setNegativeButton("취소", null)
@@ -223,12 +224,13 @@ class AddLinkyActivity : AppCompatActivity() {
                                     }
                                 }
 
-                                val keywordsStr : String? =
+                                // TODO 키워드 제한으로 일단 삭제
+                                /*val keywordsStr : String? =
                                     doc.select("meta[name=keywords]").first()?.attr("content")
                                 if(keywordsStr != null) {
                                     val keywordsArr = keywordsStr.split(",")
                                     keywords.addAll(keywordsArr)
-                                }
+                                }*/
 
                                 if(title == null) {
                                     title = doc.getElementsByTag("title")?.first()?.text()
@@ -258,9 +260,9 @@ class AddLinkyActivity : AppCompatActivity() {
                                     veil.visibility = View.INVISIBLE
 
                                     // 키워드
-                                    if(!keywords.isEmpty()) {
+                                    /*if(keywords.isNotEmpty()) {
                                         keywordAdapter.notifyDataSetChanged()
-                                    }
+                                    }*/
 
                                     // 제목
                                     titleTextInput.setText(title ?: "")
@@ -288,7 +290,7 @@ class AddLinkyActivity : AppCompatActivity() {
     }
 
     // 사진의 사이즈를 조정하는 메서드
-    fun resizeBitmap(targetWidth:Int, img: Bitmap) : Bitmap {
+    private fun resizeBitmap(targetWidth:Int, img: Bitmap) : Bitmap {
         // 이미지의 비율을 계산한다.
         val ratio = targetWidth.toDouble() / img.width.toDouble()
         // 보정될 세로 길이를 구한다.
@@ -298,7 +300,7 @@ class AddLinkyActivity : AppCompatActivity() {
         return result
     }
 
-    val clearKeywordsListener = object : View.OnClickListener {
+    private val clearKeywordsListener = object : View.OnClickListener {
         override fun onClick(v: View?) {
             val builder = AlertDialog.Builder(this@AddLinkyActivity)
             val message = "키워드를 전부 삭제하시겠습니까?"
@@ -315,7 +317,7 @@ class AddLinkyActivity : AppCompatActivity() {
         }
     }
 
-    val spinnerListener = object : AdapterView.OnItemSelectedListener {
+    private val spinnerListener = object : AdapterView.OnItemSelectedListener {
         override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
             when(parent?.id) {
                 R.id.folderSpinner -> {
@@ -335,7 +337,7 @@ class AddLinkyActivity : AppCompatActivity() {
         }
     }
 
-    val imageListener = object : View.OnClickListener {
+    private val imageListener = object : View.OnClickListener {
         override fun onClick(v: View?) {
             requestPermissions(permission_list, 0)
 
@@ -351,7 +353,7 @@ class AddLinkyActivity : AppCompatActivity() {
         }
     }
 
-    val keywordKeyListener = object : View.OnKeyListener {
+    private val keywordKeyListener = object : View.OnKeyListener {
         override fun onKey(v: View?, keyCode: Int, event: KeyEvent?): Boolean {
             var result = false
 
@@ -361,14 +363,14 @@ class AddLinkyActivity : AppCompatActivity() {
                         val word: String? = binding.tagTextInput.text.toString()
                         if (word != "") {
                             if (!keywords.contains(word)) {
-                                keywords.add(word!!)
-                                keywordAdapter.notifyItemInserted(keywords.size - 1)
-                                binding.tagTextInput.setText("")
-
-                                // 키보드 내리기
-                                val imm = getSystemService(INPUT_METHOD_SERVICE) as InputMethodManager
-                                imm.hideSoftInputFromWindow(binding.tagTextInput.windowToken, 0)
-                                binding.tagTextInput.clearFocus()
+                                if(keywords.size < 5) {
+                                    keywords.add(word!!)
+                                    keywordAdapter.notifyItemInserted(keywords.size - 1)
+                                    binding.tagTextInput.setText("")
+                                }
+                                else {
+                                    binding.tagTextInput.error = "키워드는 최대 5개까지만 가능합니다."
+                                }
                             } else {
                                 // 이미 존재하는 키워드입니다
                                 binding.tagTextInput.error = "이미 존재하는 키워드입니다."
@@ -395,10 +397,10 @@ class AddLinkyActivity : AppCompatActivity() {
                 when(buttonView?.id) {
                     R.id.add_private -> {
                         if(isChecked) {
-                            buttonView.setText("공개")
+                            buttonView.text = "공개"
                         }
                         else {
-                            buttonView.setText("비공개")
+                            buttonView.text = "비공개"
                         }
                     }
                 }
