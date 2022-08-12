@@ -4,6 +4,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:focusableInTouchMode="false"
     tools:context=".AddLinkyActivity">
 
     <androidx.appcompat.widget.Toolbar
@@ -48,6 +49,7 @@
                 android:id="@+id/tagLabel"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
+                android:focusableInTouchMode="false"
                 android:paddingLeft="20dp"
                 android:paddingTop="20dp"
                 android:paddingRight="20dp"
@@ -184,14 +186,23 @@
 
             <TextView
                 android:id="@+id/imageLabel"
-                android:layout_width="wrap_content"
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:paddingLeft="20dp"
-                android:paddingRight="20dp"
                 android:text="대표이미지"
                 android:textSize="18sp"
                 app:layout_constraintLeft_toLeftOf="parent"
+                app:layout_constraintRight_toLeftOf="@id/changePicture"
                 app:layout_constraintTop_toBottomOf="@id/space3" />
+
+            <TextView
+                android:id="@+id/changePicture"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginRight="20dp"
+                android:text="이미지 변경"
+                app:layout_constraintBaseline_toBaselineOf="@id/imageLabel"
+                app:layout_constraintRight_toRightOf="parent" />
 
             <ImageView
                 android:id="@+id/linkImage"

@@ -1,28 +1,30 @@
 package org.poolc.linky
 
 import android.Manifest
+import android.content.DialogInterface
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.ImageDecoder
 import android.graphics.Rect
 import android.os.Build
-import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.provider.MediaStore
 import android.util.Log
-import android.view.KeyEvent
-import android.view.Menu
-import android.view.MenuItem
-import android.view.View
+import android.view.*
+import android.view.inputmethod.InputMethodManager
 import android.widget.*
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.appcompat.app.AlertDialog
+import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.RecyclerView
 import org.jsoup.Jsoup
 import org.poolc.linky.databinding.ActivityAddLinkyBinding
 import java.net.HttpURLConnection
 import java.net.URL
+import java.net.URLDecoder
 import java.util.regex.Pattern
 import kotlin.concurrent.thread
 
@@ -32,6 +34,8 @@ class AddLinkyActivity : AppCompatActivity() {
     private var folders = arrayOf("선택안함", "음식", "고양이", "직접입력")
     private val keywords = ArrayList<String>()
     private lateinit var keywordAdapter : KeywordAdapter
+    private var intentChanged = true
+    private lateinit var switch : Switch
     private lateinit var albumResultLauncher : ActivityResultLauncher<Intent>
     private val permission_list = arrayOf(
         Manifest.permission.READ_EXTERNAL_STORAGE,
@@ -43,7 +47,22 @@ class AddLinkyActivity : AppCompatActivity() {
         binding = ActivityAddLinkyBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        keywordAdapter = KeywordAdapter(keywords)
+        keywordAdapter = KeywordAdapter(keywords, object : KeywordAdapter.OnItemClickListener {
+            override fun onItemClick(pos: Int) {
+                val builder = AlertDialog.Builder(this@AddLinkyActivity)
+                val message = "키워드 '${keywords[pos]}' 을/를 삭제하시겠습니까?"
+                builder.setMessage(message)
+
+                builder.setPositiveButton("삭제") { dialogInterface: DialogInterface, i: Int ->
+                    keywords.removeAt(pos)
+                    keywordAdapter.notifyItemRemoved(pos)
+                }
+
+                builder.setNegativeButton("취소", null)
+
+                builder.show()
+            }
+        })
 
         albumResultLauncher = registerForActivityResult(
             ActivityResultContracts.StartActivityForResult()) { result ->
@@ -93,7 +112,7 @@ class AddLinkyActivity : AppCompatActivity() {
             folderTextInput.isEnabled = false
 
             // image listener 설정
-            linkImage.setOnClickListener(imageListener)
+            changePicture.setOnClickListener(imageListener)
 
             // keyword textinput 키보드 이벤트 설정
             tagTextInput.setOnKeyListener(keywordKeyListener)
@@ -116,54 +135,150 @@ class AddLinkyActivity : AppCompatActivity() {
                     }
                 }
             })
+        }
+    }
 
-            // 공유하기로부터 온 intent 처리
-            if(intent.action == Intent.ACTION_SEND && intent.type != null) {
-                if(intent.type == "text/plain") {
-                    veil.visibility = View.VISIBLE
-                    val txt = intent.getStringExtra(Intent.EXTRA_TEXT).toString()
-                    val pattern = Pattern.compile("((https?|ftp|gopher|telnet|file):((//)|(\\\\))+[\\w\\d:#@%/;$()~_?\\+-=\\\\\\.&]*)", Pattern.CASE_INSENSITIVE)
-                    val matcher = pattern.matcher(txt)
-                    if(matcher.find()) {
-                        val url = txt.substring(matcher.start(0), matcher.end(0))
+    override fun onRestart() {
+        super.onRestart()
+        currentFocus?.clearFocus()
+    }
 
-                        // 메타데이터 추출
-                        thread {
-                            val doc = Jsoup.connect(url).get()
-                            val title =
-                                doc.select("meta[property=og:title]").first()?.attr("content");
-                            val image =
-                                doc.select("meta[property=og:image]").get(0).attr("content")
+    override fun onNewIntent(intent: Intent?) {
+        super.onNewIntent(intent)
 
-                            val imageUrl = URL(image)
-                            val conn = imageUrl.openConnection() as HttpURLConnection
-                            val bitmap = BitmapFactory.decodeStream(conn.inputStream)
-                            var resizedBitmap:Bitmap? = null
-                            if(bitmap != null) {
-                                // resizedBitmap = resizeBitmap(1024, bitmap)
-                                resizedBitmap = resizeBitmap(resources.displayMetrics.widthPixels - 100, bitmap)
-                            }
+        if(intent != null) {
+            setIntent(intent)
+            intentChanged = true
 
-                            runOnUiThread {
-                                veil.visibility = View.INVISIBLE
+            with(binding) {
+                // 값 초기화
+                switch.isChecked = false
+                keywords.clear()
+                keywordAdapter.notifyDataSetChanged()
+                // TODO("폴더명 초기화 필요")
+                titleTextInput.setText("")
+                linkImage.setImageResource(R.mipmap.linky_logo)
+                linkAddressTextInput.setText("")
+                linkAddressTextInput.isEnabled = true
+            }
+        }
+    }
 
-                                // 링크주소
-                                linkAddressTextInput.setText(url)
-                                linkAddressTextInput.isEnabled = false
+    override fun onResume() {
+        super.onResume()
+        with(binding) {
+            if(intentChanged) {
+                intentChanged = false
 
-                                // 제목
-                                titleTextInput.setText(title ?: "")
+                // 공유하기로부터 온 intent 처리
+                if (intent.action == Intent.ACTION_SEND) {
+                    if (intent.type == "text/plain") {
+                        veil.visibility = View.VISIBLE
 
-                                // 대표이미지
-                                if(resizedBitmap != null) {
-                                    linkImage.setImageBitmap(resizedBitmap)
+                        val txt = intent.getStringExtra(Intent.EXTRA_TEXT).toString()
+                        var pattern = Pattern.compile(
+                            "((https?|ftp|gopher|telnet|file):((//)|(\\\\))+[\\w\\d:#@%/;$()~_?\\+-=\\\\\\.&]*)",
+                            Pattern.CASE_INSENSITIVE
+                        )
+                        var matcher = pattern.matcher(txt)
+                        if (matcher.find()) {
+                            var encodedUrl = txt.substring(matcher.start(0), matcher.end(0))
+                            var url = URLDecoder.decode(encodedUrl, "UTF-8")
+
+                            // 메타데이터 추출
+                            thread {
+                                var title : String? = null
+                                var image : String? = null
+
+                                var doc = Jsoup.connect(url).userAgent("Chrome").get()
+                                if(url.contains("naver.me")) {
+                                    val metaUrl : String? = doc.select("meta[property=al:android:url]").first()?.attr("content")
+                                    pattern = Pattern.compile(
+                                        "(url=)+[\\w\\d:#@%/;\$()~_?\\+-=\\\\\\.&]*(&version)+",
+                                        Pattern.CASE_INSENSITIVE
+                                    )
+                                    matcher = pattern.matcher(metaUrl)
+                                    if(matcher.find()) {
+                                        encodedUrl = metaUrl!!.substring(matcher.start(0) + 4, matcher.end(0) - 8)
+                                        url = URLDecoder.decode(encodedUrl, "UTF-8")
+                                        doc = Jsoup.connect(url).userAgent("Chrome").get()
+                                    }
                                 }
+
+                                val metaTags = doc.select("meta[property]")
+                                for(meta in metaTags) {
+                                    if(title != null && image != null) {
+                                        break
+                                    }
+
+                                    if(title == null && meta.attr("property").contains("title")) {
+                                        title = meta.attr("content")
+                                    }
+
+                                    if(image == null && meta.attr("property").contains("image")) {
+                                        image = meta.attr("content")
+                                    }
+                                }
+
+                                val keywordsStr : String? =
+                                    doc.select("meta[name=keywords]").first()?.attr("content")
+                                if(keywordsStr != null) {
+                                    val keywordsArr = keywordsStr.split(",")
+                                    keywords.addAll(keywordsArr)
+                                }
+
+                                if(title == null) {
+                                    title = doc.getElementsByTag("title")?.first()?.text()
+                                }
+
+                                if(image == null) {
+                                    image = doc.getElementsByTag("img").first()?.absUrl("src")
+                                }
+
+                                var resizedBitmap: Bitmap? = null
+                                if(image != null) {
+                                    val imageUrl: URL? = URL(image)
+                                    val conn: HttpURLConnection? =
+                                        imageUrl?.openConnection() as HttpURLConnection
+                                    val bitmap: Bitmap? =
+                                        BitmapFactory.decodeStream(conn?.inputStream)
+                                    if (bitmap != null) {
+                                        resizedBitmap =
+                                            resizeBitmap(
+                                                resources.displayMetrics.widthPixels - 100,
+                                                bitmap
+                                            )
+                                    }
+                                }
+
+                                runOnUiThread {
+                                    veil.visibility = View.INVISIBLE
+
+                                    // 키워드
+                                    if(!keywords.isEmpty()) {
+                                        keywordAdapter.notifyDataSetChanged()
+                                    }
+
+                                    // 제목
+                                    titleTextInput.setText(title ?: "")
+
+                                    // 대표이미지
+                                    if (resizedBitmap != null) {
+                                        linkImage.setImageBitmap(resizedBitmap)
+                                    }
+
+                                    // 링크주소
+                                    linkAddressTextInput.setText(url)
+                                    linkAddressTextInput.isEnabled = false
+                                }
+
                             }
+                        } else {
+                            Log.d("test", "NO URL")
                         }
                     }
-                    else {
-                        Log.d("test", "NO URL")
-                    }
+                } else if (intent.action == Intent.ACTION_MAIN) {
+                    // 앱에서 실행된 intent인 경우
                 }
             }
         }
@@ -229,9 +344,14 @@ class AddLinkyActivity : AppCompatActivity() {
                                 keywords.add(word!!)
                                 keywordAdapter.notifyItemInserted(keywords.size - 1)
                                 binding.tagTextInput.setText("")
+
+                                // 키보드 내리기
+                                val imm = getSystemService(INPUT_METHOD_SERVICE) as InputMethodManager
+                                imm.hideSoftInputFromWindow(binding.tagTextInput.windowToken, 0)
+                                binding.tagTextInput.clearFocus()
                             } else {
                                 // 이미 존재하는 키워드입니다
-                                Log.d("test exist", "이미 존재하는 키워드 입니다.")
+                                binding.tagTextInput.error = "이미 존재하는 키워드입니다."
                             }
                         }
                         result = true
@@ -248,7 +368,7 @@ class AddLinkyActivity : AppCompatActivity() {
 
         val item = menu?.findItem(R.id.add_private)
         val relaLayout = item?.actionView as RelativeLayout
-        val switch = relaLayout.findViewById<Switch>(R.id.add_private)
+        switch = relaLayout.findViewById<Switch>(R.id.add_private)
 
         val switchListener = object : CompoundButton.OnCheckedChangeListener {
             override fun onCheckedChanged(buttonView: CompoundButton?, isChecked: Boolean) {
@@ -278,7 +398,7 @@ class AddLinkyActivity : AppCompatActivity() {
                 // 키워드가 있다면
                 val intent = Intent(this, MainActivity::class.java)
                 intent.putExtra("from", "add")
-                intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)
+                intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
                 startActivity(intent)
                 finish()
             }
