@@ -111,6 +111,9 @@ class AddLinkyActivity : AppCompatActivity() {
             folderSpinner.onItemSelectedListener = spinnerListener
             folderTextInput.isEnabled = false
 
+            // clear keywords listener 설정
+            clearKeywords.setOnClickListener(clearKeywordsListener)
+
             // image listener 설정
             changePicture.setOnClickListener(imageListener)
 
@@ -293,6 +296,23 @@ class AddLinkyActivity : AppCompatActivity() {
         // 크기를 조정한 bitmap 객체를 생성한다.
         val result = Bitmap.createScaledBitmap(img, targetWidth, targetHeight, false)
         return result
+    }
+
+    val clearKeywordsListener = object : View.OnClickListener {
+        override fun onClick(v: View?) {
+            val builder = AlertDialog.Builder(this@AddLinkyActivity)
+            val message = "키워드를 전부 삭제하시겠습니까?"
+            builder.setMessage(message)
+
+            builder.setPositiveButton("삭제") { dialogInterface: DialogInterface, i: Int ->
+                keywords.clear()
+                keywordAdapter.notifyDataSetChanged()
+            }
+
+            builder.setNegativeButton("취소", null)
+
+            builder.show()
+        }
     }
 
     val spinnerListener = object : AdapterView.OnItemSelectedListener {

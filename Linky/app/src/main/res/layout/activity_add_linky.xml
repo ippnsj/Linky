@@ -49,15 +49,22 @@
                 android:id="@+id/tagLabel"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:focusableInTouchMode="false"
                 android:paddingLeft="20dp"
                 android:paddingTop="20dp"
-                android:paddingRight="20dp"
                 android:text="키워드"
                 android:textSize="18sp"
                 app:layout_constraintLeft_toLeftOf="parent"
-                app:layout_constraintRight_toRightOf="parent"
+                app:layout_constraintRight_toLeftOf="@id/clearKeywords"
                 app:layout_constraintTop_toTopOf="parent" />
+
+            <TextView
+                android:id="@+id/clearKeywords"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginRight="20dp"
+                android:text="키워드 전체 삭제"
+                app:layout_constraintBaseline_toBaselineOf="@id/tagLabel"
+                app:layout_constraintRight_toRightOf="parent" />
 
             <com.google.android.material.textfield.TextInputLayout
                 android:id="@+id/tagLayout"
