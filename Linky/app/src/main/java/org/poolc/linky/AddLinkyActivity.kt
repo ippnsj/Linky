@@ -12,6 +12,7 @@ import android.os.Bundle
 import android.provider.MediaStore
 import android.util.Log
 import android.view.*
+import android.view.inputmethod.EditorInfo
 import android.widget.*
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
@@ -125,8 +126,28 @@ class AddLinkyActivity : AppCompatActivity() {
             // image listener 설정
             changePicture.setOnClickListener(imageListener)
 
-            // keyword textinput 키보드 이벤트 설정
-            tagTextInput.setOnKeyListener(keywordKeyListener)
+            // keyword textinput done IME 이벤트 설정
+            tagTextInput.setOnEditorActionListener { v, actionId, event ->
+                if(actionId == EditorInfo.IME_ACTION_DONE) {
+                    val word: String? = binding.tagTextInput.text.toString()
+                    if (word != "") {
+                        if (!keywords.contains(word)) {
+                            if(keywords.size < 5) {
+                                keywords.add(word!!)
+                                keywordAdapter.notifyItemInserted(keywords.size - 1)
+                                binding.tagTextInput.setText("")
+                            } else {
+                                binding.tagTextInput.error = "키워드는 최대 5개까지만 가능합니다."
+                            }
+                        } else {
+                            // 이미 존재하는 키워드입니다
+                            binding.tagTextInput.error = "이미 존재하는 키워드입니다."
+                        }
+                    }
+                    true
+                }
+                false
+            }
 
             // keyword recyclerview adapter 설정
             keywordRecycler.adapter = keywordAdapter
@@ -344,35 +365,6 @@ class AddLinkyActivity : AppCompatActivity() {
         albumIntent.putExtra(Intent.EXTRA_MIME_TYPES, mimeType)
 
         albumResultLauncher.launch(albumIntent)
-    }
-
-    private val keywordKeyListener = View.OnKeyListener { v, keyCode, event ->
-        var result = false
-
-        if (event?.action == KeyEvent.ACTION_DOWN) {
-            when (keyCode) {
-                KeyEvent.KEYCODE_ENTER -> {
-                    val word: String? = binding.tagTextInput.text.toString()
-                    if (word != "") {
-                        if (!keywords.contains(word)) {
-                            if(keywords.size < 5) {
-                                keywords.add(word!!)
-                                keywordAdapter.notifyItemInserted(keywords.size - 1)
-                                binding.tagTextInput.setText("")
-                            } else {
-                                binding.tagTextInput.error = "키워드는 최대 5개까지만 가능합니다."
-                            }
-                        } else {
-                            // 이미 존재하는 키워드입니다
-                            binding.tagTextInput.error = "이미 존재하는 키워드입니다."
-                        }
-                    }
-                    result = true
-                }
-            }
-        }
-
-        result
     }
 
     override fun onCreateOptionsMenu(menu: Menu?): Boolean {
