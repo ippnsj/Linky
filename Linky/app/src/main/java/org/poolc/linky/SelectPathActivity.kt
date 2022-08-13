@@ -35,6 +35,11 @@ class SelectPathActivity : AppCompatActivity() {
         }
     }
 
+    override fun onStop() {
+        super.onStop()
+        finish()
+    }
+
     fun createFragment(path:String) {
         // folder json 파싱
         val jsonStr = assets.open("folders.json").reader().readText()

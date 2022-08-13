@@ -9,7 +9,6 @@
         app:showAsAction="ifRoom" ></item>
     <item
         android:id="@+id/add_link"
-        android:icon="@drawable/add"
-        android:title="링크추가"
+        android:title="완료"
         app:showAsAction="ifRoom" />
 </menu>
