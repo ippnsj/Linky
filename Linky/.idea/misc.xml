@@ -23,15 +23,22 @@
         <entry key="..\:/Users/admin/Desktop/Kotlin/Linky/Linky/app/src/main/res/layout/activity_main.xml" value="0.14209726443768997" />
         <entry key="..\:/Users/admin/Desktop/Kotlin/Linky/Linky/app/src/main/res/layout/activity_register.xml" value="0.22" />
         <entry key="..\:/Users/admin/Desktop/Kotlin/Linky/Linky/app/src/main/res/layout/activity_register_main.xml" value="0.22" />
+        <entry key="..\:/Users/admin/Desktop/Kotlin/Linky/Linky/app/src/main/res/layout/activity_select_path.xml" value="0.16666666666666666" />
         <entry key="..\:/Users/admin/Desktop/Kotlin/Linky/Linky/app/src/main/res/layout/activity_splash.xml" value="0.14918946301925026" />
+        <entry key="..\:/Users/admin/Desktop/Kotlin/Linky/Linky/app/src/main/res/layout/folder_listitem.xml" value="0.1534954407294833" />
+        <entry key="..\:/Users/admin/Desktop/Kotlin/Linky/Linky/app/src/main/res/layout/foldername_dialog.xml" value="0.1534954407294833" />
+        <entry key="..\:/Users/admin/Desktop/Kotlin/Linky/Linky/app/src/main/res/layout/fragment_folder.xml" value="0.1534954407294833" />
+        <entry key="..\:/Users/admin/Desktop/Kotlin/Linky/Linky/app/src/main/res/layout/fragment_folders.xml" value="0.22" />
         <entry key="..\:/Users/admin/Desktop/Kotlin/Linky/Linky/app/src/main/res/layout/fragment_linky.xml" value="0.24444444444444444" />
         <entry key="..\:/Users/admin/Desktop/Kotlin/Linky/Linky/app/src/main/res/layout/fragment_loading.xml" value="0.24444444444444444" />
         <entry key="..\:/Users/admin/Desktop/Kotlin/Linky/Linky/app/src/main/res/layout/fragment_more.xml" value="0.24444444444444444" />
         <entry key="..\:/Users/admin/Desktop/Kotlin/Linky/Linky/app/src/main/res/layout/fragment_search.xml" value="0.24444444444444444" />
         <entry key="..\:/Users/admin/Desktop/Kotlin/Linky/Linky/app/src/main/res/layout/fragment_share.xml" value="0.1540020263424519" />
         <entry key="..\:/Users/admin/Desktop/Kotlin/Linky/Linky/app/src/main/res/layout/keyword_bubble.xml" value="0.4466666666666667" />
+        <entry key="..\:/Users/admin/Desktop/Kotlin/Linky/Linky/app/src/main/res/layout/select_path_dialog.xml" value="0.1529888551165147" />
         <entry key="..\:/Users/admin/Desktop/Kotlin/Linky/Linky/app/src/main/res/menu/menu_add_linky_topbar.xml" value="0.24444444444444444" />
         <entry key="..\:/Users/admin/Desktop/Kotlin/Linky/Linky/app/src/main/res/menu/menu_bottomnavigation.xml" value="0.24444444444444444" />
+        <entry key="..\:/Users/admin/Desktop/Kotlin/Linky/Linky/app/src/main/res/menu/menu_select_path_topbar.xml" value="0.24444444444444444" />
         <entry key="..\:/Users/admin/Desktop/Kotlin/Linky/Linky/app/src/main/res/menu/menu_topbar.xml" value="0.24444444444444444" />
       </map>
     </option>

@@ -4,10 +4,10 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".MainActivity">
+    tools:context=".SelectPathActivity">
 
     <androidx.appcompat.widget.Toolbar
-        android:id="@+id/topbar"
+        android:id="@+id/selectPathTopbar"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:background="?attr/colorPrimary"
@@ -19,7 +19,7 @@
         app:layout_constraintTop_toTopOf="parent" />
 
     <TextView
-        android:id="@+id/topbar_title"
+        android:id="@+id/selectPathTopbarTitle"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginLeft="20dp"
@@ -27,45 +27,27 @@
         android:text="TextView"
         android:textAppearance="@style/TextAppearance.AppCompat.Body2"
         android:textSize="18sp"
-        app:layout_constraintBottom_toBottomOf="@id/topbar"
+        app:layout_constraintBottom_toBottomOf="@id/selectPathTopbar"
         app:layout_constraintLeft_toLeftOf="parent"
-        app:layout_constraintTop_toTopOf="@id/topbar" />
+        app:layout_constraintTop_toTopOf="@id/selectPathTopbar" />
 
-    <TextView
-        android:id="@+id/topbar_foldername"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:elevation="1dp"
-        android:text="TextView"
-        android:textAppearance="@style/TextAppearance.AppCompat.Large"
-        app:layout_constraintBottom_toBottomOf="@id/topbar_title"
+    <Space
+        android:id="@+id/space1"
+        android:layout_width="0dp"
+        android:layout_height="20dp"
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintRight_toRightOf="parent"
-        app:layout_constraintTop_toTopOf="@id/topbar_title" />
+        app:layout_constraintTop_toBottomOf="@id/selectPathTopbar" />
 
-    <ScrollView
-        android:id="@+id/scrollView"
-        android:layout_width="match_parent"
+    <FrameLayout
+        android:id="@+id/folderFragmentContainer"
+        android:layout_width="0dp"
         android:layout_height="0dp"
-        app:layout_constraintLeft_toLeftOf="parent"
-        app:layout_constraintRight_toRightOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/topbar">
-
-        <FrameLayout
-            android:id="@+id/folderFragmentContainer"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content" />
-    </ScrollView>
-
-    <com.google.android.material.bottomnavigation.BottomNavigationView
-        android:id="@+id/bottomNavigation"
-        android:layout_width="match_parent"
-        android:layout_height="?attr/actionBarSize"
-        android:background="@color/primary"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintRight_toRightOf="parent"
-        app:menu="@menu/menu_bottomnavigation"
-        app:labelVisibilityMode="unlabeled" />
+        app:layout_constraintTop_toBottomOf="@id/space1">
+
+    </FrameLayout>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

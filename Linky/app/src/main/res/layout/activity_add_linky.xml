@@ -113,38 +113,33 @@
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:paddingLeft="20dp"
-                android:text="폴더명"
+                android:text="폴더경로"
                 android:textSize="18sp"
                 app:layout_constraintLeft_toLeftOf="parent"
-                app:layout_constraintRight_toRightOf="parent"
+                app:layout_constraintRight_toLeftOf="@id/selectPath"
                 app:layout_constraintTop_toBottomOf="@id/space1" />
 
-            <Spinner
-                android:id="@+id/folderSpinner"
-                android:layout_width="0dp"
-                android:layout_height="0dp"
-                android:paddingLeft="20dp"
-                app:layout_constraintBottom_toBottomOf="@id/folderLayout"
-                app:layout_constraintLeft_toLeftOf="parent"
-                app:layout_constraintRight_toLeftOf="@id/folderLayout"
-                app:layout_constraintTop_toBottomOf="@id/folderLabel" />
+            <TextView
+                android:id="@+id/selectPath"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginRight="20dp"
+                android:text="경로선택"
+                app:layout_constraintBaseline_toBaselineOf="@id/folderLabel"
+                app:layout_constraintRight_toRightOf="parent" />
 
-            <com.google.android.material.textfield.TextInputLayout
-                android:id="@+id/folderLayout"
+            <TextView
+                android:id="@+id/folderPath"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
+                android:paddingLeft="20dp"
+                android:paddingTop="20dp"
                 android:paddingRight="20dp"
-                app:hintEnabled="false"
-                app:layout_constraintLeft_toRightOf="@id/folderSpinner"
+                android:text="@string/default_path"
+                android:textSize="16sp"
+                app:layout_constraintLeft_toLeftOf="parent"
                 app:layout_constraintRight_toRightOf="parent"
-                app:layout_constraintTop_toBottomOf="@id/folderLabel">
-
-                <com.google.android.material.textfield.TextInputEditText
-                    android:id="@+id/folderTextInput"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:singleLine="true" />
-            </com.google.android.material.textfield.TextInputLayout>
+                app:layout_constraintTop_toBottomOf="@id/folderLabel" />
 
             <Space
                 android:id="@+id/space2"
@@ -152,7 +147,7 @@
                 android:layout_height="20dp"
                 app:layout_constraintLeft_toLeftOf="parent"
                 app:layout_constraintRight_toRightOf="parent"
-                app:layout_constraintTop_toBottomOf="@id/folderLayout" />
+                app:layout_constraintTop_toBottomOf="@id/folderPath" />
 
             <TextView
                 android:id="@+id/titleLabel"

@@ -1,19 +1,12 @@
 package org.poolc.linky
 
-import android.content.Intent
 import android.os.Bundle
 import android.util.Log
 import android.view.View
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.Fragment
-import org.jsoup.Jsoup
 import org.poolc.linky.databinding.ActivityMainBinding
-import java.net.MalformedURLException
-import java.net.URISyntaxException
-import java.net.URL
-import java.util.regex.Pattern
-import kotlin.concurrent.thread
 
 class MainActivity : AppCompatActivity() {
 
@@ -70,7 +63,7 @@ class MainActivity : AppCompatActivity() {
     private fun changeFragment(fragment:Fragment) {
         supportFragmentManager
             .beginTransaction()
-            .replace(R.id.container, fragment)
+            .replace(R.id.folderFragmentContainer, fragment)
             .commit()
     }
 }

@@ -3,7 +3,6 @@ package org.poolc.linky
 import android.Manifest
 import android.content.DialogInterface
 import android.content.Intent
-import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.ImageDecoder
@@ -13,7 +12,6 @@ import android.os.Bundle
 import android.provider.MediaStore
 import android.util.Log
 import android.view.*
-import android.view.inputmethod.InputMethodManager
 import android.widget.*
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
@@ -31,13 +29,13 @@ import kotlin.concurrent.thread
 class AddLinkyActivity : AppCompatActivity() {
 
     private lateinit var binding : ActivityAddLinkyBinding
-    private var folders = arrayOf("선택안함", "음식", "고양이", "직접입력")
     private val keywords = ArrayList<String>()
     private lateinit var keywordAdapter : KeywordAdapter
     private var intentChanged = true
     private lateinit var switch : Switch
+    private lateinit var folderResultLauncher: ActivityResultLauncher<Intent>
     private lateinit var albumResultLauncher : ActivityResultLauncher<Intent>
-    private val permission_list = arrayOf(
+    private val permissionList = arrayOf(
         Manifest.permission.READ_EXTERNAL_STORAGE,
         Manifest.permission.ACCESS_MEDIA_LOCATION
     )
@@ -64,6 +62,22 @@ class AddLinkyActivity : AppCompatActivity() {
                 builder.show()
             }
         })
+
+        folderResultLauncher = registerForActivityResult(
+            ActivityResultContracts.StartActivityForResult()) { result ->
+            if(result.resultCode == RESULT_OK) {
+                val path = result.data?.getStringExtra("path")
+
+                if(path != null) {
+                    if(path == "") {
+                        binding.folderPath.text = getString(R.string.default_path)
+                    }
+                    else {
+                        binding.folderPath.text = path
+                    }
+                }
+            }
+        }
 
         albumResultLauncher = registerForActivityResult(
             ActivityResultContracts.StartActivityForResult()) { result ->
@@ -105,13 +119,6 @@ class AddLinkyActivity : AppCompatActivity() {
             supportActionBar?.setDisplayShowTitleEnabled(false)
             addLinkyTopbarTitle.text = "링크 추가하기"
 
-            // spinner 설정
-            val spinnerAdapter = ArrayAdapter(this@AddLinkyActivity, android.R.layout.simple_spinner_item, folders)
-            spinnerAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
-            folderSpinner.adapter = spinnerAdapter
-            folderSpinner.onItemSelectedListener = spinnerListener
-            folderTextInput.isEnabled = false
-
             // clear keywords listener 설정
             clearKeywords.setOnClickListener(clearKeywordsListener)
 
@@ -139,6 +146,9 @@ class AddLinkyActivity : AppCompatActivity() {
                     }
                 }
             })
+
+            // select path listener 설정
+            selectPath.setOnClickListener(selectPathListener)
         }
     }
 
@@ -159,7 +169,7 @@ class AddLinkyActivity : AppCompatActivity() {
                 switch.isChecked = false
                 keywords.clear()
                 keywordAdapter.notifyDataSetChanged()
-                // TODO("폴더명 초기화 필요")
+                folderPath.setText(R.string.default_path)
                 titleTextInput.setText("")
                 linkImage.setImageResource(R.mipmap.linky_logo)
                 linkAddressTextInput.setText("")
@@ -317,72 +327,52 @@ class AddLinkyActivity : AppCompatActivity() {
         }
     }
 
-    private val spinnerListener = object : AdapterView.OnItemSelectedListener {
-        override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
-            when(parent?.id) {
-                R.id.folderSpinner -> {
-                    if(position == folders.size - 1) {
-                        binding.folderTextInput.setText("")
-                        binding.folderTextInput.isEnabled = true
-                    }
-                    else {
-                        binding.folderTextInput.setText(folders[position])
-                        binding.folderTextInput.isEnabled = false
-                    }
-                }
-            }
-        }
-
-        override fun onNothingSelected(parent: AdapterView<*>?) {
-        }
+    private val selectPathListener = View.OnClickListener {
+        val selectFolderIntent = Intent(this, SelectPathActivity::class.java)
+        folderResultLauncher.launch(selectFolderIntent)
     }
 
-    private val imageListener = object : View.OnClickListener {
-        override fun onClick(v: View?) {
-            requestPermissions(permission_list, 0)
+    private val imageListener = View.OnClickListener {
+        requestPermissions(permissionList, 0)
 
-            // 앨범에서 사진을 선택할 수 있는 액티비티를 실행한다.
-            val albumIntent = Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI)
-            // 실행할 액티비티의 타입을 설정한다. (이미지를 선택할 수 있는 타입으로)
-            albumIntent.type = "image/*"
-            // 선택할 파일의 타입을 지정한다. (안드로이드 OS가 사전작업을 할 수 있도록 하기 위함)
-            val mimeType = arrayOf("image/*")
-            albumIntent.putExtra(Intent.EXTRA_MIME_TYPES, mimeType)
+        // 앨범에서 사진을 선택할 수 있는 액티비티를 실행한다.
+        val albumIntent = Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI)
+        // 실행할 액티비티의 타입을 설정한다. (이미지를 선택할 수 있는 타입으로)
+        albumIntent.type = "image/*"
+        // 선택할 파일의 타입을 지정한다. (안드로이드 OS가 사전작업을 할 수 있도록 하기 위함)
+        val mimeType = arrayOf("image/*")
+        albumIntent.putExtra(Intent.EXTRA_MIME_TYPES, mimeType)
 
-            albumResultLauncher.launch(albumIntent)
-        }
+        albumResultLauncher.launch(albumIntent)
     }
 
-    private val keywordKeyListener = object : View.OnKeyListener {
-        override fun onKey(v: View?, keyCode: Int, event: KeyEvent?): Boolean {
-            var result = false
+    private val keywordKeyListener = View.OnKeyListener { v, keyCode, event ->
+        var result = false
 
-            if (event?.action == KeyEvent.ACTION_DOWN) {
-                when (keyCode) {
-                    KeyEvent.KEYCODE_ENTER -> {
-                        val word: String? = binding.tagTextInput.text.toString()
-                        if (word != "") {
-                            if (!keywords.contains(word)) {
-                                if(keywords.size < 5) {
-                                    keywords.add(word!!)
-                                    keywordAdapter.notifyItemInserted(keywords.size - 1)
-                                    binding.tagTextInput.setText("")
-                                }
-                                else {
-                                    binding.tagTextInput.error = "키워드는 최대 5개까지만 가능합니다."
-                                }
+        if (event?.action == KeyEvent.ACTION_DOWN) {
+            when (keyCode) {
+                KeyEvent.KEYCODE_ENTER -> {
+                    val word: String? = binding.tagTextInput.text.toString()
+                    if (word != "") {
+                        if (!keywords.contains(word)) {
+                            if(keywords.size < 5) {
+                                keywords.add(word!!)
+                                keywordAdapter.notifyItemInserted(keywords.size - 1)
+                                binding.tagTextInput.setText("")
                             } else {
-                                // 이미 존재하는 키워드입니다
-                                binding.tagTextInput.error = "이미 존재하는 키워드입니다."
+                                binding.tagTextInput.error = "키워드는 최대 5개까지만 가능합니다."
                             }
+                        } else {
+                            // 이미 존재하는 키워드입니다
+                            binding.tagTextInput.error = "이미 존재하는 키워드입니다."
                         }
-                        result = true
                     }
+                    result = true
                 }
             }
-
-            return result
         }
+
+        result
     }
 
     override fun onCreateOptionsMenu(menu: Menu?): Boolean {
@@ -392,20 +382,18 @@ class AddLinkyActivity : AppCompatActivity() {
         val relaLayout = item?.actionView as RelativeLayout
         switch = relaLayout.findViewById<Switch>(R.id.add_private)
 
-        val switchListener = object : CompoundButton.OnCheckedChangeListener {
-            override fun onCheckedChanged(buttonView: CompoundButton?, isChecked: Boolean) {
+        val switchListener =
+            CompoundButton.OnCheckedChangeListener { buttonView, isChecked ->
                 when(buttonView?.id) {
                     R.id.add_private -> {
                         if(isChecked) {
                             buttonView.text = "공개"
-                        }
-                        else {
+                        } else {
                             buttonView.text = "비공개"
                         }
                     }
                 }
             }
-        }
 
         switch.setOnCheckedChangeListener(switchListener)
 
