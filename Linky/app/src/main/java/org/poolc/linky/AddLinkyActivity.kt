@@ -19,6 +19,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.RecyclerView
+import org.json.JSONObject
 import org.jsoup.Jsoup
 import org.poolc.linky.databinding.ActivityAddLinkyBinding
 import java.net.HttpURLConnection
@@ -40,6 +41,10 @@ class AddLinkyActivity : AppCompatActivity() {
         Manifest.permission.READ_EXTERNAL_STORAGE,
         Manifest.permission.ACCESS_MEDIA_LOCATION
     )
+
+    private var imgUrl : String? = null
+    private var url : String? = null
+
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -218,15 +223,14 @@ class AddLinkyActivity : AppCompatActivity() {
                         var matcher = pattern.matcher(txt)
                         if (matcher.find()) {
                             var encodedUrl = txt.substring(matcher.start(0), matcher.end(0))
-                            var url = URLDecoder.decode(encodedUrl, "UTF-8")
+                            url = URLDecoder.decode(encodedUrl, "UTF-8")
 
                             // 메타데이터 추출
                             thread {
                                 var title : String? = null
-                                var image : String? = null
 
                                 var doc = Jsoup.connect(url).userAgent("Chrome").get()
-                                if(url.contains("naver.me")) {
+                                if(url!!.contains("naver.me")) {
                                     val metaUrl : String? = doc.select("meta[property=al:android:url]").first()?.attr("content")
                                     pattern = Pattern.compile(
                                         "(url=)+[\\w\\d:#@%/;\$()~_?\\+-=\\\\\\.&]*(&version)+",
@@ -242,7 +246,7 @@ class AddLinkyActivity : AppCompatActivity() {
 
                                 val metaTags = doc.select("meta[property]")
                                 for(meta in metaTags) {
-                                    if(title != null && image != null) {
+                                    if(title != null && imgUrl != null) {
                                         break
                                     }
 
@@ -250,8 +254,8 @@ class AddLinkyActivity : AppCompatActivity() {
                                         title = meta.attr("content")
                                     }
 
-                                    if(image == null && meta.attr("property").contains("image")) {
-                                        image = meta.attr("content")
+                                    if(imgUrl == null && meta.attr("property").contains("image")) {
+                                        imgUrl = meta.attr("content")
                                     }
                                 }
 
@@ -267,13 +271,13 @@ class AddLinkyActivity : AppCompatActivity() {
                                     title = doc.getElementsByTag("title")?.first()?.text()
                                 }
 
-                                if(image == null) {
-                                    image = doc.getElementsByTag("img").first()?.absUrl("src")
+                                if(imgUrl == null) {
+                                    imgUrl = doc.getElementsByTag("img").first()?.absUrl("src")
                                 }
 
                                 var resizedBitmap: Bitmap? = null
-                                if(image != null) {
-                                    val imageUrl: URL? = URL(image)
+                                if(imgUrl != null) {
+                                    val imageUrl: URL? = URL(imgUrl)
                                     val conn: HttpURLConnection? =
                                         imageUrl?.openConnection() as HttpURLConnection
                                     val bitmap: Bitmap? =

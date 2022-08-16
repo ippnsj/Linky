@@ -1,20 +1,18 @@
 package org.poolc.linky
 
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.ViewGroup
-import android.view.animation.TranslateAnimation
 import androidx.recyclerview.widget.RecyclerView
-import org.poolc.linky.databinding.FolderItemBinding
+import org.poolc.linky.databinding.FolderListitemBinding
 
-class FolderAdapter(private val folders:ArrayList<String>, private val listener: FolderAdapter.OnItemClickListener) : RecyclerView.Adapter<FolderAdapter.ViewHolder>() {
+class FolderListAdapter(private val folders:ArrayList<String>, private val listener: FolderListAdapter.OnItemClickListener) : RecyclerView.Adapter<FolderListAdapter.ViewHolder>() {
 
     public interface OnItemClickListener {
         fun onItemClick(folderName:String)
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
-        val binding = FolderItemBinding.inflate(LayoutInflater.from(parent.context), parent, false)
+        val binding = FolderListitemBinding.inflate(LayoutInflater.from(parent.context), parent, false)
         return ViewHolder(binding)
     }
 
@@ -26,16 +24,11 @@ class FolderAdapter(private val folders:ArrayList<String>, private val listener:
         return folders.size
     }
 
-    inner class ViewHolder(val binding : FolderItemBinding) : RecyclerView.ViewHolder(binding.root) {
+    inner class ViewHolder(val binding: FolderListitemBinding) : RecyclerView.ViewHolder(binding.root) {
         fun bind(pos:Int) {
             with(binding) {
                 folderName.text = folders[pos]
-                folderContainer.setOnLongClickListener {
-                    folderName.isSelected = false
-                    folderName.isSelected = true
-                    true
-                }
-                folderContainer.setOnClickListener {
+                folderName.setOnClickListener {
                     listener.onItemClick(folders[pos])
                 }
             }

@@ -2,7 +2,6 @@ package org.poolc.linky
 
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
-import android.util.Log
 import android.view.Menu
 import android.view.MenuItem
 import androidx.fragment.app.Fragment
@@ -26,7 +25,7 @@ class SelectPathActivity : AppCompatActivity() {
             // folder json 파싱
             val jsonStr = assets.open("folders.json").reader().readText()
 
-            val rootFragment = FoldersFragment()
+            val rootFragment = FolderListFragment()
             val bundle = Bundle()
             bundle.putString("path", currentPath)
             bundle.putString("jsonStr", jsonStr)
@@ -44,7 +43,7 @@ class SelectPathActivity : AppCompatActivity() {
         // folder json 파싱
         val jsonStr = assets.open("folders.json").reader().readText()
 
-        val nextFragment = FoldersFragment()
+        val nextFragment = FolderListFragment()
         val bundle = Bundle()
         bundle.putString("path", path)
         bundle.putString("jsonStr", jsonStr)

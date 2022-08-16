@@ -1,9 +1,7 @@
 package org.poolc.linky
 
-import android.app.AlertDialog
 import android.content.DialogInterface
 import android.os.Bundle
-import android.util.Log
 import android.view.*
 import androidx.fragment.app.Fragment
 import android.view.inputmethod.EditorInfo
@@ -13,10 +11,10 @@ import org.json.JSONObject
 import org.poolc.linky.databinding.FoldernameDialogBinding
 import org.poolc.linky.databinding.FragmentFoldersBinding
 
-class FoldersFragment : Fragment() {
+class FolderListFragment : Fragment() {
     private lateinit var binding : FragmentFoldersBinding
     private val folders = ArrayList<String>()
-    private lateinit var folderAdapter : FolderAdapter
+    private lateinit var folderListAdapter : FolderListAdapter
     private lateinit var path : String
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -50,7 +48,7 @@ class FoldersFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
         binding = FragmentFoldersBinding.bind(view)
 
-        folderAdapter = FolderAdapter(folders, object : FolderAdapter.OnItemClickListener {
+        folderListAdapter = FolderListAdapter(folders, object : FolderListAdapter.OnItemClickListener {
             override fun onItemClick(folderName: String) {
                 val newPath = "${path}${folderName} / "
                 val activity = activity as SelectPathActivity
@@ -61,8 +59,8 @@ class FoldersFragment : Fragment() {
         with(binding) {
             currentPath.text = path
 
-            folderRecycler.adapter = folderAdapter
-            folderRecycler.addItemDecoration(DividerItemDecoration(activity, 1))
+            folderListRecycler.adapter = folderListAdapter
+            folderListRecycler.addItemDecoration(DividerItemDecoration(activity, 1))
 
             addFolder.setOnClickListener {
                 val builder = android.app.AlertDialog.Builder(activity)
@@ -76,7 +74,7 @@ class FoldersFragment : Fragment() {
                 builder.setPositiveButton("추가") { dialogInterface: DialogInterface, i: Int ->
                     // TODO 글자수가 1자 이상이며 10자를 넘지 않는지 확인
                     folders.add(dialogBinding.newFolderName.text.toString())
-                    folderAdapter.notifyItemInserted(folders.size - 1)
+                    folderListAdapter.notifyItemInserted(folders.size - 1)
 
                     val toast = Toast.makeText(activity, "새 폴더가 추가되었습니다!", Toast.LENGTH_SHORT)
                     toast.setGravity(Gravity.BOTTOM, 0, 0)
