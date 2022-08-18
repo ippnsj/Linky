@@ -22,7 +22,6 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:enabled="true"
-            app:boxBackgroundColor="@color/white"
             app:layout_constrainedWidth="false"
             app:layout_constraintLeft_toLeftOf="parent"
             app:layout_constraintRight_toLeftOf="@id/space3"
@@ -34,7 +33,10 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:hint="이메일 주소"
-                android:inputType="textEmailAddress" />
+                android:imeActionLabel="전송"
+                android:imeOptions="actionDone"
+                android:inputType="textEmailAddress"
+                android:nextFocusForward="@id/button4" />
 
         </com.google.android.material.textfield.TextInputLayout>
 
@@ -62,7 +64,6 @@
             android:id="@+id/certificateLayout"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            app:boxBackgroundColor="#00CA2A2A"
             app:errorEnabled="true"
             app:layout_constraintLeft_toLeftOf="parent"
             app:layout_constraintRight_toRightOf="parent"
@@ -94,7 +95,6 @@
             android:id="@+id/passwordLayout"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            app:boxBackgroundColor="@color/white"
             app:layout_constraintLeft_toLeftOf="parent"
             app:layout_constraintTop_toBottomOf="@id/certificateLayout"
             app:passwordToggleEnabled="true"
@@ -112,7 +112,6 @@
             android:id="@+id/passwordCheckLayout"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            app:boxBackgroundColor="@color/white"
             app:layout_constraintLeft_toLeftOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@id/passwordLayout"
