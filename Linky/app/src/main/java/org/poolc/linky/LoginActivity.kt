@@ -154,7 +154,7 @@ class LoginActivity : AppCompatActivity() {
                     os.flush()
 
                     if(conn!!.responseCode == 200) {
-                        val sharedPref = getSharedPreferences(getString(R.string.preference_key), Context.MODE_PRIVATE)
+                        val sharedPref = getSharedPreferences(getString(R.string.preference_key), MODE_PRIVATE)
                         val response = conn!!.inputStream.reader().readText()
                         val responseJson = JSONObject(response)
 

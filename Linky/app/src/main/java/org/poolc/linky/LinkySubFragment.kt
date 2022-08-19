@@ -38,29 +38,31 @@ class LinkySubFragment : Fragment() {
         linkys.clear()
         // json 파싱
         val jsonStr = arguments?.getString("jsonStr")
-        val jsonObj = JSONObject(jsonStr)
-        val foldersArr = jsonObj.getJSONArray("folders")
-        val linkysArr = jsonObj.getJSONArray("links")
-        for(idx in 0 until foldersArr.length()) {
-            val folderObj = foldersArr.getJSONObject(idx)
-            val folderName = folderObj.getString("folderName")
+        if(jsonStr != "") {
+            val jsonObj = JSONObject(jsonStr)
+            val foldersArr = jsonObj.getJSONArray("folders")
+            val linkysArr = jsonObj.getJSONArray("links")
+            for (idx in 0 until foldersArr.length()) {
+                val folderObj = foldersArr.getJSONObject(idx)
+                val folderName = folderObj.getString("folderName")
 
-            folders.add(folderName)
-        }
+                folders.add(folderName)
+            }
 
-        for(idx in 0 until linkysArr.length()) {
-            val linkyObj = linkysArr.getJSONObject(idx)
-            val keywordsArr = linkyObj.getJSONArray("keywords")
-            val title = linkyObj.getString("title")
-            val imgUrl = linkyObj.getString("imgUrl")
-            val url = linkyObj.getString("url")
+            for (idx in 0 until linkysArr.length()) {
+                val linkyObj = linkysArr.getJSONObject(idx)
+                val keywordsArr = linkyObj.getJSONArray("keywords")
+                val title = linkyObj.getString("title")
+                val imgUrl = linkyObj.getString("imgUrl")
+                val url = linkyObj.getString("url")
 
-            val linky = HashMap<String, Any>()
-            linky.put("keywords", keywordsArr)
-            linky.put("title", title)
-            linky.put("imgUrl", imgUrl)
-            linky.put("url", url)
-            linkys.add(linky)
+                val linky = HashMap<String, Any>()
+                linky.put("keywords", keywordsArr)
+                linky.put("title", title)
+                linky.put("imgUrl", imgUrl)
+                linky.put("url", url)
+                linkys.add(linky)
+            }
         }
 
         return inflater.inflate(R.layout.fragment_linky_sub, container, false)
