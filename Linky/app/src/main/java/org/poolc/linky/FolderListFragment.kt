@@ -21,16 +21,6 @@ class FolderListFragment : Fragment() {
         super.onCreate(savedInstanceState)
 
         path = arguments?.getString("path")!!
-
-        val jsonStr = arguments?.getString("jsonStr")
-        val jsonObj = JSONObject(jsonStr)
-        val foldersArr = jsonObj.getJSONArray("folders")
-        for(idx in 0 until foldersArr.length()) {
-            val folderObj = foldersArr.getJSONObject(idx)
-            val folderName = folderObj.getString("folderName")
-
-            folders.add(folderName)
-        }
     }
 
     override fun onCreateView(
@@ -40,6 +30,18 @@ class FolderListFragment : Fragment() {
         // activity에 path값 넘김
         val activity = activity as SelectPathActivity
         activity.setCurrentPath(path)
+
+        val jsonStr = arguments?.getString("jsonStr")
+        if (jsonStr != "") {
+            val jsonObj = JSONObject(jsonStr)
+            val foldersArr = jsonObj.getJSONArray("folders")
+            for (idx in 0 until foldersArr.length()) {
+                val folderObj = foldersArr.getJSONObject(idx)
+                val folderName = folderObj.getString("folderName")
+
+                folders.add(folderName)
+            }
+        }
 
         return inflater.inflate(R.layout.fragment_folders, container, false)
     }

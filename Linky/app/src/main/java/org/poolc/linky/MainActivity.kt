@@ -47,7 +47,7 @@ class MainActivity : AppCompatActivity() {
                 when(item.itemId) {
                     R.id.linky -> {
                         if (now != "linky" && now != "sub") {
-                            // folder json 파싱
+                            // json 가져오기
                             val jsonStr = readLink()
                             bundle = Bundle()
                             bundle?.putString("path", path)
