@@ -31,8 +31,6 @@ class LoginRegisterActivity : AppCompatActivity() {
                 val intent = Intent(this@LoginRegisterActivity, LoginActivity::class.java)
                 startActivity(intent)
             }
-
-
         }
     }
 }

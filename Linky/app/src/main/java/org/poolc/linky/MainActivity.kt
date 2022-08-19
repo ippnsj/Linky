@@ -76,10 +76,16 @@ class MainActivity : AppCompatActivity() {
             }
             bottomNavigation.selectedItemId = R.id.linky
 
-            // add_linky로부터 온 intent
-            if(intent.getStringExtra("from") == "add") {
-                val toast = Toast.makeText(this@MainActivity, "새로운 링키가 추가되었습니다~!", Toast.LENGTH_SHORT)
-                toast.show()
+            // intent 처리
+            when(intent.getStringExtra("from")) {
+                "add" -> {
+                    val toast = Toast.makeText(this@MainActivity, "새로운 링키가 추가되었습니다~!", Toast.LENGTH_SHORT)
+                    toast.show()
+                }
+                "login" -> {
+                    val toast = Toast.makeText(this@MainActivity, "로그인되었습니다~!", Toast.LENGTH_SHORT)
+                    toast.show()
+                }
             }
         }
     }
