@@ -144,14 +144,11 @@ class LoginActivity : AppCompatActivity() {
                     os.flush()
 
                     if(conn!!.responseCode == 200) {
-                        val sharedPref = getSharedPreferences(getString(R.string.preference_key), MODE_PRIVATE)
                         val response = conn!!.inputStream.reader().readText()
                         val responseJson = JSONObject(response)
 
-                        with(sharedPref.edit()) {
-                            putString("userEmail", responseJson.getString("userId"))
-                            apply()
-                        }
+                        val editSharedPref = MyApplication.sharedPref.edit()
+                        editSharedPref.putString("userEmail", responseJson.getString("userEmail")).apply()
 
                         val intent = Intent(this, MainActivity::class.java)
                         intent.putExtra("from", "login")
@@ -164,6 +161,10 @@ class LoginActivity : AppCompatActivity() {
                         runOnUiThread {
                             showFailedLoginDialog(message)
                         }
+                    }
+                    else if(conn!!.responseCode == 404) {
+                        // TODO
+                        Log.d("test", "존재하지 않는 유저입니다.")
                     }
                 }
                 catch (e: MalformedURLException) {

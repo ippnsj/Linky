@@ -1,25 +1,39 @@
 package org.poolc.linky
 
+import android.animation.ObjectAnimator
+import android.content.Context
+import android.content.DialogInterface
+import android.content.Intent
 import android.graphics.Rect
 import android.os.Bundle
 import android.util.Log
+import android.view.Gravity
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.view.inputmethod.EditorInfo
+import android.view.inputmethod.InputMethodManager
+import android.widget.Toast
+import androidx.appcompat.app.AlertDialog
 import androidx.core.view.size
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.RecyclerView
 import org.json.JSONObject
+import org.poolc.linky.databinding.AddLinkDialogBinding
+import org.poolc.linky.databinding.FoldernameDialogBinding
 import org.poolc.linky.databinding.FragmentLinkySubBinding
+import kotlin.concurrent.thread
 import kotlin.math.ceil
 
 class LinkySubFragment : Fragment() {
     private lateinit var binding : FragmentLinkySubBinding
     private val folders = ArrayList<String>()
-    private val linkys = ArrayList<HashMap<String, Any>>()
+    private val links = ArrayList<HashMap<String, Any>>()
     private lateinit var folderSubAdapter: FolderSubAdapter
     private lateinit var linkySubAdapter: LinkyAdapter
     private lateinit var path : String
+    private var isFabOpen = false
+    private lateinit var mainActivity : MainActivity
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -31,38 +45,14 @@ class LinkySubFragment : Fragment() {
         savedInstanceState: Bundle?
     ): View? {
         // activity에 path값 넘김
-        val activity = activity as MainActivity
-        activity.setPath(path)
+        mainActivity.setPath(path)
 
-        folders.clear()
-        linkys.clear()
         // json 파싱
         val jsonStr = arguments?.getString("jsonStr")
+
         if(jsonStr != "") {
-            val jsonObj = JSONObject(jsonStr)
-            val foldersArr = jsonObj.getJSONArray("folders")
-            val linkysArr = jsonObj.getJSONArray("links")
-            for (idx in 0 until foldersArr.length()) {
-                val folderObj = foldersArr.getJSONObject(idx)
-                val folderName = folderObj.getString("folderName")
-
-                folders.add(folderName)
-            }
-
-            for (idx in 0 until linkysArr.length()) {
-                val linkyObj = linkysArr.getJSONObject(idx)
-                val keywordsArr = linkyObj.getJSONArray("keywords")
-                val title = linkyObj.getString("title")
-                val imgUrl = linkyObj.getString("imgUrl")
-                val url = linkyObj.getString("url")
-
-                val linky = HashMap<String, Any>()
-                linky.put("keywords", keywordsArr)
-                linky.put("title", title)
-                linky.put("imgUrl", imgUrl)
-                linky.put("url", url)
-                linkys.add(linky)
-            }
+            setFolders(jsonStr!!)
+            setLinks(jsonStr!!)
         }
 
         return inflater.inflate(R.layout.fragment_linky_sub, container, false)
@@ -80,7 +70,7 @@ class LinkySubFragment : Fragment() {
             }
         })
 
-        linkySubAdapter = LinkyAdapter(linkys)
+        linkySubAdapter = LinkyAdapter(links)
 
         with(binding) {
             folderSubRecycler.adapter = folderSubAdapter
@@ -129,6 +119,171 @@ class LinkySubFragment : Fragment() {
                     }
                 }
             })
+
+            addFolderSub.setOnClickListener {
+                val builder = AlertDialog.Builder(mainActivity)
+                builder.setTitle("추가할 폴더명을 입력해주세요")
+
+                val dialogView = layoutInflater.inflate(R.layout.foldername_dialog, null)
+                val dialogBinding = FoldernameDialogBinding.bind(dialogView)
+
+                builder.setView(dialogView)
+
+                builder.setPositiveButton("추가") { dialogInterface: DialogInterface, i: Int ->
+                    // TODO 글자수가 1자 이상이며 10자를 넘지 않는지 확인
+                    createFolder(dialogBinding.newFolderName.text.toString())
+                }
+                builder.setNegativeButton("취소", null)
+
+                val dialog = builder.create()
+
+                dialog.show()
+
+                dialogBinding.newFolderName.setOnEditorActionListener { v, actionId, event ->
+                    if(actionId == EditorInfo.IME_ACTION_DONE) {
+                        dialog.getButton(DialogInterface.BUTTON_POSITIVE).performClick()
+                        true
+                    }
+                    false
+                }
+            }
+
+            addLinkySub.setOnClickListener {
+                val builder = AlertDialog.Builder(mainActivity)
+                builder.setTitle("추가할 링크를 입력해주세요")
+                builder.setIcon(R.drawable.add_link_pink)
+
+                val dialogView = layoutInflater.inflate(R.layout.add_link_dialog, null)
+                val dialogBinding = AddLinkDialogBinding.bind(dialogView)
+
+                builder.setView(dialogView)
+
+                builder.setPositiveButton("추가", null)
+                builder.setNegativeButton("취소", null)
+
+                val dialog = builder.create()
+
+                dialog.show()
+
+                val possitiveButton = dialog.getButton(AlertDialog.BUTTON_POSITIVE)
+                possitiveButton.setOnClickListener {
+                    val url = dialogBinding.newUrl.text.toString()
+                    if(url == "") {
+                        dialogBinding.newUrl.error = "url을 입력해주세요."
+                    }
+                    else {
+                        toggleFab()
+                        val imm = mainActivity.getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
+                        imm.hideSoftInputFromWindow(dialogBinding.newUrl.windowToken, 0)
+                        dialog?.dismiss()
+                        val intent = Intent(mainActivity, AddLinkyActivity::class.java)
+                        intent.putExtra("url", url)
+                        startActivity(intent)
+                    }
+                }
+
+                dialogBinding.newUrl.setOnEditorActionListener { v, actionId, event ->
+                    if(actionId == EditorInfo.IME_ACTION_DONE) {
+                        possitiveButton.performClick()
+                        true
+                    }
+                    false
+                }
+            }
+
+            addSub.setOnClickListener {
+                toggleFab()
+            }
+        }
+    }
+
+    override fun onAttach(context: Context) {
+        super.onAttach(context)
+        mainActivity = context as MainActivity
+    }
+
+    private fun toggleFab() {
+        with(binding) {
+            if (isFabOpen) {
+                ObjectAnimator.ofFloat(addFolderSub, "translationY", 0f).apply { start() }
+                ObjectAnimator.ofFloat(addLinkySub, "translationY", 0f).apply { start() }
+                addSub.setImageResource(R.drawable.add)
+            } else {
+                ObjectAnimator.ofFloat(addFolderSub, "translationY", -400f).apply { start() }
+                ObjectAnimator.ofFloat(addLinkySub, "translationY", -200f).apply { start() }
+                addSub.setImageResource(R.drawable.close)
+            }
+        }
+
+        isFabOpen = !isFabOpen
+    }
+
+    private fun setFolders(jsonStr:String) {
+        folders.clear()
+        val jsonObj = JSONObject(jsonStr)
+        val foldersArr = jsonObj.getJSONArray("folderInfos")
+        for (idx in 0 until foldersArr.length()) {
+            val folderObj = foldersArr.getJSONObject(idx)
+            val folderName = folderObj.getString("folderName")
+
+            folders.add(folderName)
+        }
+    }
+
+    private fun setLinks(jsonStr: String) {
+        links.clear()
+        val jsonObj = JSONObject(jsonStr)
+        val linksArr = jsonObj.getJSONArray("linkInfos")
+        for (idx in 0 until linksArr.length()) {
+            val linkObj = linksArr.getJSONObject(idx)
+            val keywordsArr = linkObj.getJSONArray("keywords")
+            val title = linkObj.getString("title")
+            val imgUrl = linkObj.getString("imgUrl")
+            val url = linkObj.getString("url")
+
+            val link = HashMap<String, Any>()
+            link.put("keywords", keywordsArr)
+            link.put("title", title)
+            link.put("imgUrl", imgUrl)
+            link.put("url", url)
+            links.add(link)
+        }
+    }
+
+    private fun createFolder(folderName:String) {
+        val app = mainActivity.application as MyApplication
+
+        thread {
+            val responseCode = app.createFolder(folderName, path)
+
+            if(responseCode == 200) {
+                var jsonStr = ""
+                thread {
+                    jsonStr = app.readFolder(path)
+
+                    if (jsonStr != "") {
+                        mainActivity.runOnUiThread {
+                            folders.clear()
+                            setFolders(jsonStr)
+                            folderSubAdapter.notifyDataSetChanged()
+
+                            val toast =
+                                Toast.makeText(activity, "새 폴더가 추가되었습니다!", Toast.LENGTH_SHORT)
+                            toast.setGravity(Gravity.BOTTOM, 0, 0)
+                            toast.show()
+                        }
+                    }
+                }
+            }
+            else if(responseCode == 400) {
+                Log.d("test", "Bad request")
+            }
+            else if(responseCode == 404) {
+                Log.d("test", "Not Found")
+            }
+            else if(responseCode == 401) {
+                Log.d("test", "Unauthorized")
+            }
         }
     }
 }

@@ -43,7 +43,7 @@
             app:layout_constraintRight_toRightOf="parent"
             app:layout_constraintTop_toBottomOf="@id/emailLayout"
             app:passwordToggleEnabled="true"
-            app:startIconDrawable="@drawable/lock">
+            app:startIconDrawable="@drawable/password">
 
             <com.google.android.material.textfield.TextInputEditText
                 android:id="@+id/passwordTextInput"
