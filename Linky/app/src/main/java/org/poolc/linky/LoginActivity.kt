@@ -1,31 +1,21 @@
 package org.poolc.linky
 
-import android.app.Dialog
-import android.content.Context
-import android.content.DialogInterface
 import android.content.Intent
 import android.graphics.Color
-import android.graphics.ColorSpace
-import android.graphics.Paint
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.text.Spannable
-import android.text.SpannableString
 import android.text.SpannableStringBuilder
 import android.text.style.ForegroundColorSpan
 import android.util.Log
 import android.util.Patterns
-import android.view.WindowManager
 import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.InputMethodManager
-import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.core.widget.doAfterTextChanged
 import org.json.JSONObject
 import org.poolc.linky.databinding.ActivityLoginBinding
-import java.io.BufferedReader
 import java.io.IOException
-import java.io.InputStreamReader
 import java.net.HttpURLConnection
 import java.net.MalformedURLException
 import java.net.URL
@@ -171,7 +161,9 @@ class LoginActivity : AppCompatActivity() {
                     else if(conn!!.responseCode == 400) {
                         val message = "이메일 또는 비밀번호가 잘못되었습니다.\n" +
                                 "다시 확인 후 로그인 해주세요."
-                        showFailedLoginDialog(message)
+                        runOnUiThread {
+                            showFailedLoginDialog(message)
+                        }
                     }
                 }
                 catch (e: MalformedURLException) {

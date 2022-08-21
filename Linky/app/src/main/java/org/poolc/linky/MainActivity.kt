@@ -99,7 +99,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun readLink() : String {
         val sharedPref = getSharedPreferences(getString(R.string.preference_key), MODE_PRIVATE)
-        val url = URL("http://${MyApplication.ip}:${MyApplication.port}/folder/readLink")
+        val url = URL("http://${MyApplication.ip}:${MyApplication.port}/folder/read")
         var conn : HttpURLConnection? = null
         var response : String = ""
 
