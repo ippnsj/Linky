@@ -100,10 +100,10 @@
         android:src="@drawable/add_folder"
         app:backgroundTint="@color/primary"
         app:fabSize="mini"
-        app:layout_constraintBottom_toBottomOf="@id/add"
-        app:layout_constraintEnd_toEndOf="@id/add"
-        app:layout_constraintStart_toStartOf="@id/add"
-        app:layout_constraintTop_toTopOf="@id/add" />
+        app:layout_constraintBottom_toBottomOf="@id/add_sub"
+        app:layout_constraintEnd_toEndOf="@id/add_sub"
+        app:layout_constraintStart_toStartOf="@id/add_sub"
+        app:layout_constraintTop_toTopOf="@id/add_sub" />
 
     <com.google.android.material.floatingactionbutton.FloatingActionButton
         android:id="@+id/add_linky_sub"
@@ -114,10 +114,10 @@
         android:src="@drawable/add_linky"
         app:backgroundTint="@color/primary"
         app:fabSize="mini"
-        app:layout_constraintBottom_toBottomOf="@id/add"
-        app:layout_constraintEnd_toEndOf="@id/add"
-        app:layout_constraintStart_toStartOf="@id/add"
-        app:layout_constraintTop_toTopOf="@id/add" />
+        app:layout_constraintBottom_toBottomOf="@id/add_sub"
+        app:layout_constraintEnd_toEndOf="@id/add_sub"
+        app:layout_constraintStart_toStartOf="@id/add_sub"
+        app:layout_constraintTop_toTopOf="@id/add_sub" />
 
     <com.google.android.material.floatingactionbutton.FloatingActionButton
         android:id="@+id/add_sub"

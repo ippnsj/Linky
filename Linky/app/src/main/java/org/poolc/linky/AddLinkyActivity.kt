@@ -9,6 +9,7 @@ import android.graphics.ImageDecoder
 import android.graphics.Rect
 import android.os.Build
 import android.os.Bundle
+import android.os.Message
 import android.provider.MediaStore
 import android.util.Log
 import android.util.Patterns
@@ -461,16 +462,95 @@ class AddLinkyActivity : AppCompatActivity() {
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         when(item?.itemId) {
             R.id.add_link -> {
-                // 키워드가 설정되어 있지 않다는 것을 확인시켜주는 문자메세지 필요
+                if(verify()) {
+                    // 키워드가 설정되어 있지 않다는 것을 확인시켜주는 문자메세지 필요
+                    if(keywords.size == 0) {
+                        val dialog = AlertDialog.Builder(this)
+                        dialog.setIcon(R.drawable.no_keyword)
+                        dialog.setTitle("키워드 없음")
+                        dialog.setMessage("설정된 키워드가 없습니다.\n" +
+                                "키워드 검색이 불가하더라도 추가하시겠습니까?")
 
-                // 키워드가 있다면
-                val intent = Intent(this, MainActivity::class.java)
-                intent.putExtra("from", "add")
-                intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
-                startActivity(intent)
-                finish()
+                        dialog.setPositiveButton("추가") { dialogInterface: DialogInterface, i: Int ->
+                            createLink()
+                        }
+
+                        dialog.setNegativeButton("취소", null)
+
+                        dialog.show()
+                    }
+                    else {
+                        // 키워드가 있다면
+                        createLink()
+                    }
+                }
             }
         }
         return super.onOptionsItemSelected(item)
+    }
+
+    private fun createLink() {
+        val app = application as MyApplication
+
+        val path = binding.folderPath.text.toString()
+        val title = binding.titleTextInput.text.toString()
+
+        // TODO 이미지 URL 인지 BITMAP 인지 확인
+
+        thread {
+            val responseCode = app.createLink(switch.isChecked, keywords, path, title, imgUrl!!, url!!)
+
+            when (responseCode) {
+                200 -> {
+                    val intent = Intent(this, MainActivity::class.java)
+                    intent.putExtra("from", "add")
+                    intent.flags =
+                        Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+                    startActivity(intent)
+                    finish()
+                }
+                400 -> {
+                    Log.d("test", "Bad request")
+                }
+                404 -> {
+                    Log.d("test", "Not Found")
+                }
+                401 -> {
+                    Log.d("test", "Unauthorized")
+                }
+            }
+        }
+    }
+
+    private fun showErrorMessage(message:String) {
+        val dialog = AlertDialog.Builder(this)
+        dialog.setIcon(R.drawable.ic_baseline_warning_8)
+        dialog.setTitle("링크 추가 실패")
+        dialog.setMessage(message)
+
+        dialog.setPositiveButton("확인", null)
+
+        dialog.show()
+    }
+
+    private fun verify():Boolean {
+        var result = false
+        with(binding) {
+            if (folderPath.text == getString(R.string.default_path)) {
+                showErrorMessage("저장할 위치를 지정해주세요.")
+            }
+            else if(titleTextInput.text.toString() == "") {
+                showErrorMessage("제목을 입력해주세요.")
+            }
+            else if(titleTextInput.text!!.length > 20) {
+                showErrorMessage("제목이 너무 깁니다.\n" +
+                        "20자 이하로 작성해주세요.")
+            }
+            else {
+                result = true
+            }
+        }
+
+        return result
     }
 }

@@ -33,8 +33,7 @@ class FolderListFragment : Fragment() {
         savedInstanceState: Bundle?
     ): View? {
         // activity에 path값 넘김
-        val activity = activity as SelectPathActivity
-        activity.setCurrentPath(path)
+        selectPathActivity.setCurrentPath(path)
 
         val jsonStr = arguments?.getString("jsonStr")
         if (jsonStr != "") {
@@ -50,9 +49,8 @@ class FolderListFragment : Fragment() {
 
         folderListAdapter = FolderListAdapter(folders, object : FolderListAdapter.OnItemClickListener {
             override fun onItemClick(folderName: String) {
-                val newPath = "${path}${folderName} / "
-                val activity = activity as SelectPathActivity
-                activity.createFragment(newPath)
+                val newPath = "${path}${folderName}/"
+                selectPathActivity.createFragment(newPath)
             }
         })
 
@@ -65,6 +63,7 @@ class FolderListFragment : Fragment() {
             addFolder.setOnClickListener {
                 val builder = AlertDialog.Builder(selectPathActivity)
                 builder.setTitle("추가할 폴더명을 입력해주세요")
+                builder.setIcon(R.drawable.add_folder_pink)
 
                 val dialogView = layoutInflater.inflate(R.layout.foldername_dialog, null)
                 val dialogBinding = FoldernameDialogBinding.bind(dialogView)
@@ -98,6 +97,7 @@ class FolderListFragment : Fragment() {
     }
 
     private fun setFolders(jsonStr:String) {
+        folders.clear()
         val jsonObj = JSONObject(jsonStr)
         val foldersArr = jsonObj.getJSONArray("folderInfos")
         for (idx in 0 until foldersArr.length()) {
@@ -120,13 +120,16 @@ class FolderListFragment : Fragment() {
                     jsonStr = app.readFolder(path)
 
                     if (jsonStr != "") {
-                        folders.clear()
-                        setFolders(jsonStr)
-                        folderListAdapter.notifyDataSetChanged()
+                        selectPathActivity.runOnUiThread {
+                            folders.clear()
+                            setFolders(jsonStr)
+                            folderListAdapter.notifyDataSetChanged()
 
-                        val toast = Toast.makeText(activity, "새 폴더가 추가되었습니다!", Toast.LENGTH_SHORT)
-                        toast.setGravity(Gravity.BOTTOM, 0, 0)
-                        toast.show()
+                            val toast =
+                                Toast.makeText(activity, "새 폴더가 추가되었습니다!", Toast.LENGTH_SHORT)
+                            toast.setGravity(Gravity.BOTTOM, 0, 0)
+                            toast.show()
+                        }
                     }
                 }
             }

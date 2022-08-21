@@ -66,6 +66,46 @@ class MyApplication : Application() {
         return responseCode
     }
 
+    fun createLink(public:Boolean, keywords:ArrayList<String>, path:String, linkTitle:String, linkImage:String, linkUrl:String) : Int {
+        val url = URL("http://$ip:$port/link/create")
+        var conn : HttpURLConnection? = null
+        var responseCode = -1
+
+        try {
+            conn = url.openConnection() as HttpURLConnection
+            conn!!.requestMethod = "POST"
+            conn!!.connectTimeout = 10000;
+            conn!!.readTimeout = 100000;
+            conn!!.setRequestProperty("Content-Type", "application/json")
+            conn!!.setRequestProperty("Accept", "application/json")
+
+            conn!!.doOutput = true
+
+            val body = JSONObject()
+            body.put("userEmail", sharedPref!!.getString("userEmail", ""))
+            body.put("public", public)
+            body.put("keywords", keywords)
+            body.put("path", path)
+            body.put("linkName", linkTitle)
+            body.put("linkPicture", linkImage)
+            body.put("linkUrl", linkUrl)
+
+            val os = conn!!.outputStream
+            os.write(body.toString().toByteArray())
+            os.flush()
+
+            responseCode =  conn!!.responseCode
+        } catch (e: MalformedURLException) {
+            Log.d("test", "올바르지 않은 URL 주소입니다.")
+        } catch (e: IOException) {
+            Log.d("test", "connection 오류")
+        } finally {
+            conn?.disconnect()
+        }
+
+        return responseCode
+    }
+
     fun readFolder(path:String) : String {
         val url = URL("http://$ip:$port/folder/readFolder")
         var conn : HttpURLConnection? = null

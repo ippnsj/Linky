@@ -3,6 +3,7 @@ package org.poolc.linky
 import android.animation.ObjectAnimator
 import android.content.Context
 import android.content.DialogInterface
+import android.content.Intent
 import android.graphics.Rect
 import android.os.Bundle
 import android.util.Log
@@ -11,12 +12,14 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.view.inputmethod.EditorInfo
+import android.view.inputmethod.InputMethodManager
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.core.view.size
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.RecyclerView
 import org.json.JSONObject
+import org.poolc.linky.databinding.AddLinkDialogBinding
 import org.poolc.linky.databinding.FoldernameDialogBinding
 import org.poolc.linky.databinding.FragmentLinkySubBinding
 import kotlin.concurrent.thread
@@ -42,11 +45,11 @@ class LinkySubFragment : Fragment() {
         savedInstanceState: Bundle?
     ): View? {
         // activity에 path값 넘김
-        val activity = activity as MainActivity
-        activity.setPath(path)
+        mainActivity.setPath(path)
 
         // json 파싱
         val jsonStr = arguments?.getString("jsonStr")
+
         if(jsonStr != "") {
             setFolders(jsonStr!!)
             setLinks(jsonStr!!)
@@ -145,6 +148,49 @@ class LinkySubFragment : Fragment() {
                 }
             }
 
+            addLinkySub.setOnClickListener {
+                val builder = AlertDialog.Builder(mainActivity)
+                builder.setTitle("추가할 링크를 입력해주세요")
+                builder.setIcon(R.drawable.add_link_pink)
+
+                val dialogView = layoutInflater.inflate(R.layout.add_link_dialog, null)
+                val dialogBinding = AddLinkDialogBinding.bind(dialogView)
+
+                builder.setView(dialogView)
+
+                builder.setPositiveButton("추가", null)
+                builder.setNegativeButton("취소", null)
+
+                val dialog = builder.create()
+
+                dialog.show()
+
+                val possitiveButton = dialog.getButton(AlertDialog.BUTTON_POSITIVE)
+                possitiveButton.setOnClickListener {
+                    val url = dialogBinding.newUrl.text.toString()
+                    if(url == "") {
+                        dialogBinding.newUrl.error = "url을 입력해주세요."
+                    }
+                    else {
+                        toggleFab()
+                        val imm = mainActivity.getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
+                        imm.hideSoftInputFromWindow(dialogBinding.newUrl.windowToken, 0)
+                        dialog?.dismiss()
+                        val intent = Intent(mainActivity, AddLinkyActivity::class.java)
+                        intent.putExtra("url", url)
+                        startActivity(intent)
+                    }
+                }
+
+                dialogBinding.newUrl.setOnEditorActionListener { v, actionId, event ->
+                    if(actionId == EditorInfo.IME_ACTION_DONE) {
+                        possitiveButton.performClick()
+                        true
+                    }
+                    false
+                }
+            }
+
             addSub.setOnClickListener {
                 toggleFab()
             }
@@ -187,7 +233,7 @@ class LinkySubFragment : Fragment() {
     private fun setLinks(jsonStr: String) {
         links.clear()
         val jsonObj = JSONObject(jsonStr)
-        val linksArr = jsonObj.getJSONArray("links")
+        val linksArr = jsonObj.getJSONArray("linkInfos")
         for (idx in 0 until linksArr.length()) {
             val linkObj = linksArr.getJSONObject(idx)
             val keywordsArr = linkObj.getJSONArray("keywords")
@@ -205,7 +251,7 @@ class LinkySubFragment : Fragment() {
     }
 
     private fun createFolder(folderName:String) {
-        val app = activity?.application as MyApplication
+        val app = mainActivity.application as MyApplication
 
         thread {
             val responseCode = app.createFolder(folderName, path)
@@ -216,13 +262,16 @@ class LinkySubFragment : Fragment() {
                     jsonStr = app.readFolder(path)
 
                     if (jsonStr != "") {
-                        folders.clear()
-                        setFolders(jsonStr)
-                        folderSubAdapter.notifyDataSetChanged()
+                        mainActivity.runOnUiThread {
+                            folders.clear()
+                            setFolders(jsonStr)
+                            folderSubAdapter.notifyDataSetChanged()
 
-                        val toast = Toast.makeText(activity, "새 폴더가 추가되었습니다!", Toast.LENGTH_SHORT)
-                        toast.setGravity(Gravity.BOTTOM, 0, 0)
-                        toast.show()
+                            val toast =
+                                Toast.makeText(activity, "새 폴더가 추가되었습니다!", Toast.LENGTH_SHORT)
+                            toast.setGravity(Gravity.BOTTOM, 0, 0)
+                            toast.show()
+                        }
                     }
                 }
             }
