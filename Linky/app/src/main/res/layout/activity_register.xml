@@ -98,7 +98,7 @@
             app:layout_constraintLeft_toLeftOf="parent"
             app:layout_constraintTop_toBottomOf="@id/certificateLayout"
             app:passwordToggleEnabled="true"
-            app:startIconDrawable="@drawable/lock">
+            app:startIconDrawable="@drawable/password">
 
             <com.google.android.material.textfield.TextInputEditText
                 android:id="@+id/passwordTextInput"
@@ -116,7 +116,7 @@
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@id/passwordLayout"
             app:passwordToggleEnabled="true"
-            app:startIconDrawable="@drawable/lock">
+            app:startIconDrawable="@drawable/password">
 
             <com.google.android.material.textfield.TextInputEditText
                 android:id="@+id/passwordCheckTextInput"

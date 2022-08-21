@@ -7,15 +7,10 @@ import android.view.*
 import androidx.fragment.app.Fragment
 import android.view.inputmethod.EditorInfo
 import android.widget.Toast
-import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.DividerItemDecoration
 import org.json.JSONObject
 import org.poolc.linky.databinding.FoldernameDialogBinding
 import org.poolc.linky.databinding.FragmentFoldersBinding
-import java.io.IOException
-import java.net.HttpURLConnection
-import java.net.MalformedURLException
-import java.net.URL
 import kotlin.concurrent.thread
 
 class FolderListFragment : Fragment() {
@@ -40,14 +35,7 @@ class FolderListFragment : Fragment() {
 
         val jsonStr = arguments?.getString("jsonStr")
         if (jsonStr != "") {
-            val jsonObj = JSONObject(jsonStr)
-            val foldersArr = jsonObj.getJSONArray("folders")
-            for (idx in 0 until foldersArr.length()) {
-                val folderObj = foldersArr.getJSONObject(idx)
-                val folderName = folderObj.getString("folderName")
-
-                folders.add(folderName)
-            }
+            setFolders(jsonStr!!)
         }
 
         return inflater.inflate(R.layout.fragment_folders, container, false)
@@ -101,124 +89,47 @@ class FolderListFragment : Fragment() {
         }
     }
 
-    private fun readFolder() : String{
-        val sharedPref = activity?.getSharedPreferences(
-            getString(R.string.preference_key),
-            AppCompatActivity.MODE_PRIVATE
-        )
-        val url = URL("http://${MyApplication.ip}:${MyApplication.port}/folder/readFolder")
-        var conn : HttpURLConnection? = null
-        var response : String = ""
+    private fun setFolders(jsonStr:String) {
+        val jsonObj = JSONObject(jsonStr)
+        val foldersArr = jsonObj.getJSONArray("folders")
+        for (idx in 0 until foldersArr.length()) {
+            val folderObj = foldersArr.getJSONObject(idx)
+            val folderName = folderObj.getString("folderName")
 
-        thread {
-            try {
-                conn = url.openConnection() as HttpURLConnection
-                conn!!.requestMethod = "POST"
-                conn!!.connectTimeout = 10000;
-                conn!!.readTimeout = 100000;
-                conn!!.setRequestProperty("Content-Type", "application/json")
-                conn!!.setRequestProperty("Accept", "application/json")
-
-                conn!!.doOutput = true
-                conn!!.doInput = true
-
-                val body = JSONObject()
-                body.put("userEmail", sharedPref!!.getString("userEmail", ""))
-                body.put("path", path)
-
-                val os = conn!!.outputStream
-                os.write(body.toString().toByteArray())
-                os.flush()
-
-                if(conn!!.responseCode == 200) {
-                    response = conn!!.inputStream.reader().readText()
-                }
-                else if(conn!!.responseCode == 400) {
-                    Log.d("test", "Bad request")
-                }
-                else if(conn!!.responseCode == 404) {
-                    Log.d("test", "Not Found")
-                }
-                else if(conn!!.responseCode == 401) {
-                    Log.d("test", "Unauthorized")
-                }
-            }
-            catch (e: MalformedURLException) {
-                Log.d("test", "올바르지 않은 URL 주소입니다.")
-            } catch (e: IOException) {
-                Log.d("test", "connection 오류")
-            }finally {
-                conn?.disconnect()
-            }
+            folders.add(folderName)
         }
-
-        return response
     }
 
     private fun createFolder(folderName:String) {
-        val sharedPref = activity?.getSharedPreferences(
-            getString(R.string.preference_key),
-            AppCompatActivity.MODE_PRIVATE
-        )
-        val url = URL("http://${MyApplication.ip}:${MyApplication.port}/folder/create")
-        var conn : HttpURLConnection? = null
-        var response : String = ""
+        val app = activity?.application as MyApplication
 
         thread {
-            try {
-                conn = url.openConnection() as HttpURLConnection
-                conn!!.requestMethod = "POST"
-                conn!!.connectTimeout = 10000;
-                conn!!.readTimeout = 100000;
-                conn!!.setRequestProperty("Content-Type", "application/json")
-                conn!!.setRequestProperty("Accept", "application/json")
+            val responseCode = app.createFolder(folderName, path)
 
-                conn!!.doOutput = true
-
-                val body = JSONObject()
-                body.put("userEmail", sharedPref!!.getString("userEmail", ""))
-                body.put("path", path)
-                body.put("folderName", folderName)
-
-                val os = conn!!.outputStream
-                os.write(body.toString().toByteArray())
-                os.flush()
-
-                if(conn!!.responseCode == 200) {
-                    val jsonStr = readFolder()
-                    if (jsonStr != "") {
-                        folders.clear()
-                        val jsonObj = JSONObject(jsonStr)
-                        val foldersArr = jsonObj.getJSONArray("folders")
-                        for (idx in 0 until foldersArr.length()) {
-                            val folderObj = foldersArr.getJSONObject(idx)
-                            val folderName = folderObj.getString("folderName")
-
-                            folders.add(folderName)
-                        }
-                        folderListAdapter.notifyDataSetChanged()
-
-                        val toast = Toast.makeText(activity, "새 폴더가 추가되었습니다!", Toast.LENGTH_SHORT)
-                        toast.setGravity(Gravity.BOTTOM, 0, 0)
-                        toast.show()
-                    }
+            if(responseCode == 200) {
+                var jsonStr = ""
+                thread {
+                    jsonStr = app.readFolder(path)
                 }
-                else if(conn!!.responseCode == 400) {
-                    Log.d("test", "Bad request")
-                }
-                else if(conn!!.responseCode == 404) {
-                    Log.d("test", "Not Found")
-                }
-                else if(conn!!.responseCode == 401) {
-                    Log.d("test", "Unauthorized")
+
+                if (jsonStr != "") {
+                    folders.clear()
+                    setFolders(jsonStr)
+                    folderListAdapter.notifyDataSetChanged()
+
+                    val toast = Toast.makeText(activity, "새 폴더가 추가되었습니다!", Toast.LENGTH_SHORT)
+                    toast.setGravity(Gravity.BOTTOM, 0, 0)
+                    toast.show()
                 }
             }
-            catch (e: MalformedURLException) {
-                Log.d("test", "올바르지 않은 URL 주소입니다.")
-            } catch (e: IOException) {
-                Log.d("test", "connection 오류")
-            }finally {
-                conn?.disconnect()
+            else if(responseCode == 400) {
+                Log.d("test", "Bad request")
+            }
+            else if(responseCode == 404) {
+                Log.d("test", "Not Found")
+            }
+            else if(responseCode == 401) {
+                Log.d("test", "Unauthorized")
             }
         }
     }

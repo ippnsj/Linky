@@ -90,4 +90,45 @@
         app:spanCount="2">
 
     </androidx.recyclerview.widget.RecyclerView>
+
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+        android:id="@+id/add_folder_sub"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:clickable="true"
+        android:contentDescription="폴더추가"
+        android:src="@drawable/add_folder"
+        app:backgroundTint="@color/primary"
+        app:fabSize="mini"
+        app:layout_constraintBottom_toBottomOf="@id/add"
+        app:layout_constraintEnd_toEndOf="@id/add"
+        app:layout_constraintStart_toStartOf="@id/add"
+        app:layout_constraintTop_toTopOf="@id/add" />
+
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+        android:id="@+id/add_linky_sub"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:clickable="true"
+        android:contentDescription="링크추가"
+        android:src="@drawable/add_linky"
+        app:backgroundTint="@color/primary"
+        app:fabSize="mini"
+        app:layout_constraintBottom_toBottomOf="@id/add"
+        app:layout_constraintEnd_toEndOf="@id/add"
+        app:layout_constraintStart_toStartOf="@id/add"
+        app:layout_constraintTop_toTopOf="@id/add" />
+
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+        android:id="@+id/add_sub"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginRight="30dp"
+        android:layout_marginBottom="30dp"
+        android:clickable="true"
+        android:contentDescription="추가"
+        app:backgroundTint="@color/primary"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:srcCompat="@drawable/add" />
 </androidx.constraintlayout.widget.ConstraintLayout>
