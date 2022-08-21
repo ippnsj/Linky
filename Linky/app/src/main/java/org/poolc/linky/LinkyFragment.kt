@@ -34,13 +34,15 @@ class LinkyFragment : Fragment() {
         folders.clear()
         // json 파싱
         val jsonStr = arguments?.getString("jsonStr")
-        val jsonObj = JSONObject(jsonStr)
-        val foldersArr = jsonObj.getJSONArray("folders")
-        for(idx in 0 until foldersArr.length()) {
-            val folderObj = foldersArr.getJSONObject(idx)
-            val folderName = folderObj.getString("folderName")
+        if(jsonStr != "") {
+            val jsonObj = JSONObject(jsonStr)
+            val foldersArr = jsonObj.getJSONArray("folders")
+            for (idx in 0 until foldersArr.length()) {
+                val folderObj = foldersArr.getJSONObject(idx)
+                val folderName = folderObj.getString("folderName")
 
-            folders.add(folderName)
+                folders.add(folderName)
+            }
         }
 
         return inflater.inflate(R.layout.fragment_linky, container, false)

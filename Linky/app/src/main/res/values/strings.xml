@@ -6,4 +6,6 @@
 
     <string name="helper_keyword">Keyword and Enter</string>
     <string name="default_path">Please select the path</string>
+
+    <string name="preference_key">LinkyIsTheBest</string>
 </resources>

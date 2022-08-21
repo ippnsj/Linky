@@ -1,10 +1,12 @@
 package org.poolc.linky
 
+import android.content.Context
 import android.content.Intent
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
+import android.util.Log
 import org.poolc.linky.databinding.ActivitySplashBinding
 
 class SplashActivity : AppCompatActivity() {
@@ -17,8 +19,16 @@ class SplashActivity : AppCompatActivity() {
         setContentView(binding.root)
 
         Handler(Looper.getMainLooper()).postDelayed({
-            var intent = Intent(this, MainActivity::class.java)
-            startActivity(intent)
+            val sharedPref = getSharedPreferences(getString(R.string.preference_key), MODE_PRIVATE)
+            val userEmail = sharedPref.getString("userEmail", "")
+            if(userEmail == "") {
+                var intent = Intent(this, LoginRegisterActivity::class.java)
+                startActivity(intent)
+            }
+            else {
+                var intent = Intent(this, MainActivity::class.java)
+                startActivity(intent)
+            }
         }, 1000)
     }
 }

@@ -3,6 +3,7 @@ package org.poolc.linky
 import android.content.Intent
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import android.widget.Toast
 import org.poolc.linky.databinding.ActivityLoginRegisterBinding
 
 class LoginRegisterActivity : AppCompatActivity() {
@@ -13,6 +14,11 @@ class LoginRegisterActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         binding = ActivityLoginRegisterBinding.inflate(layoutInflater)
         setContentView(binding.root)
+
+        if(intent.getStringExtra("result") == "success register") {
+            val toast = Toast.makeText(this, "가입이 완료되었습니다~!", Toast.LENGTH_SHORT)
+            toast.show()
+        }
 
         with(binding) {
             registerButton.setOnClickListener {

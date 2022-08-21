@@ -1,6 +1,7 @@
 package org.poolc.linky
 
 import android.Manifest
+import android.content.Context
 import android.content.DialogInterface
 import android.content.Intent
 import android.graphics.Bitmap
@@ -9,27 +10,30 @@ import android.graphics.ImageDecoder
 import android.graphics.Rect
 import android.os.Build
 import android.os.Bundle
+import android.os.PersistableBundle
 import android.provider.MediaStore
 import android.util.Log
+import android.util.Patterns
 import android.view.*
 import android.view.inputmethod.EditorInfo
 import android.widget.*
+import androidx.activity.OnBackPressedCallback
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.RecyclerView
-import org.json.JSONObject
 import org.jsoup.Jsoup
 import org.poolc.linky.databinding.ActivityAddLinkyBinding
 import java.net.HttpURLConnection
+import java.net.MalformedURLException
 import java.net.URL
 import java.net.URLDecoder
 import java.util.regex.Pattern
 import kotlin.concurrent.thread
+import kotlin.system.exitProcess
 
 class AddLinkyActivity : AppCompatActivity() {
-
     private lateinit var binding : ActivityAddLinkyBinding
     private val keywords = ArrayList<String>()
     private lateinit var keywordAdapter : KeywordAdapter
@@ -45,11 +49,18 @@ class AddLinkyActivity : AppCompatActivity() {
     private var imgUrl : String? = null
     private var url : String? = null
 
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityAddLinkyBinding.inflate(layoutInflater)
         setContentView(binding.root)
+
+        val sharedPref = getSharedPreferences(getString(R.string.preference_key), MODE_PRIVATE)
+        if(sharedPref.getString("userEmail", "") == "") {
+            val intent = Intent(this, LoginRegisterActivity::class.java)
+            intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+            startActivity(intent)
+            finish()
+        }
 
         keywordAdapter = KeywordAdapter(keywords, object : KeywordAdapter.OnItemClickListener {
             override fun onItemClick(pos: Int) {
@@ -98,8 +109,7 @@ class AddLinkyActivity : AppCompatActivity() {
                         // DB에 저장된 정보를 사용하기 위해 Content Provider인 contentResolver를 넘겨주어야 한다.
                         val source = ImageDecoder.createSource(contentResolver, uri)
                         val bitmap = ImageDecoder.decodeBitmap(source)
-                        val resizedBitmap = resizeBitmap(resources.displayMetrics.widthPixels - 100, bitmap)
-                        binding.linkImage.setImageBitmap(resizedBitmap)
+                        binding.linkImage.setImageBitmap(bitmap)
                     }
                     else {
                         // 안드로이드 9 버전까지
@@ -111,8 +121,7 @@ class AddLinkyActivity : AppCompatActivity() {
                             val source = cursor.getString(index)
                             // 이미지를 생성한다.
                             val bitmap = BitmapFactory.decodeFile(source)
-                            val resizedBitmap = resizeBitmap(resources.displayMetrics.widthPixels - 100, bitmap)
-                            binding.linkImage.setImageBitmap(resizedBitmap)
+                            binding.linkImage.setImageBitmap(bitmap)
                         }
                     }
                 }
@@ -178,6 +187,11 @@ class AddLinkyActivity : AppCompatActivity() {
         }
     }
 
+    override fun onBackPressed() {
+        super.onBackPressed()
+        finishAndRemoveTask()
+    }
+
     override fun onRestart() {
         super.onRestart()
         currentFocus?.clearFocus()
@@ -188,6 +202,7 @@ class AddLinkyActivity : AppCompatActivity() {
 
         if(intent != null) {
             setIntent(intent)
+
             intentChanged = true
 
             with(binding) {
@@ -209,6 +224,7 @@ class AddLinkyActivity : AppCompatActivity() {
         with(binding) {
             if(intentChanged) {
                 intentChanged = false
+                imgUrl = null
 
                 // 공유하기로부터 온 intent 처리
                 if (intent.action == Intent.ACTION_SEND) {
@@ -216,35 +232,37 @@ class AddLinkyActivity : AppCompatActivity() {
                         veil.visibility = View.VISIBLE
 
                         val txt = intent.getStringExtra(Intent.EXTRA_TEXT).toString()
-                        var pattern = Pattern.compile(
-                            "((https?|ftp|gopher|telnet|file):((//)|(\\\\))+[\\w\\d:#@%/;$()~_?\\+-=\\\\\\.&]*)",
-                            Pattern.CASE_INSENSITIVE
-                        )
-                        var matcher = pattern.matcher(txt)
-                        if (matcher.find()) {
-                            var encodedUrl = txt.substring(matcher.start(0), matcher.end(0))
-                            url = URLDecoder.decode(encodedUrl, "UTF-8")
+                        val txtDecoded = URLDecoder.decode(txt, "UTF-8")
+                        val pattern = Patterns.WEB_URL
 
+                        var matcher = pattern.matcher(txtDecoded)
+                        if (matcher.find()) {
+                            url = txtDecoded.substring(matcher.start(0), matcher.end(0))
                             // 메타데이터 추출
                             thread {
                                 var title : String? = null
 
                                 var doc = Jsoup.connect(url).userAgent("Chrome").get()
-                                if(url!!.contains("naver.me")) {
-                                    val metaUrl : String? = doc.select("meta[property=al:android:url]").first()?.attr("content")
-                                    pattern = Pattern.compile(
-                                        "(url=)+[\\w\\d:#@%/;\$()~_?\\+-=\\\\\\.&]*(&version)+",
-                                        Pattern.CASE_INSENSITIVE
-                                    )
-                                    matcher = pattern.matcher(metaUrl)
-                                    if(matcher.find()) {
-                                        encodedUrl = metaUrl!!.substring(matcher.start(0) + 4, matcher.end(0) - 8)
-                                        url = URLDecoder.decode(encodedUrl, "UTF-8")
+
+                                val conn = URL(url).openConnection() as HttpURLConnection
+                                if(conn.responseCode in 300..399) {
+                                    var metaUrl : String? = doc.select("meta[property=og:url]").first()?.attr("content")
+                                    if(metaUrl == null) {
+                                        val metaURLEncoded : String? = doc.select("meta[property=al:android:url]").first()?.attr("content")
+                                        val metaUrl = URLDecoder.decode(metaURLEncoded, "UTF-8")
+                                        matcher = pattern.matcher(metaUrl)
+                                        if(matcher.find()) {
+                                            url = metaUrl!!.substring(matcher.start(0), matcher.end(0))
+                                            doc = Jsoup.connect(url).userAgent("Chrome").get()
+                                        }
+                                    }
+                                    else {
+                                        url = metaUrl
                                         doc = Jsoup.connect(url).userAgent("Chrome").get()
                                     }
                                 }
 
-                                val metaTags = doc.select("meta[property]")
+                                var metaTags = doc.select("meta[property]")
                                 for(meta in metaTags) {
                                     if(title != null && imgUrl != null) {
                                         break
@@ -255,6 +273,21 @@ class AddLinkyActivity : AppCompatActivity() {
                                     }
 
                                     if(imgUrl == null && meta.attr("property").contains("image")) {
+                                        imgUrl = meta.attr("content")
+                                    }
+                                }
+
+                                metaTags = doc.select("meta[name]")
+                                for(meta in metaTags) {
+                                    if(title != null && imgUrl != null) {
+                                        break
+                                    }
+
+                                    if(title == null && meta.attr("name").contains("title")) {
+                                        title = meta.attr("content")
+                                    }
+
+                                    if(imgUrl == null && meta.attr("name").contains("image")) {
                                         imgUrl = meta.attr("content")
                                     }
                                 }
@@ -275,19 +308,20 @@ class AddLinkyActivity : AppCompatActivity() {
                                     imgUrl = doc.getElementsByTag("img").first()?.absUrl("src")
                                 }
 
-                                var resizedBitmap: Bitmap? = null
+                                var bitmap: Bitmap? = null
                                 if(imgUrl != null) {
-                                    val imageUrl: URL? = URL(imgUrl)
-                                    val conn: HttpURLConnection? =
-                                        imageUrl?.openConnection() as HttpURLConnection
-                                    val bitmap: Bitmap? =
-                                        BitmapFactory.decodeStream(conn?.inputStream)
-                                    if (bitmap != null) {
-                                        resizedBitmap =
-                                            resizeBitmap(
-                                                resources.displayMetrics.widthPixels - 100,
-                                                bitmap
-                                            )
+                                    try {
+                                        if(!imgUrl!!.contains("http")) {
+                                            imgUrl = "http://$imgUrl"
+                                        }
+                                        val imageUrl: URL? = URL(imgUrl)
+                                        val conn: HttpURLConnection? =
+                                            imageUrl?.openConnection() as HttpURLConnection
+                                        bitmap = BitmapFactory.decodeStream(conn?.inputStream)
+                                    }
+                                    catch (e:MalformedURLException) {
+                                        bitmap = null
+                                        Log.d("test","MalformedURLException" )
                                     }
                                 }
 
@@ -303,8 +337,11 @@ class AddLinkyActivity : AppCompatActivity() {
                                     titleTextInput.setText(title ?: "")
 
                                     // 대표이미지
-                                    if (resizedBitmap != null) {
-                                        linkImage.setImageBitmap(resizedBitmap)
+                                    if (bitmap != null) {
+                                        linkImage.setImageBitmap(bitmap)
+                                    }
+                                    else {
+                                        linkImage.setImageResource(R.mipmap.linky_logo)
                                     }
 
                                     // 링크주소
@@ -322,17 +359,6 @@ class AddLinkyActivity : AppCompatActivity() {
                 }
             }
         }
-    }
-
-    // 사진의 사이즈를 조정하는 메서드
-    private fun resizeBitmap(targetWidth:Int, img: Bitmap) : Bitmap {
-        // 이미지의 비율을 계산한다.
-        val ratio = targetWidth.toDouble() / img.width.toDouble()
-        // 보정될 세로 길이를 구한다.
-        val targetHeight = (img.height * ratio).toInt()
-        // 크기를 조정한 bitmap 객체를 생성한다.
-        val result = Bitmap.createScaledBitmap(img, targetWidth, targetHeight, false)
-        return result
     }
 
     private val clearKeywordsListener = object : View.OnClickListener {

@@ -1,5 +1,6 @@
 package org.poolc.linky
 
+import android.content.Intent
 import android.os.Bundle
 import android.util.Log
 import android.view.View
@@ -7,7 +8,13 @@ import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentManager
+import org.json.JSONObject
 import org.poolc.linky.databinding.ActivityMainBinding
+import java.io.IOException
+import java.net.HttpURLConnection
+import java.net.MalformedURLException
+import java.net.URL
+import kotlin.concurrent.thread
 
 class MainActivity : AppCompatActivity() {
 
@@ -40,8 +47,8 @@ class MainActivity : AppCompatActivity() {
                 when(item.itemId) {
                     R.id.linky -> {
                         if (now != "linky" && now != "sub") {
-                            // folder json 파싱
-                            val jsonStr = assets.open("folders.json").reader().readText()
+                            // json 가져오기
+                            val jsonStr = readLink()
                             bundle = Bundle()
                             bundle?.putString("path", path)
                             bundle?.putString("jsonStr", jsonStr)
@@ -76,12 +83,69 @@ class MainActivity : AppCompatActivity() {
             }
             bottomNavigation.selectedItemId = R.id.linky
 
-            // add_linky로부터 온 intent
-            if(intent.getStringExtra("from") == "add") {
-                val toast = Toast.makeText(this@MainActivity, "새로운 링키가 추가되었습니다~!", Toast.LENGTH_SHORT)
-                toast.show()
+            // intent 처리
+            when(intent.getStringExtra("from")) {
+                "add" -> {
+                    val toast = Toast.makeText(this@MainActivity, "새로운 링키가 추가되었습니다~!", Toast.LENGTH_SHORT)
+                    toast.show()
+                }
+                "login" -> {
+                    val toast = Toast.makeText(this@MainActivity, "로그인되었습니다~!", Toast.LENGTH_SHORT)
+                    toast.show()
+                }
             }
         }
+    }
+
+    private fun readLink() : String {
+        val sharedPref = getSharedPreferences(getString(R.string.preference_key), MODE_PRIVATE)
+        val url = URL("http://${MyApplication.ip}:${MyApplication.port}/folder/read")
+        var conn : HttpURLConnection? = null
+        var response : String = ""
+
+        thread {
+            try {
+                conn = url.openConnection() as HttpURLConnection
+                conn!!.requestMethod = "POST"
+                conn!!.connectTimeout = 10000;
+                conn!!.readTimeout = 100000;
+                conn!!.setRequestProperty("Content-Type", "application/json")
+                conn!!.setRequestProperty("Accept", "application/json")
+
+                conn!!.doOutput = true
+                conn!!.doInput = true
+
+                val body = JSONObject()
+                body.put("userEmail", sharedPref.getString("userEmail", ""))
+                body.put("path", path)
+
+                val os = conn!!.outputStream
+                os.write(body.toString().toByteArray())
+                os.flush()
+
+                if(conn!!.responseCode == 200) {
+                    response = conn!!.inputStream.reader().readText()
+                }
+                else if(conn!!.responseCode == 400) {
+                    Log.d("test", "Bad request")
+                }
+                else if(conn!!.responseCode == 404) {
+                    Log.d("test", "Not Found")
+                }
+                else if(conn!!.responseCode == 401) {
+                    Log.d("test", "Unauthorized")
+                }
+            }
+            catch (e: MalformedURLException) {
+                Log.d("test", "올바르지 않은 URL 주소입니다.")
+            } catch (e: IOException) {
+                Log.d("test", "connection 오류")
+            }finally {
+                conn?.disconnect()
+            }
+        }
+
+        return response
     }
 
     private fun changeFragment(fragment:Fragment, bundle: Bundle?, addToStack:Boolean) {
