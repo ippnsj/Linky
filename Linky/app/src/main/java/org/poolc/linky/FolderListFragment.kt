@@ -1,5 +1,6 @@
 package org.poolc.linky
 
+import android.content.Context
 import android.content.DialogInterface
 import android.os.Bundle
 import android.util.Log
@@ -7,6 +8,7 @@ import android.view.*
 import androidx.fragment.app.Fragment
 import android.view.inputmethod.EditorInfo
 import android.widget.Toast
+import androidx.appcompat.app.AlertDialog
 import androidx.recyclerview.widget.DividerItemDecoration
 import org.json.JSONObject
 import org.poolc.linky.databinding.FoldernameDialogBinding
@@ -18,6 +20,7 @@ class FolderListFragment : Fragment() {
     private val folders = ArrayList<String>()
     private lateinit var folderListAdapter : FolderListAdapter
     private lateinit var path : String
+    private lateinit var selectPathActivity : SelectPathActivity
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -60,7 +63,7 @@ class FolderListFragment : Fragment() {
             folderListRecycler.addItemDecoration(DividerItemDecoration(activity, 1))
 
             addFolder.setOnClickListener {
-                val builder = android.app.AlertDialog.Builder(activity)
+                val builder = AlertDialog.Builder(selectPathActivity)
                 builder.setTitle("추가할 폴더명을 입력해주세요")
 
                 val dialogView = layoutInflater.inflate(R.layout.foldername_dialog, null)
@@ -89,9 +92,14 @@ class FolderListFragment : Fragment() {
         }
     }
 
+    override fun onAttach(context: Context) {
+        super.onAttach(context)
+        selectPathActivity = context as SelectPathActivity
+    }
+
     private fun setFolders(jsonStr:String) {
         val jsonObj = JSONObject(jsonStr)
-        val foldersArr = jsonObj.getJSONArray("folders")
+        val foldersArr = jsonObj.getJSONArray("folderInfos")
         for (idx in 0 until foldersArr.length()) {
             val folderObj = foldersArr.getJSONObject(idx)
             val folderName = folderObj.getString("folderName")
@@ -110,16 +118,16 @@ class FolderListFragment : Fragment() {
                 var jsonStr = ""
                 thread {
                     jsonStr = app.readFolder(path)
-                }
 
-                if (jsonStr != "") {
-                    folders.clear()
-                    setFolders(jsonStr)
-                    folderListAdapter.notifyDataSetChanged()
+                    if (jsonStr != "") {
+                        folders.clear()
+                        setFolders(jsonStr)
+                        folderListAdapter.notifyDataSetChanged()
 
-                    val toast = Toast.makeText(activity, "새 폴더가 추가되었습니다!", Toast.LENGTH_SHORT)
-                    toast.setGravity(Gravity.BOTTOM, 0, 0)
-                    toast.show()
+                        val toast = Toast.makeText(activity, "새 폴더가 추가되었습니다!", Toast.LENGTH_SHORT)
+                        toast.setGravity(Gravity.BOTTOM, 0, 0)
+                        toast.show()
+                    }
                 }
             }
             else if(responseCode == 400) {

@@ -1,6 +1,7 @@
 package org.poolc.linky
 
 import android.os.Bundle
+import android.util.Log
 import android.view.View
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
@@ -19,7 +20,7 @@ class MainActivity : AppCompatActivity() {
     private val searchFragment = SearchFragment()
     private val moreFragment = MoreFragment()
 
-    private val app = application as MyApplication
+    private lateinit var app : MyApplication
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -27,6 +28,7 @@ class MainActivity : AppCompatActivity() {
         setContentView(binding.root)
 
         fm = supportFragmentManager
+        app = application as MyApplication
 
         with(binding) {
             // topbar 설정
@@ -44,22 +46,28 @@ class MainActivity : AppCompatActivity() {
                         if (now != "linky" && now != "sub") {
                             // json 가져오기
                             var jsonStr = ""
-                            thread {
-                                jsonStr = app.read(path)
-                            }
-
-                            bundle = Bundle()
-                            bundle?.putString("path", path)
-                            bundle?.putString("jsonStr", jsonStr)
-
                             topbarTitle.text = "내 링키"
                             if (path == "") {
                                 now = "linky"
-                                changeFragment(linkyFragment, bundle, false)
+                                thread {
+                                    jsonStr = app.readFolder(path)
+
+                                    bundle = Bundle()
+                                    bundle?.putString("path", path)
+                                    bundle?.putString("jsonStr", jsonStr)
+                                    changeFragment(linkyFragment, bundle, false)
+                                }
                             } else {
                                 val fragment = fm.findFragmentByTag(path)
                                 now = "sub"
-                                changeFragment(fragment!!, bundle, false)
+                                thread {
+                                    jsonStr = app.read(path)
+
+                                    bundle = Bundle()
+                                    bundle?.putString("path", path)
+                                    bundle?.putString("jsonStr", jsonStr)
+                                    changeFragment(fragment!!, bundle, false)
+                                }
                             }
                         }
                     }
@@ -125,14 +133,14 @@ class MainActivity : AppCompatActivity() {
         var jsonStr = ""
         thread {
             jsonStr = app.read(path)
-        }
 
-        val nextFragment = LinkySubFragment()
-        val bundle = Bundle()
-        bundle.putString("path", path)
-        bundle.putString("jsonStr", jsonStr)
-        this.path = path
-        now = "sub"
-        changeFragment(nextFragment, bundle, true)
+            val nextFragment = LinkySubFragment()
+            val bundle = Bundle()
+            bundle.putString("path", path)
+            bundle.putString("jsonStr", jsonStr)
+            this.path = path
+            now = "sub"
+            changeFragment(nextFragment, bundle, true)
+        }
     }
 }

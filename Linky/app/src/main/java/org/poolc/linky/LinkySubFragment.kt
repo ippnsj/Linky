@@ -1,6 +1,7 @@
 package org.poolc.linky
 
 import android.animation.ObjectAnimator
+import android.content.Context
 import android.content.DialogInterface
 import android.graphics.Rect
 import android.os.Bundle
@@ -11,6 +12,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.view.inputmethod.EditorInfo
 import android.widget.Toast
+import androidx.appcompat.app.AlertDialog
 import androidx.core.view.size
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.RecyclerView
@@ -28,6 +30,7 @@ class LinkySubFragment : Fragment() {
     private lateinit var linkySubAdapter: LinkyAdapter
     private lateinit var path : String
     private var isFabOpen = false
+    private lateinit var mainActivity : MainActivity
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -115,7 +118,7 @@ class LinkySubFragment : Fragment() {
             })
 
             addFolderSub.setOnClickListener {
-                val builder = android.app.AlertDialog.Builder(activity)
+                val builder = AlertDialog.Builder(mainActivity)
                 builder.setTitle("추가할 폴더명을 입력해주세요")
 
                 val dialogView = layoutInflater.inflate(R.layout.foldername_dialog, null)
@@ -148,6 +151,11 @@ class LinkySubFragment : Fragment() {
         }
     }
 
+    override fun onAttach(context: Context) {
+        super.onAttach(context)
+        mainActivity = context as MainActivity
+    }
+
     private fun toggleFab() {
         with(binding) {
             if (isFabOpen) {
@@ -167,7 +175,7 @@ class LinkySubFragment : Fragment() {
     private fun setFolders(jsonStr:String) {
         folders.clear()
         val jsonObj = JSONObject(jsonStr)
-        val foldersArr = jsonObj.getJSONArray("folders")
+        val foldersArr = jsonObj.getJSONArray("folderInfos")
         for (idx in 0 until foldersArr.length()) {
             val folderObj = foldersArr.getJSONObject(idx)
             val folderName = folderObj.getString("folderName")
@@ -206,16 +214,16 @@ class LinkySubFragment : Fragment() {
                 var jsonStr = ""
                 thread {
                     jsonStr = app.readFolder(path)
-                }
 
-                if (jsonStr != "") {
-                    folders.clear()
-                    setFolders(jsonStr)
-                    folderSubAdapter.notifyDataSetChanged()
+                    if (jsonStr != "") {
+                        folders.clear()
+                        setFolders(jsonStr)
+                        folderSubAdapter.notifyDataSetChanged()
 
-                    val toast = Toast.makeText(activity, "새 폴더가 추가되었습니다!", Toast.LENGTH_SHORT)
-                    toast.setGravity(Gravity.BOTTOM, 0, 0)
-                    toast.show()
+                        val toast = Toast.makeText(activity, "새 폴더가 추가되었습니다!", Toast.LENGTH_SHORT)
+                        toast.setGravity(Gravity.BOTTOM, 0, 0)
+                        toast.show()
+                    }
                 }
             }
             else if(responseCode == 400) {

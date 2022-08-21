@@ -19,8 +19,7 @@ class SplashActivity : AppCompatActivity() {
         setContentView(binding.root)
 
         Handler(Looper.getMainLooper()).postDelayed({
-            val sharedPref = getSharedPreferences(getString(R.string.preference_key), MODE_PRIVATE)
-            val userEmail = sharedPref.getString("userEmail", "")
+            val userEmail = MyApplication.sharedPref.getString("userEmail", "")
             if(userEmail == "") {
                 var intent = Intent(this, LoginRegisterActivity::class.java)
                 startActivity(intent)

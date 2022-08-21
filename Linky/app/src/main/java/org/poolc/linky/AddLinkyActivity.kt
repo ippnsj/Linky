@@ -1,7 +1,6 @@
 package org.poolc.linky
 
 import android.Manifest
-import android.content.Context
 import android.content.DialogInterface
 import android.content.Intent
 import android.graphics.Bitmap
@@ -10,28 +9,25 @@ import android.graphics.ImageDecoder
 import android.graphics.Rect
 import android.os.Build
 import android.os.Bundle
-import android.os.PersistableBundle
 import android.provider.MediaStore
 import android.util.Log
 import android.util.Patterns
 import android.view.*
 import android.view.inputmethod.EditorInfo
 import android.widget.*
-import androidx.activity.OnBackPressedCallback
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.RecyclerView
 import org.jsoup.Jsoup
+import org.jsoup.nodes.Document
 import org.poolc.linky.databinding.ActivityAddLinkyBinding
 import java.net.HttpURLConnection
 import java.net.MalformedURLException
 import java.net.URL
 import java.net.URLDecoder
-import java.util.regex.Pattern
 import kotlin.concurrent.thread
-import kotlin.system.exitProcess
 
 class AddLinkyActivity : AppCompatActivity() {
     private lateinit var binding : ActivityAddLinkyBinding
@@ -54,8 +50,7 @@ class AddLinkyActivity : AppCompatActivity() {
         binding = ActivityAddLinkyBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        val sharedPref = getSharedPreferences(getString(R.string.preference_key), MODE_PRIVATE)
-        if(sharedPref.getString("userEmail", "") == "") {
+        if(MyApplication.sharedPref.getString("userEmail", "") == "") {
             val intent = Intent(this, LoginRegisterActivity::class.java)
             intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
             startActivity(intent)
@@ -225,12 +220,16 @@ class AddLinkyActivity : AppCompatActivity() {
             if(intentChanged) {
                 intentChanged = false
                 imgUrl = null
+                url = null
+                var title : String? = null
+                var doc : Document? = null
 
-                // 공유하기로부터 온 intent 처리
-                if (intent.action == Intent.ACTION_SEND) {
-                    if (intent.type == "text/plain") {
-                        veil.visibility = View.VISIBLE
-
+                thread {
+                    // 공유하기로부터 온 intent 처리
+                    if (intent.action == Intent.ACTION_SEND && intent.type == "text/plain") {
+                        runOnUiThread {
+                            veil.visibility = View.VISIBLE
+                        }
                         val txt = intent.getStringExtra(Intent.EXTRA_TEXT).toString()
                         val txtDecoded = URLDecoder.decode(txt, "UTF-8")
                         val pattern = Patterns.WEB_URL
@@ -239,123 +238,160 @@ class AddLinkyActivity : AppCompatActivity() {
                         if (matcher.find()) {
                             url = txtDecoded.substring(matcher.start(0), matcher.end(0))
                             // 메타데이터 추출
-                            thread {
-                                var title : String? = null
-
-                                var doc = Jsoup.connect(url).userAgent("Chrome").get()
-
-                                val conn = URL(url).openConnection() as HttpURLConnection
-                                if(conn.responseCode in 300..399) {
-                                    var metaUrl : String? = doc.select("meta[property=og:url]").first()?.attr("content")
-                                    if(metaUrl == null) {
-                                        val metaURLEncoded : String? = doc.select("meta[property=al:android:url]").first()?.attr("content")
-                                        val metaUrl = URLDecoder.decode(metaURLEncoded, "UTF-8")
-                                        matcher = pattern.matcher(metaUrl)
-                                        if(matcher.find()) {
-                                            url = metaUrl!!.substring(matcher.start(0), matcher.end(0))
-                                            doc = Jsoup.connect(url).userAgent("Chrome").get()
-                                        }
-                                    }
-                                    else {
-                                        url = metaUrl
-                                        doc = Jsoup.connect(url).userAgent("Chrome").get()
-                                    }
-                                }
-
-                                var metaTags = doc.select("meta[property]")
-                                for(meta in metaTags) {
-                                    if(title != null && imgUrl != null) {
-                                        break
-                                    }
-
-                                    if(title == null && meta.attr("property").contains("title")) {
-                                        title = meta.attr("content")
-                                    }
-
-                                    if(imgUrl == null && meta.attr("property").contains("image")) {
-                                        imgUrl = meta.attr("content")
-                                    }
-                                }
-
-                                metaTags = doc.select("meta[name]")
-                                for(meta in metaTags) {
-                                    if(title != null && imgUrl != null) {
-                                        break
-                                    }
-
-                                    if(title == null && meta.attr("name").contains("title")) {
-                                        title = meta.attr("content")
-                                    }
-
-                                    if(imgUrl == null && meta.attr("name").contains("image")) {
-                                        imgUrl = meta.attr("content")
-                                    }
-                                }
-
-                                // TODO 키워드 제한으로 일단 삭제
-                                /*val keywordsStr : String? =
-                                    doc.select("meta[name=keywords]").first()?.attr("content")
-                                if(keywordsStr != null) {
-                                    val keywordsArr = keywordsStr.split(",")
-                                    keywords.addAll(keywordsArr)
-                                }*/
-
-                                if(title == null) {
-                                    title = doc.getElementsByTag("title")?.first()?.text()
-                                }
-
-                                if(imgUrl == null) {
-                                    imgUrl = doc.getElementsByTag("img").first()?.absUrl("src")
-                                }
-
-                                var bitmap: Bitmap? = null
-                                if(imgUrl != null) {
-                                    try {
-                                        if(!imgUrl!!.contains("http")) {
-                                            imgUrl = "http://$imgUrl"
-                                        }
-                                        val imageUrl: URL? = URL(imgUrl)
-                                        val conn: HttpURLConnection? =
-                                            imageUrl?.openConnection() as HttpURLConnection
-                                        bitmap = BitmapFactory.decodeStream(conn?.inputStream)
-                                    }
-                                    catch (e:MalformedURLException) {
-                                        bitmap = null
-                                        Log.d("test","MalformedURLException" )
-                                    }
-                                }
-
-                                runOnUiThread {
-                                    veil.visibility = View.INVISIBLE
-
-                                    // 키워드
-                                    /*if(keywords.isNotEmpty()) {
-                                        keywordAdapter.notifyDataSetChanged()
-                                    }*/
-
-                                    // 제목
-                                    titleTextInput.setText(title ?: "")
-
-                                    // 대표이미지
-                                    if (bitmap != null) {
-                                        linkImage.setImageBitmap(bitmap)
-                                    }
-                                    else {
-                                        linkImage.setImageResource(R.mipmap.linky_logo)
-                                    }
-
-                                    // 링크주소
-                                    linkAddressTextInput.setText(url)
-                                    linkAddressTextInput.isEnabled = false
-                                }
-
+                            doc = try {
+                                Jsoup.connect(url).userAgent("Chrome").get()
+                            } catch (e:IllegalArgumentException) {
+                                null
                             }
-                        } else {
-                            Log.d("test", "NO URL")
+
+                            val conn = URL(url).openConnection() as HttpURLConnection
+                            if (conn.responseCode in 300..399) {
+                                var metaUrl: String? =
+                                    doc!!.select("meta[property=og:url]").first()?.attr("content")
+                                if (metaUrl == null) {
+                                    val metaURLEncoded: String? =
+                                        doc!!.select("meta[property=al:android:url]").first()
+                                            ?.attr("content")
+                                    val metaUrl = URLDecoder.decode(metaURLEncoded, "UTF-8")
+                                    matcher = pattern.matcher(metaUrl)
+                                    if (matcher.find()) {
+                                        url = metaUrl!!.substring(
+                                            matcher.start(0),
+                                            matcher.end(0)
+                                        )
+                                        doc = try {
+                                            Jsoup.connect(url).userAgent("Chrome").get()
+                                        } catch (e:IllegalArgumentException) {
+                                            null
+                                        }
+                                    }
+                                } else {
+                                    url = metaUrl
+                                    doc = try {
+                                        Jsoup.connect(url).userAgent("Chrome").get()
+                                    } catch (e:IllegalArgumentException) {
+                                        null
+                                    }
+                                }
+                            }
+                        }
+                    } else {
+                        runOnUiThread {
+                            veil.visibility = View.VISIBLE
+                        }
+                        url = intent.getStringExtra("url")
+                        doc = try {
+                            Jsoup.connect(url).userAgent("Chrome").get()
+                        } catch (e:IllegalArgumentException) {
+                            null
                         }
                     }
-                } else if (intent.action == Intent.ACTION_MAIN) {
-                    // 앱에서 실행된 intent인 경우
+
+                    if (doc == null) {
+                        runOnUiThread {
+                            veil.visibility = View.INVISIBLE
+                            val builder = AlertDialog.Builder(this@AddLinkyActivity)
+                            val title = "URL 오류"
+                            val message = "존재하지 않는 url 입니다."
+                            builder.setIcon(R.drawable.ic_baseline_warning_8)
+                            builder.setTitle(title)
+                            builder.setMessage(message)
+
+                            builder.setPositiveButton("확인") { dialogInterface: DialogInterface, i: Int ->
+                                val intent = Intent(this@AddLinkyActivity, MainActivity::class.java)
+                                intent.flags = Intent.FLAG_ACTIVITY_SINGLE_TOP
+                                startActivity(intent)
+                                finishAndRemoveTask()
+                            }
+
+                            builder.show()
+                        }
+                    } else {
+                        var metaTags = doc!!.select("meta[property]")
+                        for (meta in metaTags) {
+                            if (title != null && imgUrl != null) {
+                                break
+                            }
+
+                            if (title == null && meta.attr("property").contains("title")) {
+                                title = meta.attr("content")
+                            }
+
+                            if (imgUrl == null && meta.attr("property").contains("image")) {
+                                imgUrl = meta.attr("content")
+                            }
+                        }
+
+                        metaTags = doc!!.select("meta[name]")
+                        for (meta in metaTags) {
+                            if (title != null && imgUrl != null) {
+                                break
+                            }
+
+                            if (title == null && meta.attr("name").contains("title")) {
+                                title = meta.attr("content")
+                            }
+
+                            if (imgUrl == null && meta.attr("name").contains("image")) {
+                                imgUrl = meta.attr("content")
+                            }
+                        }
+
+                        // TODO 키워드 제한으로 일단 삭제
+                        /*val keywordsStr : String? =
+                        doc.select("meta[name=keywords]").first()?.attr("content")
+                        if(keywordsStr != null) {
+                            val keywordsArr = keywordsStr.split(",")
+                            keywords.addAll(keywordsArr)
+                        }*/
+
+                        if (title == null) {
+                            title = doc!!.getElementsByTag("title")?.first()?.text()
+                        }
+
+                        if (imgUrl == null) {
+                            imgUrl = doc!!.getElementsByTag("img").first()?.absUrl("src")
+                        }
+
+                        var bitmap: Bitmap? = null
+                        if (imgUrl != null) {
+                            try {
+                                if (!imgUrl!!.contains("http")) {
+                                    imgUrl = "http://$imgUrl"
+                                }
+                                val imageUrl: URL? = URL(imgUrl)
+                                val conn: HttpURLConnection? =
+                                    imageUrl?.openConnection() as HttpURLConnection
+                                bitmap = BitmapFactory.decodeStream(conn?.inputStream)
+                            } catch (e: MalformedURLException) {
+                                bitmap = null
+                                Log.d("test", "MalformedURLException")
+                            }
+                        }
+
+                        runOnUiThread {
+                            veil.visibility = View.INVISIBLE
+
+                            // 키워드
+                            /*if(keywords.isNotEmpty()) {
+                                keywordAdapter.notifyDataSetChanged()
+                            }*/
+
+                            // 제목
+                            titleTextInput.setText(title ?: "")
+
+                            // 대표이미지
+                            if (bitmap != null) {
+                                linkImage.setImageBitmap(bitmap)
+                            } else {
+                                linkImage.setImageResource(R.mipmap.linky_logo)
+                            }
+
+                            // 링크주소
+                            linkAddressTextInput.setText(url)
+                            linkAddressTextInput.isEnabled = false
+                        }
+                    }
                 }
             }
         }

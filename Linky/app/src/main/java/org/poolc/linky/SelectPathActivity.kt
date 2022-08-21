@@ -11,12 +11,14 @@ import kotlin.concurrent.thread
 class SelectPathActivity : AppCompatActivity() {
     private lateinit var binding : ActivitySelectPathBinding
     private var path = ""
-    private val app = application as MyApplication
+    private lateinit var app : MyApplication
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivitySelectPathBinding.inflate(layoutInflater)
         setContentView(binding.root)
+
+        app = application as MyApplication
 
         with(binding) {
             // topbar 설정
@@ -28,14 +30,14 @@ class SelectPathActivity : AppCompatActivity() {
             var jsonStr = ""
             thread {
                 jsonStr = app.readFolder(path)
-            }
 
-            val rootFragment = FolderListFragment()
-            val bundle = Bundle()
-            bundle.putString("path", path)
-            bundle.putString("jsonStr", jsonStr)
-            rootFragment.arguments = bundle
-            setFragment(true, rootFragment)
+                val rootFragment = FolderListFragment()
+                val bundle = Bundle()
+                bundle.putString("path", path)
+                bundle.putString("jsonStr", jsonStr)
+                rootFragment.arguments = bundle
+                setFragment(true, rootFragment)
+            }
         }
     }
 
@@ -49,14 +51,14 @@ class SelectPathActivity : AppCompatActivity() {
         var jsonStr = ""
         thread {
             jsonStr = app.readFolder(path)
-        }
 
-        val nextFragment = FolderListFragment()
-        val bundle = Bundle()
-        bundle.putString("path", path)
-        bundle.putString("jsonStr", jsonStr)
-        nextFragment.arguments = bundle
-        setFragment(false, nextFragment)
+            val nextFragment = FolderListFragment()
+            val bundle = Bundle()
+            bundle.putString("path", path)
+            bundle.putString("jsonStr", jsonStr)
+            nextFragment.arguments = bundle
+            setFragment(false, nextFragment)
+        }
     }
 
     fun setCurrentPath(path:String) {
