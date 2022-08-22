@@ -224,56 +224,21 @@ class AddLinkyActivity : AppCompatActivity() {
                 url = null
                 var title : String? = null
                 var doc : Document? = null
+                val pattern = Patterns.WEB_URL
 
                 thread {
                     // 공유하기로부터 온 intent 처리
-                    if (intent.action == Intent.ACTION_SEND && intent.type == "text/plain") {
-                        runOnUiThread {
-                            veil.visibility = View.VISIBLE
-                        }
-                        val txt = intent.getStringExtra(Intent.EXTRA_TEXT).toString()
-                        val txtDecoded = URLDecoder.decode(txt, "UTF-8")
-                        val pattern = Patterns.WEB_URL
-
-                        var matcher = pattern.matcher(txtDecoded)
-                        if (matcher.find()) {
-                            url = txtDecoded.substring(matcher.start(0), matcher.end(0))
-                            // 메타데이터 추출
-                            doc = try {
-                                Jsoup.connect(url).userAgent("Chrome").get()
-                            } catch (e:IllegalArgumentException) {
-                                null
+                    if (intent.action == Intent.ACTION_SEND) {
+                        if(intent.type == "text/plain") {
+                            runOnUiThread {
+                                veil.visibility = View.VISIBLE
                             }
+                            val txt = intent.getStringExtra(Intent.EXTRA_TEXT).toString()
+                            val txtDecoded = URLDecoder.decode(txt, "UTF-8")
 
-                            val conn = URL(url).openConnection() as HttpURLConnection
-                            if (conn.responseCode in 300..399) {
-                                var metaUrl: String? =
-                                    doc!!.select("meta[property=og:url]").first()?.attr("content")
-                                if (metaUrl == null) {
-                                    val metaURLEncoded: String? =
-                                        doc!!.select("meta[property=al:android:url]").first()
-                                            ?.attr("content")
-                                    val metaUrl = URLDecoder.decode(metaURLEncoded, "UTF-8")
-                                    matcher = pattern.matcher(metaUrl)
-                                    if (matcher.find()) {
-                                        url = metaUrl!!.substring(
-                                            matcher.start(0),
-                                            matcher.end(0)
-                                        )
-                                        doc = try {
-                                            Jsoup.connect(url).userAgent("Chrome").get()
-                                        } catch (e:IllegalArgumentException) {
-                                            null
-                                        }
-                                    }
-                                } else {
-                                    url = metaUrl
-                                    doc = try {
-                                        Jsoup.connect(url).userAgent("Chrome").get()
-                                    } catch (e:IllegalArgumentException) {
-                                        null
-                                    }
-                                }
+                            val matcher = pattern.matcher(txtDecoded)
+                            if (matcher.find()) {
+                                url = txtDecoded.substring(matcher.start(0), matcher.end(0))
                             }
                         }
                     } else {
@@ -281,9 +246,68 @@ class AddLinkyActivity : AppCompatActivity() {
                             veil.visibility = View.VISIBLE
                         }
                         url = intent.getStringExtra("url")
+                    }
+
+                    if(url != null) {
+                        val conn = URL(url).openConnection() as HttpURLConnection
+                        if (conn.responseCode in 300..399) {
+                            url = conn.getHeaderField("Location")
+                            if(url!!.contains("link.naver.com")) {
+                                try {
+                                    doc = Jsoup.connect(url).userAgent("Chrome").get()
+                                    var metaUrl = doc!!.select("meta[property=al:android:url]").first()
+                                        ?.attr("content")
+                                    metaUrl = URLDecoder.decode(metaUrl, "UTF-8")
+                                    val matcher = pattern.matcher(metaUrl)
+                                    if(matcher.find()) {
+                                        url = metaUrl!!.substring(
+                                            matcher.start(0),
+                                            matcher.end(0)
+                                        )
+                                    }
+                                } catch (e: IllegalArgumentException) {
+                                    doc = null
+                                } catch (e:Exception) {
+                                    Log.d("test", e.stackTraceToString())
+                                    doc = null
+                                }
+                            }
+                        }
+                        else if(url!!.contains("naver.me")) {
+                            try {
+                                doc = Jsoup.connect(url).userAgent("Chrome").get()
+                                var metaUrl = doc!!.select("meta[property=al:android:url]").first()
+                                    ?.attr("content")
+                                metaUrl = URLDecoder.decode(metaUrl, "UTF-8")
+                                val matcher = pattern.matcher(metaUrl)
+                                if(matcher.find()) {
+                                    url = metaUrl!!.substring(
+                                        matcher.start(0),
+                                        matcher.end(0)
+                                    )
+                                }
+                                val idx = url!!.indexOf("&version")
+                                if(idx != -1) {
+                                    url = url!!.substring(
+                                        0,
+                                        idx
+                                    )
+                                }
+                            } catch (e: IllegalArgumentException) {
+                                doc = null
+                            } catch (e:Exception) {
+                                Log.d("test", e.stackTraceToString())
+                                doc = null
+                            }
+                        }
+
                         doc = try {
+                            url = URLDecoder.decode(url, "UTF-8")
                             Jsoup.connect(url).userAgent("Chrome").get()
-                        } catch (e:IllegalArgumentException) {
+                        } catch (e: IllegalArgumentException) {
+                            null
+                        } catch (e:Exception) {
+                            Log.d("test", e.stackTraceToString())
                             null
                         }
                     }
