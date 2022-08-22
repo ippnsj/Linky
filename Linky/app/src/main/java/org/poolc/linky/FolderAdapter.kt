@@ -2,12 +2,12 @@ package org.poolc.linky
 
 import android.util.Log
 import android.view.LayoutInflater
+import android.view.View
 import android.view.ViewGroup
-import android.view.animation.TranslateAnimation
 import androidx.recyclerview.widget.RecyclerView
 import org.poolc.linky.databinding.FolderItemBinding
 
-class FolderAdapter(private val folders:ArrayList<String>, private val listener: FolderAdapter.OnItemClickListener) : RecyclerView.Adapter<FolderAdapter.ViewHolder>() {
+class FolderAdapter(private val folders:ArrayList<String>, private val listener: FolderAdapter.OnItemClickListener, private val isEditMode:Boolean) : RecyclerView.Adapter<FolderAdapter.ViewHolder>() {
 
     public interface OnItemClickListener {
         fun onItemClick(folderName:String)
@@ -36,7 +36,18 @@ class FolderAdapter(private val folders:ArrayList<String>, private val listener:
                     true
                 }
                 folderContainer.setOnClickListener {
+                    if(isEditMode) {
+                        select.isSelected = !select.isSelected
+                    }
+
                     listener.onItemClick(folders[pos])
+                }
+
+                if(isEditMode) {
+                    select.visibility = View.VISIBLE
+                }
+                else {
+                    select.visibility = View.INVISIBLE
                 }
             }
         }

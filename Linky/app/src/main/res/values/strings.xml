@@ -8,4 +8,6 @@
     <string name="default_path">Please select the path</string>
 
     <string name="preference_key">LinkyIsTheBest</string>
+    <!-- TODO: Remove or change this placeholder text -->
+    <string name="hello_blank_fragment">Hello blank fragment</string>
 </resources>

@@ -3,6 +3,7 @@ package org.poolc.linky
 import android.animation.ObjectAnimator
 import android.content.Context
 import android.content.DialogInterface
+import android.content.Intent
 import android.graphics.Rect
 import android.os.Bundle
 import android.util.Log
@@ -41,6 +42,7 @@ class LinkyFragment : Fragment() {
     ): View? {
         // activity에 path값 넘김
         mainActivity.setPath(path)
+        mainActivity.setFolderName("")
 
         folders.clear()
         // json 파싱
@@ -59,9 +61,9 @@ class LinkyFragment : Fragment() {
         folderAdapter = FolderAdapter(folders, object : FolderAdapter.OnItemClickListener {
             override fun onItemClick(folderName: String) {
                 val newPath = "${path}${folderName}/"
-                mainActivity.createFragment(newPath)
+                mainActivity.createFragment(newPath, folderName)
             }
-        })
+        }, false)
 
         with(binding) {
             folderRecycler.adapter = folderAdapter
@@ -87,6 +89,12 @@ class LinkyFragment : Fragment() {
                     }
                 }
             })
+
+            edit.setOnClickListener {
+                val intent = Intent(mainActivity, EditActivity::class.java)
+                intent.putExtra("path", path)
+                startActivity(intent)
+            }
 
             addFolder.setOnClickListener {
                 val builder = AlertDialog.Builder(mainActivity)

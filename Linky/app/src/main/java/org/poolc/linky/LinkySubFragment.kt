@@ -32,12 +32,14 @@ class LinkySubFragment : Fragment() {
     private lateinit var folderSubAdapter: FolderSubAdapter
     private lateinit var linkySubAdapter: LinkyAdapter
     private lateinit var path : String
+    private lateinit var folderName : String
     private var isFabOpen = false
     private lateinit var mainActivity : MainActivity
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        path = arguments?.getString("path")!!
+        path = arguments?.getString("path") ?: ""
+        folderName = arguments?.getString("folderName") ?: ""
     }
 
     override fun onCreateView(
@@ -46,6 +48,7 @@ class LinkySubFragment : Fragment() {
     ): View? {
         // activity에 path값 넘김
         mainActivity.setPath(path)
+        mainActivity.setFolderName(folderName)
 
         // json 파싱
         val jsonStr = arguments?.getString("jsonStr")
@@ -65,8 +68,7 @@ class LinkySubFragment : Fragment() {
         folderSubAdapter = FolderSubAdapter(folders, object : FolderSubAdapter.OnItemClickListener {
             override fun onItemClick(folderName: String) {
                 val newPath = "${path}${folderName}/"
-                val activity = activity as MainActivity
-                activity.createFragment(newPath)
+                mainActivity.createFragment(newPath, folderName)
             }
         })
 

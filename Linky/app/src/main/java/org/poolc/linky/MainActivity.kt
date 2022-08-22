@@ -14,6 +14,7 @@ class MainActivity : AppCompatActivity() {
 
     private lateinit var binding : ActivityMainBinding
     private var path = ""
+    private var folderName = ""
     private var now = ""
     private lateinit var fm : FragmentManager
     private val linkyFragment = LinkyFragment()
@@ -35,7 +36,6 @@ class MainActivity : AppCompatActivity() {
             setSupportActionBar(topbar)
             supportActionBar?.setDisplayShowTitleEnabled(false)
             topbarTitle.text = "내 링키"
-            topbarFoldername.visibility = View.INVISIBLE
 
             // bottom navigatonbar 설정
             var bundle : Bundle? = null
@@ -49,22 +49,26 @@ class MainActivity : AppCompatActivity() {
                             topbarTitle.text = "내 링키"
                             if (path == "") {
                                 now = "linky"
+
                                 thread {
                                     jsonStr = app.readFolder(path)
 
                                     bundle = Bundle()
                                     bundle?.putString("path", path)
+                                    bundle?.putString("folderName", folderName)
                                     bundle?.putString("jsonStr", jsonStr)
                                     changeFragment(linkyFragment, bundle, false)
                                 }
                             } else {
                                 val fragment = fm.findFragmentByTag(path)
                                 now = "sub"
+
                                 thread {
                                     jsonStr = app.read(path)
 
                                     bundle = Bundle()
                                     bundle?.putString("path", path)
+                                    bundle?.putString("folderName", folderName)
                                     bundle?.putString("jsonStr", jsonStr)
                                     changeFragment(fragment!!, bundle, false)
                                 }
@@ -128,7 +132,18 @@ class MainActivity : AppCompatActivity() {
         this.path = path
     }
 
-    fun createFragment(path:String) {
+    fun setFolderName(folderName:String) {
+        this.folderName = folderName
+        if(folderName == "") {
+            binding.topbarFoldername.visibility = View.INVISIBLE
+        }
+        else {
+            binding.topbarFoldername.visibility = View.VISIBLE
+            binding.topbarFoldername.text = folderName
+        }
+    }
+
+    fun createFragment(path:String, folderName:String) {
         // folder json 파싱
         var jsonStr = ""
         thread {
@@ -137,8 +152,10 @@ class MainActivity : AppCompatActivity() {
             val nextFragment = LinkySubFragment()
             val bundle = Bundle()
             bundle.putString("path", path)
+            bundle.putString("folderName", folderName)
             bundle.putString("jsonStr", jsonStr)
             this.path = path
+            this.folderName = folderName
             now = "sub"
             changeFragment(nextFragment, bundle, true)
         }

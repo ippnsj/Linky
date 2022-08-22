@@ -13,6 +13,7 @@ import org.poolc.linky.databinding.FragmentSearchBinding
 
 class SearchFragment : Fragment() {
     private lateinit var binding : FragmentSearchBinding
+    private lateinit var mainActivity: MainActivity
     private lateinit var backCallback : OnBackPressedCallback
 
     override fun onCreateView(
@@ -29,12 +30,14 @@ class SearchFragment : Fragment() {
 
     override fun onAttach(context: Context) {
         super.onAttach(context)
+        mainActivity = context as MainActivity
+
         backCallback = object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
-                activity?.finish()
+                mainActivity.finish()
             }
         }
-        activity?.onBackPressedDispatcher?.addCallback(this, backCallback)
+        mainActivity.onBackPressedDispatcher?.addCallback(this, backCallback)
     }
 
     override fun onDetach() {

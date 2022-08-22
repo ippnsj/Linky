@@ -4,6 +4,7 @@ import android.app.Application
 import android.content.SharedPreferences
 import android.util.Log
 import androidx.appcompat.app.AppCompatActivity
+import org.json.JSONArray
 import org.json.JSONObject
 import java.io.IOException
 import java.net.HttpURLConnection
@@ -81,13 +82,15 @@ class MyApplication : Application() {
 
             conn!!.doOutput = true
 
+            val keywordsJsonArr = JSONArray(keywords)
+
             val body = JSONObject()
             body.put("userEmail", sharedPref!!.getString("userEmail", ""))
-            body.put("public", public)
-            body.put("keywords", keywords)
+            body.put("isPublic", public)
+            body.put("keywords", keywordsJsonArr)
             body.put("path", path)
-            body.put("linkName", linkTitle)
-            body.put("linkPicture", linkImage)
+            body.put("linkTitle", linkTitle)
+            body.put("linkImage", linkImage)
             body.put("linkUrl", linkUrl)
 
             val os = conn!!.outputStream
@@ -159,46 +162,44 @@ class MyApplication : Application() {
         var conn : HttpURLConnection? = null
         var response : String = ""
 
-        thread {
-            try {
-                conn = url.openConnection() as HttpURLConnection
-                conn!!.requestMethod = "POST"
-                conn!!.connectTimeout = 10000;
-                conn!!.readTimeout = 100000;
-                conn!!.setRequestProperty("Content-Type", "application/json")
-                conn!!.setRequestProperty("Accept", "application/json")
+        try {
+            conn = url.openConnection() as HttpURLConnection
+            conn!!.requestMethod = "POST"
+            conn!!.connectTimeout = 10000;
+            conn!!.readTimeout = 100000;
+            conn!!.setRequestProperty("Content-Type", "application/json")
+            conn!!.setRequestProperty("Accept", "application/json")
 
-                conn!!.doOutput = true
-                conn!!.doInput = true
+            conn!!.doOutput = true
+            conn!!.doInput = true
 
-                val body = JSONObject()
-                body.put("userEmail", sharedPref.getString("userEmail", ""))
-                body.put("path", path)
+            val body = JSONObject()
+            body.put("userEmail", sharedPref.getString("userEmail", ""))
+            body.put("path", path)
 
-                val os = conn!!.outputStream
-                os.write(body.toString().toByteArray())
-                os.flush()
+            val os = conn!!.outputStream
+            os.write(body.toString().toByteArray())
+            os.flush()
 
-                if(conn!!.responseCode == 200) {
-                    response = conn!!.inputStream.reader().readText()
-                }
-                else if(conn!!.responseCode == 400) {
-                    Log.d("test", "Bad request")
-                }
-                else if(conn!!.responseCode == 404) {
-                    Log.d("test", "Not Found")
-                }
-                else if(conn!!.responseCode == 401) {
-                    Log.d("test", "Unauthorized")
-                }
+            if(conn!!.responseCode == 200) {
+                response = conn!!.inputStream.reader().readText()
             }
-            catch (e: MalformedURLException) {
-                Log.d("test", "올바르지 않은 URL 주소입니다.")
-            } catch (e: IOException) {
-                Log.d("test", "connection 오류")
-            }finally {
-                conn?.disconnect()
+            else if(conn!!.responseCode == 400) {
+                Log.d("test", "Bad request")
             }
+            else if(conn!!.responseCode == 404) {
+                Log.d("test", "Not Found")
+            }
+            else if(conn!!.responseCode == 401) {
+                Log.d("test", "Unauthorized")
+            }
+        }
+        catch (e: MalformedURLException) {
+            Log.d("test", "올바르지 않은 URL 주소입니다.")
+        } catch (e: IOException) {
+            Log.d("test", "connection 오류")
+        }finally {
+            conn?.disconnect()
         }
 
         return response
