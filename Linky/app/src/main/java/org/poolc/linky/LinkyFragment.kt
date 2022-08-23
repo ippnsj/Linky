@@ -44,11 +44,13 @@ class LinkyFragment : Fragment() {
         mainActivity.setPath(path)
         mainActivity.setFolderName("")
 
-        folders.clear()
         // json 파싱
         val jsonStr = arguments?.getString("jsonStr")
-        if(jsonStr != "") {
+        if (jsonStr != "") {
             setFolders(jsonStr!!)
+        }
+        else {
+            folders.clear()
         }
 
         return inflater.inflate(R.layout.fragment_linky, container, false)
@@ -58,8 +60,11 @@ class LinkyFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
         binding = FragmentLinkyBinding.bind(view)
 
-        folderAdapter = FolderAdapter(folders, object : FolderAdapter.OnItemClickListener {
-            override fun onItemClick(folderName: String) {
+        isFabOpen = false
+
+        folderAdapter = FolderAdapter(folders, null, object : FolderAdapter.OnItemClickListener {
+            override fun onItemClick(pos:Int) {
+                val folderName = folders[pos]
                 val newPath = "${path}${folderName}/"
                 mainActivity.createFragment(newPath, folderName)
             }
@@ -136,6 +141,17 @@ class LinkyFragment : Fragment() {
         mainActivity = context as MainActivity
     }
 
+    fun update(jsonStr:String) {
+        if (jsonStr != "") {
+            setFolders(jsonStr!!)
+        }
+        else {
+            folders.clear()
+        }
+
+        folderAdapter.notifyDataSetChanged()
+    }
+
     private fun toggleFab() {
         with(binding) {
             if (isFabOpen) {
@@ -151,6 +167,7 @@ class LinkyFragment : Fragment() {
     }
 
     private fun setFolders(jsonStr:String) {
+        folders.clear()
         val jsonObj = JSONObject(jsonStr)
         val foldersArr = jsonObj.getJSONArray("folderInfos")
         for (idx in 0 until foldersArr.length()) {
@@ -162,7 +179,7 @@ class LinkyFragment : Fragment() {
     }
 
     private fun createFolder(folderName:String) {
-        val app = activity?.application as MyApplication
+        val app = mainActivity.application as MyApplication
 
         thread {
             val responseCode = app.createFolder(folderName, path)

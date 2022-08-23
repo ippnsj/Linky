@@ -53,9 +53,13 @@ class LinkySubFragment : Fragment() {
         // json 파싱
         val jsonStr = arguments?.getString("jsonStr")
 
-        if(jsonStr != "") {
+        if (jsonStr != "") {
             setFolders(jsonStr!!)
             setLinks(jsonStr!!)
+        }
+        else {
+            folders.clear()
+            links.clear()
         }
 
         return inflater.inflate(R.layout.fragment_linky_sub, container, false)
@@ -64,6 +68,8 @@ class LinkySubFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         binding = FragmentLinkySubBinding.bind(view)
+
+        isFabOpen = false
 
         folderSubAdapter = FolderSubAdapter(folders, object : FolderSubAdapter.OnItemClickListener {
             override fun onItemClick(folderName: String) {
@@ -202,6 +208,20 @@ class LinkySubFragment : Fragment() {
     override fun onAttach(context: Context) {
         super.onAttach(context)
         mainActivity = context as MainActivity
+    }
+
+    fun update(jsonStr:String) {
+        if (jsonStr != "") {
+            setFolders(jsonStr!!)
+            setLinks(jsonStr!!)
+        }
+        else {
+            folders.clear()
+            links.clear()
+        }
+
+        folderSubAdapter.notifyDataSetChanged()
+        linkySubAdapter.notifyDataSetChanged()
     }
 
     private fun toggleFab() {

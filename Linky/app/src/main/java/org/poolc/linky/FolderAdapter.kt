@@ -7,10 +7,10 @@ import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
 import org.poolc.linky.databinding.FolderItemBinding
 
-class FolderAdapter(private val folders:ArrayList<String>, private val listener: FolderAdapter.OnItemClickListener, private val isEditMode:Boolean) : RecyclerView.Adapter<FolderAdapter.ViewHolder>() {
+class FolderAdapter(private val folders:ArrayList<String>, private val isSelected:ArrayList<Boolean>?, private val listener: FolderAdapter.OnItemClickListener, private val isEditMode:Boolean) : RecyclerView.Adapter<FolderAdapter.ViewHolder>() {
 
     public interface OnItemClickListener {
-        fun onItemClick(folderName:String)
+        fun onItemClick(pos:Int)
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
@@ -36,15 +36,12 @@ class FolderAdapter(private val folders:ArrayList<String>, private val listener:
                     true
                 }
                 folderContainer.setOnClickListener {
-                    if(isEditMode) {
-                        select.isSelected = !select.isSelected
-                    }
-
-                    listener.onItemClick(folders[pos])
+                    listener.onItemClick(pos)
                 }
 
                 if(isEditMode) {
                     select.visibility = View.VISIBLE
+                    select.isSelected = isSelected?.get(pos) ?: false
                 }
                 else {
                     select.visibility = View.INVISIBLE

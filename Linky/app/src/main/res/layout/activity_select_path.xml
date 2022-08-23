@@ -24,7 +24,6 @@
         android:layout_height="wrap_content"
         android:layout_marginLeft="20dp"
         android:elevation="1dp"
-        android:text="TextView"
         android:textAppearance="@style/TextAppearance.AppCompat.Body2"
         android:textSize="18sp"
         app:layout_constraintBottom_toBottomOf="@id/selectPathTopbar"

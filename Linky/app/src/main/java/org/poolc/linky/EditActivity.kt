@@ -1,9 +1,11 @@
 package org.poolc.linky
 
+import android.content.DialogInterface
 import android.os.Bundle
 import android.view.Menu
 import android.view.MenuItem
 import android.widget.TextView
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.Fragment
 import com.google.android.material.bottomnavigation.BottomNavigationView
@@ -14,6 +16,8 @@ import kotlin.concurrent.thread
 class EditActivity : AppCompatActivity() {
     private lateinit var binding : ActivityEditBinding
     private lateinit var path : String
+    private lateinit var editLinkyFragment : EditLinkyFragment
+    // private lateinit var editLinkySubFragment : EditLinkySubFragment
 
     private lateinit var app : MyApplication
 
@@ -23,8 +27,6 @@ class EditActivity : AppCompatActivity() {
         setContentView(binding.root)
 
         app = application as MyApplication
-
-        setFragment()
 
         with(binding) {
             // topbar 설정
@@ -40,12 +42,35 @@ class EditActivity : AppCompatActivity() {
 
                     }
                     R.id.delete -> {
+                        var message = ""
+                        if(path == "") {
+                            message = "선택된 폴더를 모두 삭제하시겠습니까?"
+                        }
+                        else {
+                            message = "선택된 폴더 및 링크를 모두 삭제하시겠습니까?"
+                        }
 
+                        val builder = AlertDialog.Builder(this@EditActivity)
+                        builder.setMessage(message)
+
+                        builder.setPositiveButton("삭제") { dialogInterface: DialogInterface, i: Int ->
+                            editLinkyFragment.delete()
+                        }
+
+                        builder.setNegativeButton("취소", null)
+
+                        builder.show()
                     }
                 }
                 true
             }
         }
+    }
+
+    override fun onStart() {
+        super.onStart()
+
+        setFragment()
     }
 
     private fun createFragment(fragment: Fragment, bundle: Bundle?) {
@@ -71,7 +96,8 @@ class EditActivity : AppCompatActivity() {
                     bundle = Bundle()
                     bundle?.putString("path", path)
                     bundle?.putString("jsonStr", jsonStr)
-                    createFragment(EditLinkyFragment(), bundle)
+                    editLinkyFragment = EditLinkyFragment()
+                    createFragment(editLinkyFragment, bundle)
                 }
             }
             else {
@@ -94,6 +120,15 @@ class EditActivity : AppCompatActivity() {
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        when(item.itemId) {
+            R.id.selectAll -> {
+                editLinkyFragment.selectAll()
+            }
+            R.id.done -> {
+                finish()
+            }
+        }
+
         return super.onOptionsItemSelected(item)
     }
 }

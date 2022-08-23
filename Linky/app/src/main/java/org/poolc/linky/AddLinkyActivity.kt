@@ -24,6 +24,7 @@ import androidx.recyclerview.widget.RecyclerView
 import org.jsoup.Jsoup
 import org.jsoup.nodes.Document
 import org.poolc.linky.databinding.ActivityAddLinkyBinding
+import java.io.IOException
 import java.net.HttpURLConnection
 import java.net.MalformedURLException
 import java.net.URL
@@ -249,10 +250,33 @@ class AddLinkyActivity : AppCompatActivity() {
                     }
 
                     if(url != null) {
-                        val conn = URL(url).openConnection() as HttpURLConnection
-                        if (conn.responseCode in 300..399) {
-                            url = conn.getHeaderField("Location")
-                            if(url!!.contains("link.naver.com")) {
+                        var conn : HttpURLConnection? = null
+                        try {
+                            conn = URL(url).openConnection() as HttpURLConnection
+                            if (conn.responseCode in 300..399) {
+                                url = conn.getHeaderField("Location")
+                                if(url!!.contains("link.naver.com")) {
+                                    try {
+                                        doc = Jsoup.connect(url).userAgent("Chrome").get()
+                                        var metaUrl = doc!!.select("meta[property=al:android:url]").first()
+                                            ?.attr("content")
+                                        metaUrl = URLDecoder.decode(metaUrl, "UTF-8")
+                                        val matcher = pattern.matcher(metaUrl)
+                                        if(matcher.find()) {
+                                            url = metaUrl!!.substring(
+                                                matcher.start(0),
+                                                matcher.end(0)
+                                            )
+                                        }
+                                    } catch (e: IllegalArgumentException) {
+                                        doc = null
+                                    } catch (e:Exception) {
+                                        Log.d("test", e.stackTraceToString())
+                                        doc = null
+                                    }
+                                }
+                            }
+                            else if(url!!.contains("naver.me")) {
                                 try {
                                     doc = Jsoup.connect(url).userAgent("Chrome").get()
                                     var metaUrl = doc!!.select("meta[property=al:android:url]").first()
@@ -265,6 +289,13 @@ class AddLinkyActivity : AppCompatActivity() {
                                             matcher.end(0)
                                         )
                                     }
+                                    val idx = url!!.indexOf("&version")
+                                    if(idx != -1) {
+                                        url = url!!.substring(
+                                            0,
+                                            idx
+                                        )
+                                    }
                                 } catch (e: IllegalArgumentException) {
                                     doc = null
                                 } catch (e:Exception) {
@@ -272,43 +303,22 @@ class AddLinkyActivity : AppCompatActivity() {
                                     doc = null
                                 }
                             }
-                        }
-                        else if(url!!.contains("naver.me")) {
-                            try {
-                                doc = Jsoup.connect(url).userAgent("Chrome").get()
-                                var metaUrl = doc!!.select("meta[property=al:android:url]").first()
-                                    ?.attr("content")
-                                metaUrl = URLDecoder.decode(metaUrl, "UTF-8")
-                                val matcher = pattern.matcher(metaUrl)
-                                if(matcher.find()) {
-                                    url = metaUrl!!.substring(
-                                        matcher.start(0),
-                                        matcher.end(0)
-                                    )
-                                }
-                                val idx = url!!.indexOf("&version")
-                                if(idx != -1) {
-                                    url = url!!.substring(
-                                        0,
-                                        idx
-                                    )
-                                }
+
+                            doc = try {
+                                url = URLDecoder.decode(url, "UTF-8")
+                                Jsoup.connect(url).userAgent("Chrome").get()
                             } catch (e: IllegalArgumentException) {
-                                doc = null
+                                null
                             } catch (e:Exception) {
                                 Log.d("test", e.stackTraceToString())
-                                doc = null
+                                null
                             }
-                        }
-
-                        doc = try {
-                            url = URLDecoder.decode(url, "UTF-8")
-                            Jsoup.connect(url).userAgent("Chrome").get()
-                        } catch (e: IllegalArgumentException) {
-                            null
-                        } catch (e:Exception) {
-                            Log.d("test", e.stackTraceToString())
-                            null
+                        } catch (e: MalformedURLException) {
+                            Log.d("test", "올바르지 않은 URL 주소입니다.")
+                        } catch (e: IOException) {
+                            Log.d("test", "connection 오류")
+                        }finally {
+                            conn?.disconnect()
                         }
                     }
 

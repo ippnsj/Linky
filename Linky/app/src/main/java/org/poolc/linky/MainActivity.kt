@@ -20,6 +20,7 @@ class MainActivity : AppCompatActivity() {
     private val linkyFragment = LinkyFragment()
     private val searchFragment = SearchFragment()
     private val moreFragment = MoreFragment()
+    private var newb = true
 
     private lateinit var app : MyApplication
 
@@ -105,6 +106,38 @@ class MainActivity : AppCompatActivity() {
                     toast.show()
                 }
             }
+        }
+    }
+
+    override fun onStart() {
+        super.onStart()
+        if(!newb) {
+            if (now == "linky" || now == "sub") {
+                var bundle: Bundle? = null
+                // json 가져오기
+                var jsonStr = ""
+                if (path == "") {
+                    thread {
+                        jsonStr = app.readFolder(path)
+
+                        runOnUiThread {
+                            linkyFragment.update(jsonStr)
+                        }
+                    }
+                } else {
+                    val fragment = fm.findFragmentByTag(path) as LinkySubFragment
+                    thread {
+                        jsonStr = app.read(path)
+
+                        runOnUiThread {
+                            fragment.update(jsonStr)
+                        }
+                    }
+                }
+            }
+        }
+        else {
+            newb = false
         }
     }
 
