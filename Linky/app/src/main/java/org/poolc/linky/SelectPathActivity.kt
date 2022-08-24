@@ -27,18 +27,7 @@ class SelectPathActivity : AppCompatActivity() {
             supportActionBar?.setDisplayShowTitleEnabled(false)
             selectPathTopbarTitle.text = "경로선택"
 
-            // json 가져오기
-            var jsonStr = ""
-            thread {
-                jsonStr = app.readFolder(path)
-
-                val rootFragment = FolderListFragment()
-                val bundle = Bundle()
-                bundle.putString("path", path)
-                bundle.putString("jsonStr", jsonStr)
-                rootFragment.arguments = bundle
-                setFragment(true, rootFragment)
-            }
+            createFragment("")
         }
     }
 
@@ -47,18 +36,25 @@ class SelectPathActivity : AppCompatActivity() {
         finish()
     }
 
-    fun createFragment(path:String) {
+    fun createFragment(newPath:String) {
+        val moveCurrentPath = intent.getStringExtra("path")
+        var folders : ArrayList<String>? = null
+        if(moveCurrentPath == newPath) {
+            folders = intent.getStringArrayListExtra("folders")
+        }
+
         // json 가져오기
         var jsonStr = ""
         thread {
-            jsonStr = app.readFolder(path)
+            jsonStr = app.readFolder(newPath)
 
-            val nextFragment = FolderListFragment()
+            val fragment = FolderListFragment()
             val bundle = Bundle()
-            bundle.putString("path", path)
+            bundle.putString("path", newPath)
             bundle.putString("jsonStr", jsonStr)
-            nextFragment.arguments = bundle
-            setFragment(false, nextFragment)
+            bundle.putStringArrayList("folders", folders)
+            fragment.arguments = bundle
+            setFragment(newPath, fragment)
         }
     }
 
@@ -66,11 +62,11 @@ class SelectPathActivity : AppCompatActivity() {
         this.path = path
     }
 
-    private fun setFragment(isRoot:Boolean, fragment:Fragment) {
+    private fun setFragment(newPath: String, fragment:Fragment) {
         val tran = supportFragmentManager.beginTransaction()
         tran.replace(R.id.folderFragmentContainer, fragment)
 
-        if(!isRoot) {
+        if(newPath != "") {
             tran.addToBackStack(null)
         }
 

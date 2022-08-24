@@ -5,7 +5,7 @@
     <item
         android:id="@+id/move"
         android:icon="@drawable/move"
-        android:title="폴더이동"
+        android:title="이동"
         app:showAsAction="ifRoom" />
     <item
         android:id="@+id/delete"

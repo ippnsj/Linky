@@ -45,34 +45,22 @@ class MainActivity : AppCompatActivity() {
                 when(item.itemId) {
                     R.id.linky -> {
                         if (now != "linky" && now != "sub") {
-                            // json 가져오기
-                            var jsonStr = ""
                             topbarTitle.text = "내 링키"
                             if (path == "") {
                                 now = "linky"
 
-                                thread {
-                                    jsonStr = app.readFolder(path)
-
-                                    bundle = Bundle()
-                                    bundle?.putString("path", path)
-                                    bundle?.putString("folderName", folderName)
-                                    bundle?.putString("jsonStr", jsonStr)
-                                    changeFragment(linkyFragment, bundle, false)
-                                }
+                                bundle = Bundle()
+                                bundle?.putString("path", path)
+                                bundle?.putString("folderName", folderName)
+                                changeFragment(linkyFragment, bundle, false)
                             } else {
                                 val fragment = fm.findFragmentByTag(path)
                                 now = "sub"
 
-                                thread {
-                                    jsonStr = app.read(path)
-
-                                    bundle = Bundle()
-                                    bundle?.putString("path", path)
-                                    bundle?.putString("folderName", folderName)
-                                    bundle?.putString("jsonStr", jsonStr)
-                                    changeFragment(fragment!!, bundle, false)
-                                }
+                                bundle = Bundle()
+                                bundle?.putString("path", path)
+                                bundle?.putString("folderName", folderName)
+                                changeFragment(fragment!!, bundle, false)
                             }
                         }
                     }

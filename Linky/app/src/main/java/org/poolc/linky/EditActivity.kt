@@ -4,11 +4,11 @@ import android.content.DialogInterface
 import android.os.Bundle
 import android.view.Menu
 import android.view.MenuItem
-import android.widget.TextView
+import android.view.View
+import android.widget.PopupMenu
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.Fragment
-import com.google.android.material.bottomnavigation.BottomNavigationView
 import org.poolc.linky.databinding.ActivityEditBinding
 import kotlin.concurrent.thread
 
@@ -18,6 +18,7 @@ class EditActivity : AppCompatActivity() {
     private lateinit var path : String
     private lateinit var editLinkyFragment : EditLinkyFragment
     // private lateinit var editLinkySubFragment : EditLinkySubFragment
+    private var allSelectButton : MenuItem? = null
 
     private lateinit var app : MyApplication
 
@@ -39,7 +40,7 @@ class EditActivity : AppCompatActivity() {
             bottomNavigation.setOnItemSelectedListener { item ->
                 when(item.itemId) {
                     R.id.move -> {
-
+                        editLinkyFragment.move()
                     }
                     R.id.delete -> {
                         var message = ""
@@ -73,6 +74,15 @@ class EditActivity : AppCompatActivity() {
         setFragment()
     }
 
+    fun setAllSelectButton(isAllSelected:Boolean) {
+        if(isAllSelected) {
+            allSelectButton?.title = "모두취소"
+        }
+        else {
+            allSelectButton?.title = "모두선택"
+        }
+    }
+
     private fun createFragment(fragment: Fragment, bundle: Bundle?) {
         if(bundle != null) {
             fragment.arguments = bundle
@@ -101,14 +111,14 @@ class EditActivity : AppCompatActivity() {
                 }
             }
             else {
-                thread {
+                /*thread {
                     jsonStr = app.read(path)
 
                     bundle = Bundle()
                     bundle?.putString("path", path)
                     bundle?.putString("jsonStr", jsonStr)
                     createFragment(LinkySubFragment(), bundle)
-                }
+                }*/
             }
         }
     }
@@ -116,13 +126,29 @@ class EditActivity : AppCompatActivity() {
     override fun onCreateOptionsMenu(menu: Menu?): Boolean {
         menuInflater.inflate(R.menu.menu_edit_linky_topbar, menu)
 
+        allSelectButton = menu?.findItem(R.id.selectAll)
+
         return super.onCreateOptionsMenu(menu)
+    }
+
+    private fun selectAllPopup() {
+        val view = findViewById<View>(R.id.selectAll)
+        val popup = PopupMenu(this, view)
+        popup.menuInflater.inflate(R.menu.menu_select_all, popup.menu)
+        popup.show()
+
+        popup.setOnMenuItemClickListener(popupListener)
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         when(item.itemId) {
             R.id.selectAll -> {
-                editLinkyFragment.selectAll()
+                if(path == "") {
+                    editLinkyFragment.selectAll()
+                }
+                else {
+                    selectAllPopup()
+                }
             }
             R.id.done -> {
                 finish()
@@ -130,5 +156,20 @@ class EditActivity : AppCompatActivity() {
         }
 
         return super.onOptionsItemSelected(item)
+    }
+
+    private val popupListener = object : PopupMenu.OnMenuItemClickListener {
+        override fun onMenuItemClick(item: MenuItem?): Boolean {
+            when(item?.itemId) {
+                R.id.selectAllFolder -> {
+
+                }
+                R.id.selectAllLink -> {
+
+                }
+            }
+
+            return true
+        }
     }
 }

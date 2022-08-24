@@ -205,6 +205,44 @@ class MyApplication : Application() {
         return response
     }
 
+    fun moveFolder(originalPath:ArrayList<String>, modifiedPath:String) : Int {
+        val url = URL("http://$ip:$port/folder/move")
+        var conn : HttpURLConnection? = null
+        var responseCode = -1
+
+        try {
+            conn = url.openConnection() as HttpURLConnection
+            conn!!.requestMethod = "POST"
+            conn!!.connectTimeout = 10000;
+            conn!!.readTimeout = 100000;
+            conn!!.setRequestProperty("Content-Type", "application/json")
+            conn!!.setRequestProperty("Accept", "application/json")
+
+            conn!!.doOutput = true
+
+            val originalPathJsonArr = JSONArray(originalPath)
+
+            val body = JSONObject()
+            body.put("userEmail", sharedPref!!.getString("userEmail", ""))
+            body.put("originalPaths", originalPathJsonArr)
+            body.put("modifiedPath", modifiedPath)
+
+            val os = conn!!.outputStream
+            os.write(body.toString().toByteArray())
+            os.flush()
+
+            responseCode =  conn!!.responseCode
+        } catch (e: MalformedURLException) {
+            Log.d("test", "올바르지 않은 URL 주소입니다.")
+        } catch (e: IOException) {
+            Log.d("test", "connection 오류")
+        } finally {
+            conn?.disconnect()
+        }
+
+        return responseCode
+    }
+
     fun deleteFolder(path:String) : Int {
         val url = URL("http://$ip:$port/folder/delete")
         var conn : HttpURLConnection? = null
