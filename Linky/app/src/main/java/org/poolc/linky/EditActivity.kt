@@ -17,7 +17,7 @@ class EditActivity : AppCompatActivity() {
     private lateinit var binding : ActivityEditBinding
     private lateinit var path : String
     private lateinit var editLinkyFragment : EditLinkyFragment
-    // private lateinit var editLinkySubFragment : EditLinkySubFragment
+    private lateinit var editLinkySubFragment : EditLinkySubFragment
     private var allSelectButton : MenuItem? = null
 
     private lateinit var app : MyApplication
@@ -95,30 +95,20 @@ class EditActivity : AppCompatActivity() {
 
     private fun setFragment() {
         path = intent.getStringExtra("path") ?: ""
-        var jsonStr = ""
         var bundle : Bundle? = null
 
         with(binding) {
             if(path == "") {
-                thread {
-                    jsonStr = app.readFolder(path)
-
-                    bundle = Bundle()
-                    bundle?.putString("path", path)
-                    bundle?.putString("jsonStr", jsonStr)
-                    editLinkyFragment = EditLinkyFragment()
-                    createFragment(editLinkyFragment, bundle)
-                }
+                bundle = Bundle()
+                bundle?.putString("path", path)
+                editLinkyFragment = EditLinkyFragment()
+                createFragment(editLinkyFragment, bundle)
             }
             else {
-                /*thread {
-                    jsonStr = app.read(path)
-
-                    bundle = Bundle()
-                    bundle?.putString("path", path)
-                    bundle?.putString("jsonStr", jsonStr)
-                    createFragment(LinkySubFragment(), bundle)
-                }*/
+                bundle = Bundle()
+                bundle?.putString("path", path)
+                editLinkySubFragment = EditLinkySubFragment()
+                createFragment(editLinkySubFragment, bundle)
             }
         }
     }
@@ -162,10 +152,10 @@ class EditActivity : AppCompatActivity() {
         override fun onMenuItemClick(item: MenuItem?): Boolean {
             when(item?.itemId) {
                 R.id.selectAllFolder -> {
-
+                    editLinkySubFragment.selectAllFolders()
                 }
                 R.id.selectAllLink -> {
-
+                    editLinkySubFragment.selectAllLinks()
                 }
             }
 

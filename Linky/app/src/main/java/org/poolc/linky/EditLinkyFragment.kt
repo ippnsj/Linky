@@ -24,64 +24,15 @@ import kotlin.math.ceil
 
 class EditLinkyFragment : Fragment() {
     private lateinit var binding : FragmentEditLinkyBinding
-    private val folders = ArrayList<String>()
-    private val isSelected = ArrayList<Boolean>()
+    private lateinit var app : MyApplication
+    private val folders = ArrayList<Folder>()
     private var totalSelected = 0
     private lateinit var folderAdapter: FolderAdapter
     private lateinit var path : String
     private lateinit var editActivity: EditActivity
-    private lateinit var folderResultLauncher: ActivityResultLauncher<Intent>
     private var moveFolders = ArrayList<String>()
-
-    override fun onAttach(context: Context) {
-        super.onAttach(context)
-        editActivity = context as EditActivity
-    }
-
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        path = arguments?.getString("path")!!
-    }
-
-    override fun onCreateView(
-        inflater: LayoutInflater, container: ViewGroup?,
-        savedInstanceState: Bundle?
-    ): View? {
-        // json 파싱
-        val jsonStr = arguments?.getString("jsonStr")
-        if(jsonStr != "") {
-            setFolders(jsonStr!!)
-        }
-        else {
-            folders.clear()
-            isSelected.clear()
-            totalSelected = 0
-        }
-
-        return inflater.inflate(R.layout.fragment_edit_linky, container, false)
-    }
-
-    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-        super.onViewCreated(view, savedInstanceState)
-        binding = FragmentEditLinkyBinding.bind(view)
-
-        folderAdapter = FolderAdapter(folders, isSelected, object : FolderAdapter.OnItemClickListener {
-            override fun onItemClick(pos:Int) {
-                isSelected[pos] = !isSelected[pos]
-                totalSelected = if(isSelected[pos]) { totalSelected + 1 } else { totalSelected - 1 }
-                folderAdapter.notifyItemChanged(pos)
-
-                if(totalSelected == folders.size) {
-                    editActivity.setAllSelectButton(true)
-                }
-                else {
-                    editActivity.setAllSelectButton(false)
-                }
-            }
-        }, true)
-
-        folderResultLauncher = registerForActivityResult(
-            ActivityResultContracts.StartActivityForResult()) { result ->
+    private val folderResultLauncher = registerForActivityResult(
+        ActivityResultContracts.StartActivityForResult()) { result ->
             if(result.resultCode == AppCompatActivity.RESULT_OK) {
                 val movePath = result.data?.getStringExtra("path")
 
@@ -97,11 +48,7 @@ class EditLinkyFragment : Fragment() {
                     builder.show()
                 }
                 else {
-                    val app = editActivity.application as MyApplication
-
                     thread {
-                        Log.d("test", moveFolders.toString())
-                        Log.d("test", movePath!!)
                         val responseCode = app.moveFolder(moveFolders, movePath!!)
 
                         editActivity.runOnUiThread {
@@ -112,7 +59,6 @@ class EditLinkyFragment : Fragment() {
                                     Toast.LENGTH_SHORT
                                 )
                                 toast.show()
-                                update()
                             } else {
                                 val builder = AlertDialog.Builder(editActivity)
                                 var positiveButtonFunc: DialogInterface.OnClickListener? = null
@@ -121,27 +67,9 @@ class EditLinkyFragment : Fragment() {
                                 when (responseCode) {
                                     400 -> {
                                         message = "폴더 이동에 실패하였습니다."
-                                        positiveButtonFunc =
-                                            object : DialogInterface.OnClickListener {
-                                                override fun onClick(
-                                                    dialog: DialogInterface?,
-                                                    which: Int
-                                                ) {
-                                                    update()
-                                                }
-                                            }
                                     }
                                     404 -> {
                                         message = "존재하지 않는 폴더가 있습니다."
-                                        positiveButtonFunc =
-                                            object : DialogInterface.OnClickListener {
-                                                override fun onClick(
-                                                    dialog: DialogInterface?,
-                                                    which: Int
-                                                ) {
-                                                    update()
-                                                }
-                                            }
                                     }
                                     401 -> {
                                         message = "사용자 인증 오류로 인해 자동 로그아웃 됩니다."
@@ -158,15 +86,6 @@ class EditLinkyFragment : Fragment() {
                                     }
                                     else -> {
                                         message = "폴더 이동에 실패하였습니다."
-                                        positiveButtonFunc =
-                                            object : DialogInterface.OnClickListener {
-                                                override fun onClick(
-                                                    dialog: DialogInterface?,
-                                                    which: Int
-                                                ) {
-                                                    update()
-                                                }
-                                            }
                                     }
                                 }
 
@@ -184,62 +103,108 @@ class EditLinkyFragment : Fragment() {
             }
         }
 
-        with(binding) {
-            folderRecycler.adapter = folderAdapter
-
-            folderRecycler.addItemDecoration(object : RecyclerView.ItemDecoration() {
-                override fun getItemOffsets(
-                    outRect: Rect,
-                    view: View,
-                    parent: RecyclerView,
-                    state: RecyclerView.State
-                ) {
-                    val pos = parent.getChildAdapterPosition(view)
-                    val size = parent.size
-                    val rows = ceil((size / 3).toDouble())
-
-                    if(pos > (rows - 1) * 3) {
-                        outRect.top = 20
-                        outRect.bottom = 40
-                    }
-                    else {
-                        outRect.top = 20
-                        outRect.bottom = 20
-                    }
-                }
-            })
-        }
+    override fun onAttach(context: Context) {
+        super.onAttach(context)
+        editActivity = context as EditActivity
+        app = editActivity.application as MyApplication
     }
 
-    private fun setFolders(jsonStr:String) {
-        folders.clear()
-        isSelected.clear()
-        totalSelected = 0
-        val jsonObj = JSONObject(jsonStr)
-        val foldersArr = jsonObj.getJSONArray("folderInfos")
-        for (idx in 0 until foldersArr.length()) {
-            val folderObj = foldersArr.getJSONObject(idx)
-            val folderName = folderObj.getString("folderName")
-
-            folders.add(folderName)
-            isSelected.add(false)
-        }
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        path = arguments?.getString("path")!!
     }
 
-    private fun update() {
-        val app = editActivity.application as MyApplication
+    override fun onCreateView(
+        inflater: LayoutInflater, container: ViewGroup?,
+        savedInstanceState: Bundle?
+    ): View? {
+        return inflater.inflate(R.layout.fragment_edit_linky, container, false)
+    }
+
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+        binding = FragmentEditLinkyBinding.bind(view)
 
         thread {
             // json 파싱
             val jsonStr = app.readFolder(path)
 
             editActivity.runOnUiThread {
+                if(jsonStr != "") {
+                    setFolders(jsonStr!!)
+                }
+                else {
+                    folders.clear()
+                    totalSelected = 0
+                }
+
+                folderAdapter = FolderAdapter(folders, object : FolderAdapter.OnItemClickListener {
+                    override fun onItemClick(pos:Int) {
+                        folders[pos].switchIsSelected()
+                        totalSelected = if(folders[pos].getIsSelected()) { totalSelected + 1 } else { totalSelected - 1 }
+                        folderAdapter.notifyItemChanged(pos)
+
+                        if(totalSelected == folders.size) {
+                            editActivity.setAllSelectButton(true)
+                        }
+                        else {
+                            editActivity.setAllSelectButton(false)
+                        }
+                    }
+                }, true)
+
+                with(binding) {
+                    folderRecycler.adapter = folderAdapter
+
+                    folderRecycler.addItemDecoration(object : RecyclerView.ItemDecoration() {
+                        override fun getItemOffsets(
+                            outRect: Rect,
+                            view: View,
+                            parent: RecyclerView,
+                            state: RecyclerView.State
+                        ) {
+                            val pos = parent.getChildAdapterPosition(view)
+                            val size = parent.size
+                            val rows = ceil((size / 3).toDouble())
+
+                            if(pos > (rows - 1) * 3) {
+                                outRect.top = 20
+                                outRect.bottom = 40
+                            }
+                            else {
+                                outRect.top = 20
+                                outRect.bottom = 20
+                            }
+                        }
+                    })
+                }
+            }
+        }
+    }
+
+    private fun setFolders(jsonStr:String) {
+        val jsonObj = JSONObject(jsonStr)
+        val foldersArr = jsonObj.getJSONArray("folderInfos")
+        for (idx in 0 until foldersArr.length()) {
+            val folderObj = foldersArr.getJSONObject(idx)
+            val folderName = folderObj.getString("folderName")
+
+            val folder = Folder(folderName, false)
+            folders.add(folder)
+        }
+    }
+
+    private fun update() {
+        thread {
+            // json 파싱
+            val jsonStr = app.readFolder(path)
+
+            editActivity.runOnUiThread {
+                folders.clear()
+                totalSelected = 0
+
                 if (jsonStr != "") {
                     setFolders(jsonStr!!)
-                } else {
-                    folders.clear()
-                    isSelected.clear()
-                    totalSelected = 0
                 }
 
                 folderAdapter.notifyDataSetChanged()
@@ -249,8 +214,8 @@ class EditLinkyFragment : Fragment() {
 
     fun selectAll() {
         if(totalSelected == folders.size) {
-            for (pos in 0 until isSelected.size) {
-                isSelected[pos] = false
+            for (pos in 0 until folders.size) {
+                folders[pos].setIsSelected(false)
                 totalSelected--
                 folderAdapter.notifyItemChanged(pos)
             }
@@ -258,9 +223,9 @@ class EditLinkyFragment : Fragment() {
             editActivity.setAllSelectButton(false)
         }
         else {
-            for (pos in 0 until isSelected.size) {
-                if (!isSelected[pos]) {
-                    isSelected[pos] = true
+            for (pos in 0 until folders.size) {
+                if (!folders[pos].getIsSelected()) {
+                    folders[pos].setIsSelected(true)
                     totalSelected++
                     folderAdapter.notifyItemChanged(pos)
                 }
@@ -273,9 +238,9 @@ class EditLinkyFragment : Fragment() {
     private fun getMoveFolders() {
         moveFolders.clear()
 
-        for(pos in 0 until isSelected.size) {
-            if(isSelected[pos]) {
-                moveFolders.add(folders[pos])
+        for(pos in 0 until folders.size) {
+            if(folders[pos].getIsSelected()) {
+                moveFolders.add(folders[pos].getFolderName())
             }
         }
     }
@@ -315,15 +280,14 @@ class EditLinkyFragment : Fragment() {
             builder.show()
         }
         else {
-            val app = editActivity.application as MyApplication
             var completeDeletion = true
             var positiveButtonFunc: DialogInterface.OnClickListener? = null
             var message = ""
 
             thread {
-                for (pos in 0 until isSelected.size) {
-                    if (isSelected[pos]) {
-                        val responseCode = app.deleteFolder("${folders[pos]}/")
+                for (pos in 0 until folders.size) {
+                    if (folders[pos].getIsSelected()) {
+                        val responseCode = app.deleteFolder("${folders[pos].getFolderName()}/")
 
                         if (responseCode != 200) {
                             when (responseCode) {

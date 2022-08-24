@@ -43,4 +43,12 @@
         app:layout_constraintLeft_toLeftOf="@id/linky_image"
         app:layout_constraintRight_toRightOf="@id/linky_image"
         app:layout_constraintTop_toBottomOf="@id/linky_title" />
+
+    <ImageView
+        android:id="@+id/selectLink"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintRight_toRightOf="parent"
+        app:srcCompat="@drawable/select" />
 </androidx.constraintlayout.widget.ConstraintLayout>

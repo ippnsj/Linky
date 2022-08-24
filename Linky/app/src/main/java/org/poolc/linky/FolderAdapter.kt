@@ -7,7 +7,7 @@ import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
 import org.poolc.linky.databinding.FolderItemBinding
 
-class FolderAdapter(private val folders:ArrayList<String>, private val isSelected:ArrayList<Boolean>?, private val listener: FolderAdapter.OnItemClickListener, private val isEditMode:Boolean) : RecyclerView.Adapter<FolderAdapter.ViewHolder>() {
+class FolderAdapter(private val folders:ArrayList<Folder>, private val listener: FolderAdapter.OnItemClickListener, private val isEditMode:Boolean) : RecyclerView.Adapter<FolderAdapter.ViewHolder>() {
 
     public interface OnItemClickListener {
         fun onItemClick(pos:Int)
@@ -29,7 +29,7 @@ class FolderAdapter(private val folders:ArrayList<String>, private val isSelecte
     inner class ViewHolder(val binding : FolderItemBinding) : RecyclerView.ViewHolder(binding.root) {
         fun bind(pos:Int) {
             with(binding) {
-                folderName.text = folders[pos]
+                folderName.text = folders[pos].getFolderName()
                 folderContainer.setOnLongClickListener {
                     folderName.isSelected = false
                     folderName.isSelected = true
@@ -41,7 +41,7 @@ class FolderAdapter(private val folders:ArrayList<String>, private val isSelecte
 
                 if(isEditMode) {
                     select.visibility = View.VISIBLE
-                    select.isSelected = isSelected?.get(pos) ?: false
+                    select.isSelected = folders[pos].getIsSelected()
                 }
                 else {
                     select.visibility = View.INVISIBLE

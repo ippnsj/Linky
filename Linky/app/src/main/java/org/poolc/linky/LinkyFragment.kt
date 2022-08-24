@@ -25,7 +25,7 @@ import kotlin.math.ceil
 
 class LinkyFragment : Fragment() {
     private lateinit var binding : FragmentLinkyBinding
-    private val folders = ArrayList<String>()
+    private val folders = ArrayList<Folder>()
     private lateinit var folderAdapter: FolderAdapter
     private lateinit var path : String
     private var isFabOpen = false
@@ -66,9 +66,9 @@ class LinkyFragment : Fragment() {
 
                 isFabOpen = false
 
-                folderAdapter = FolderAdapter(folders, null, object : FolderAdapter.OnItemClickListener {
+                folderAdapter = FolderAdapter(folders, object : FolderAdapter.OnItemClickListener {
                     override fun onItemClick(pos:Int) {
-                        val folderName = folders[pos]
+                        val folderName = folders[pos].getFolderName()
                         val newPath = "${path}${folderName}/"
                         mainActivity.createFragment(newPath, folderName)
                     }
@@ -181,7 +181,8 @@ class LinkyFragment : Fragment() {
             val folderObj = foldersArr.getJSONObject(idx)
             val folderName = folderObj.getString("folderName")
 
-            folders.add(folderName)
+            val folder = Folder(folderName, false)
+            folders.add(folder)
         }
     }
 

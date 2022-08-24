@@ -5,6 +5,7 @@ import android.content.Context
 import android.content.DialogInterface
 import android.content.Intent
 import android.graphics.Rect
+import android.net.Uri
 import android.os.Bundle
 import android.util.Log
 import android.view.Gravity
@@ -27,8 +28,8 @@ import kotlin.math.ceil
 
 class LinkySubFragment : Fragment() {
     private lateinit var binding : FragmentLinkySubBinding
-    private val folders = ArrayList<String>()
-    private val links = ArrayList<HashMap<String, Any>>()
+    private val folders = ArrayList<Folder>()
+    private val links = ArrayList<Link>()
     private lateinit var folderSubAdapter: FolderSubAdapter
     private lateinit var linkySubAdapter: LinkyAdapter
     private lateinit var path : String
@@ -75,13 +76,20 @@ class LinkySubFragment : Fragment() {
                 isFabOpen = false
 
                 folderSubAdapter = FolderSubAdapter(folders, object : FolderSubAdapter.OnItemClickListener {
-                    override fun onItemClick(folderName: String) {
-                        val newPath = "${path}${folderName}/"
-                        mainActivity.createFragment(newPath, folderName)
+                    override fun onItemClick(pos:Int) {
+                        val newFolderName = folders[pos].getFolderName()
+                        val newPath = "${path}${newFolderName}/"
+                        mainActivity.createFragment(newPath, newFolderName)
                     }
-                })
+                }, false)
 
-                linkySubAdapter = LinkyAdapter(links)
+                linkySubAdapter = LinkyAdapter(links, object : LinkyAdapter.OnItemClickListener {
+                    override fun onItemClick(pos: Int) {
+                        val intent = Intent(Intent.ACTION_VIEW, Uri.parse(links[pos].getUrl()))
+                        startActivity(intent)
+                    }
+
+                }, false)
 
                 with(binding) {
                     folderSubRecycler.adapter = folderSubAdapter
@@ -260,7 +268,8 @@ class LinkySubFragment : Fragment() {
             val folderObj = foldersArr.getJSONObject(idx)
             val folderName = folderObj.getString("folderName")
 
-            folders.add(folderName)
+            val folder = Folder(folderName, false)
+            folders.add(folder)
         }
     }
 
@@ -270,16 +279,13 @@ class LinkySubFragment : Fragment() {
         val linksArr = jsonObj.getJSONArray("linkInfos")
         for (idx in 0 until linksArr.length()) {
             val linkObj = linksArr.getJSONObject(idx)
+            val id = linkObj.getString("id")
             val keywordsArr = linkObj.getJSONArray("keywords")
             val title = linkObj.getString("title")
             val imgUrl = linkObj.getString("imgUrl")
             val url = linkObj.getString("url")
 
-            val link = HashMap<String, Any>()
-            link.put("keywords", keywordsArr)
-            link.put("title", title)
-            link.put("imgUrl", imgUrl)
-            link.put("url", url)
+            val link = Link(id, keywordsArr, title, imgUrl, url, false)
             links.add(link)
         }
     }
