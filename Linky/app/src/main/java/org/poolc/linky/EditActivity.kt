@@ -40,27 +40,36 @@ class EditActivity : AppCompatActivity() {
             bottomNavigation.setOnItemSelectedListener { item ->
                 when(item.itemId) {
                     R.id.move -> {
-                        editLinkyFragment.move()
-                    }
-                    R.id.delete -> {
-                        var message = ""
                         if(path == "") {
-                            message = "선택된 폴더를 모두 삭제하시겠습니까?"
+                            editLinkyFragment.move()
                         }
                         else {
-                            message = "선택된 폴더 및 링크를 모두 삭제하시겠습니까?"
+
                         }
+                    }
+                    R.id.delete -> {
+                        if (path == "") {
+                            var message = ""
+                            if (path == "") {
+                                message = "선택된 폴더를 모두 삭제하시겠습니까?"
+                            } else {
+                                message = "선택된 폴더 및 링크를 모두 삭제하시겠습니까?"
+                            }
 
-                        val builder = AlertDialog.Builder(this@EditActivity)
-                        builder.setMessage(message)
+                            val builder = AlertDialog.Builder(this@EditActivity)
+                            builder.setMessage(message)
 
-                        builder.setPositiveButton("삭제") { dialogInterface: DialogInterface, i: Int ->
-                            editLinkyFragment.delete()
+                            builder.setPositiveButton("삭제") { dialogInterface: DialogInterface, i: Int ->
+                                editLinkyFragment.delete()
+                            }
+
+                            builder.setNegativeButton("취소", null)
+
+                            builder.show()
                         }
+                        else {
 
-                        builder.setNegativeButton("취소", null)
-
-                        builder.show()
+                        }
                     }
                 }
                 true

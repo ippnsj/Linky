@@ -51,9 +51,11 @@ class RegisterActivity : AppCompatActivity() {
             doneButton.setOnClickListener {
                 val email = emailTextInput.text.toString()
                 val password = passwordTextInput.text.toString()
-                val nickname = ""
-                val profilePicture = ""
-                register(email, password, nickname, profilePicture)
+
+                val intent = Intent(this@RegisterActivity, SetProfileActivity::class.java)
+                intent.putExtra("email", email)
+                intent.putExtra("password", password)
+                startActivity(intent)
             }
         }
     }
@@ -66,47 +68,6 @@ class RegisterActivity : AppCompatActivity() {
             toast.show()
         }else {
             binding.emailTextInput.error = "이메일 형식이 올바르지 않습니다."
-        }
-    }
-
-    private fun register(email:String, password:String, nickname:String, imageUrl:String) {
-        val url = URL("http://${MyApplication.ip}:${MyApplication.port}/member")
-        var conn : HttpURLConnection? = null
-
-        thread {
-            try {
-                conn = url.openConnection() as HttpURLConnection
-                conn!!.requestMethod = "POST"
-                conn!!.setRequestProperty("Content-Type", "application/json")
-                conn!!.setRequestProperty("Accept", "application/json")
-
-                conn!!.doOutput = true
-                conn!!.doInput = true
-
-                val body = JSONObject()
-                body.put("email", email)
-                body.put("password", password)
-                body.put("nickname", nickname)
-                body.put("imageUrl", imageUrl)
-
-                val os = conn!!.outputStream
-                os.write(body.toString().toByteArray())
-                os.flush()
-
-                if(conn!!.responseCode == 200) {
-                    val intent = Intent(this, LoginRegisterActivity::class.java)
-                    intent.putExtra("result", "success register")
-                    intent.flags = Intent.FLAG_ACTIVITY_CLEAR_TOP
-                    startActivity(intent)
-                }
-            }
-            catch (e:MalformedURLException) {
-                Log.d("test", "올바르지 않은 URL 주소입니다.")
-            } catch (e:IOException) {
-                Log.d("test", "connection 오류")
-            }finally {
-                conn?.disconnect()
-            }
         }
     }
 }

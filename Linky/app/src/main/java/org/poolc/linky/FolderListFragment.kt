@@ -104,7 +104,7 @@ class FolderListFragment : Fragment() {
         val foldersArr = jsonObj.getJSONArray("folderInfos")
         for (idx in 0 until foldersArr.length()) {
             val folderObj = foldersArr.getJSONObject(idx)
-            val folderName = folderObj.getString("folderName")
+            val folderName = folderObj.getString("name")
 
             if(notAllowedFolders == null || !notAllowedFolders.contains(folderName)) {
                 folders.add(folderName)

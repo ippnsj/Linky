@@ -34,72 +34,63 @@ class EditLinkyFragment : Fragment() {
     private val folderResultLauncher = registerForActivityResult(
         ActivityResultContracts.StartActivityForResult()) { result ->
             if(result.resultCode == AppCompatActivity.RESULT_OK) {
-                val movePath = result.data?.getStringExtra("path")
+                val responseCode = result.data?.getIntExtra("responseCode", -1)
 
-                if(path == movePath) {
+                if (responseCode == 200) {
+                    val toast = Toast.makeText(
+                        editActivity,
+                        "이동이 완료되었습니다~!",
+                        Toast.LENGTH_SHORT
+                    )
+                    toast.show()
+                } else {
                     val builder = AlertDialog.Builder(editActivity)
+                    var positiveButtonFunc: DialogInterface.OnClickListener? = null
+                    var message = ""
+
+                    when (responseCode) {
+                        400 -> {
+                            message = "폴더 이동에 실패하였습니다."
+                        }
+                        404 -> {
+                            message = "존재하지 않는 폴더가 있습니다."
+                        }
+                        401 -> {
+                            message = "사용자 인증 오류로 인해 자동 로그아웃 됩니다."
+                            positiveButtonFunc =
+                                object : DialogInterface.OnClickListener {
+                                    override fun onClick(
+                                        dialog: DialogInterface?,
+                                        which: Int
+                                    ) {
+                                        editActivity.finishAffinity()
+                                        System.exit(0)
+                                    }
+                                }
+                        }
+                        else -> {
+                            message = "폴더 이동에 실패하였습니다."
+                        }
+                    }
 
                     builder.setIcon(R.drawable.ic_baseline_warning_8)
                     builder.setTitle("이동 실패")
-                    builder.setMessage("이동하고자 하는 경로와 현재 경로가 같습니다.")
+                    builder.setMessage(message)
 
-                    builder.setPositiveButton("확인", null)
+                    builder.setPositiveButton("확인", positiveButtonFunc)
 
                     builder.show()
                 }
-                else {
-                    thread {
-                        val responseCode = app.moveFolder(selectedFolders, movePath!!)
+            } else if(result.resultCode == AppCompatActivity.RESULT_CANCELED) {
+                val builder = AlertDialog.Builder(editActivity)
 
-                        editActivity.runOnUiThread {
-                            if (responseCode == 200) {
-                                val toast = Toast.makeText(
-                                    editActivity,
-                                    "이동이 완료되었습니다~!",
-                                    Toast.LENGTH_SHORT
-                                )
-                                toast.show()
-                            } else {
-                                val builder = AlertDialog.Builder(editActivity)
-                                var positiveButtonFunc: DialogInterface.OnClickListener? = null
-                                var message = ""
+                builder.setIcon(R.drawable.ic_baseline_warning_8)
+                builder.setTitle("이동 실패")
+                builder.setMessage("이동하고자 하는 경로와 현재 경로가 같습니다.")
 
-                                when (responseCode) {
-                                    400 -> {
-                                        message = "폴더 이동에 실패하였습니다."
-                                    }
-                                    404 -> {
-                                        message = "존재하지 않는 폴더가 있습니다."
-                                    }
-                                    401 -> {
-                                        message = "사용자 인증 오류로 인해 자동 로그아웃 됩니다."
-                                        positiveButtonFunc =
-                                            object : DialogInterface.OnClickListener {
-                                                override fun onClick(
-                                                    dialog: DialogInterface?,
-                                                    which: Int
-                                                ) {
-                                                    editActivity.finishAffinity()
-                                                    System.exit(0)
-                                                }
-                                            }
-                                    }
-                                    else -> {
-                                        message = "폴더 이동에 실패하였습니다."
-                                    }
-                                }
+                builder.setPositiveButton("확인", null)
 
-                                builder.setIcon(R.drawable.ic_baseline_warning_8)
-                                builder.setTitle("이동 실패")
-                                builder.setMessage(message)
-
-                                builder.setPositiveButton("확인", positiveButtonFunc)
-
-                                builder.show()
-                            }
-                        }
-                    }
-                }
+                builder.show()
             }
         }
 
@@ -187,7 +178,7 @@ class EditLinkyFragment : Fragment() {
         val foldersArr = jsonObj.getJSONArray("folderInfos")
         for (idx in 0 until foldersArr.length()) {
             val folderObj = foldersArr.getJSONObject(idx)
-            val folderName = folderObj.getString("folderName")
+            val folderName = folderObj.getString("name")
 
             val folder = Folder(folderName, false)
             folders.add(folder)
@@ -263,6 +254,7 @@ class EditLinkyFragment : Fragment() {
             val intent = Intent(editActivity, SelectPathActivity::class.java)
             intent.putExtra("path", path)
             intent.putExtra("folders", selectedFolders)
+            intent.putExtra("purpose", "move")
             folderResultLauncher.launch(intent)
         }
     }

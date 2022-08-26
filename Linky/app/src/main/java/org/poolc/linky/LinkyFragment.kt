@@ -179,7 +179,7 @@ class LinkyFragment : Fragment() {
         val foldersArr = jsonObj.getJSONArray("folderInfos")
         for (idx in 0 until foldersArr.length()) {
             val folderObj = foldersArr.getJSONObject(idx)
-            val folderName = folderObj.getString("folderName")
+            val folderName = folderObj.getString("name")
 
             val folder = Folder(folderName, false)
             folders.add(folder)

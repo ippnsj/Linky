@@ -85,9 +85,28 @@ class SelectPathActivity : AppCompatActivity() {
                 finish()
             }
             R.id.done -> {
-                intent.putExtra("path", path)
-                setResult(RESULT_OK, intent)
-                finish()
+                if(intent.getStringExtra("purpose") == "move") {
+                    val prevPath = intent.getStringExtra("path")
+                    if(prevPath == path) {
+                        setResult(RESULT_CANCELED, intent)
+                        finish()
+                    }
+                    else {
+                        thread {
+                            val selectedFolders = intent.getStringArrayListExtra("folders")
+                            val responseCode = app.moveFolder(selectedFolders!!, path)
+
+                            intent.putExtra("responseCode", responseCode)
+                            setResult(RESULT_OK, intent)
+                            finish()
+                        }
+                    }
+                }
+                else {
+                    intent.putExtra("path", path)
+                    setResult(RESULT_OK, intent)
+                    finish()
+                }
             }
         }
 

@@ -266,7 +266,7 @@ class LinkySubFragment : Fragment() {
         val foldersArr = jsonObj.getJSONArray("folderInfos")
         for (idx in 0 until foldersArr.length()) {
             val folderObj = foldersArr.getJSONObject(idx)
-            val folderName = folderObj.getString("folderName")
+            val folderName = folderObj.getString("name")
 
             val folder = Folder(folderName, false)
             folders.add(folder)
@@ -282,7 +282,7 @@ class LinkySubFragment : Fragment() {
             val id = linkObj.getString("id")
             val keywordsArr = linkObj.getJSONArray("keywords")
             val title = linkObj.getString("title")
-            val imgUrl = linkObj.getString("imgUrl")
+            val imgUrl = linkObj.getString("imageUrl")
             val url = linkObj.getString("url")
 
             val link = Link(id, keywordsArr, title, imgUrl, url, false)
