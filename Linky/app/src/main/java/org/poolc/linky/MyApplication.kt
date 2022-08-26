@@ -31,25 +31,25 @@ class MyApplication : Application() {
         super.onCreate()
     }
 
-    fun createFolder(folderName:String, path:String) : Int {
-        val url = URL("http://$ip:$port/folder/create")
+    fun createFolder(name:String, path:String) : Int {
+        val url = URL("http://$ip:$port/folder")
         var conn : HttpURLConnection? = null
         var responseCode = -1
 
         try {
             conn = url.openConnection() as HttpURLConnection
             conn!!.requestMethod = "POST"
-            conn!!.connectTimeout = 10000;
-            conn!!.readTimeout = 100000;
+            conn!!.connectTimeout = 10000
+            conn!!.readTimeout = 100000
             conn!!.setRequestProperty("Content-Type", "application/json")
             conn!!.setRequestProperty("Accept", "application/json")
 
             conn!!.doOutput = true
 
             val body = JSONObject()
-            body.put("userEmail", sharedPref!!.getString("userEmail", ""))
+            body.put("email", sharedPref!!.getString("email", ""))
             body.put("path", path)
-            body.put("folderName", folderName)
+            body.put("name", name)
 
             val os = conn!!.outputStream
             os.write(body.toString().toByteArray())
@@ -67,16 +67,16 @@ class MyApplication : Application() {
         return responseCode
     }
 
-    fun createLink(public:Boolean, keywords:ArrayList<String>, path:String, linkTitle:String, linkImage:String, linkUrl:String) : Int {
-        val url = URL("http://$ip:$port/link/create")
+    fun createLink(public:Boolean, keywords:ArrayList<String>, path:String, name:String, imageUrl:String, linkUrl:String) : Int {
+        val url = URL("http://$ip:$port/link")
         var conn : HttpURLConnection? = null
         var responseCode = -1
 
         try {
             conn = url.openConnection() as HttpURLConnection
             conn!!.requestMethod = "POST"
-            conn!!.connectTimeout = 10000;
-            conn!!.readTimeout = 100000;
+            conn!!.connectTimeout = 10000
+            conn!!.readTimeout = 100000
             conn!!.setRequestProperty("Content-Type", "application/json")
             conn!!.setRequestProperty("Accept", "application/json")
 
@@ -85,13 +85,13 @@ class MyApplication : Application() {
             val keywordsJsonArr = JSONArray(keywords)
 
             val body = JSONObject()
-            body.put("userEmail", sharedPref!!.getString("userEmail", ""))
+            body.put("email", sharedPref!!.getString("email", ""))
             body.put("isPublic", public)
             body.put("keywords", keywordsJsonArr)
             body.put("path", path)
-            body.put("linkTitle", linkTitle)
-            body.put("linkImage", linkImage)
-            body.put("linkUrl", linkUrl)
+            body.put("name", name)
+            body.put("imageUrl", imageUrl)
+            body.put("url", linkUrl)
 
             val os = conn!!.outputStream
             os.write(body.toString().toByteArray())
@@ -109,29 +109,21 @@ class MyApplication : Application() {
         return responseCode
     }
 
-    fun readFolder(path:String) : String {
-        val url = URL("http://$ip:$port/folder/readFolder")
+    fun read(path:String, showLink:Boolean) : String {
+        val email = sharedPref!!.getString("email", "")
+        val paramsUrl = "email=$email&path=$path&showLink=$showLink"
+        val url = URL("http://$ip:$port/folder?$paramsUrl")
         var conn : HttpURLConnection? = null
         var response : String = ""
 
         try {
             conn = url.openConnection() as HttpURLConnection
-            conn!!.requestMethod = "POST"
-            conn!!.connectTimeout = 10000;
-            conn!!.readTimeout = 100000;
-            conn!!.setRequestProperty("Content-Type", "application/json")
+            conn!!.requestMethod = "GET"
+            conn!!.connectTimeout = 10000
+            conn!!.readTimeout = 100000
             conn!!.setRequestProperty("Accept", "application/json")
 
-            conn!!.doOutput = true
             conn!!.doInput = true
-
-            val body = JSONObject()
-            body.put("userEmail", sharedPref!!.getString("userEmail", ""))
-            body.put("path", path)
-
-            val os = conn!!.outputStream
-            os.write(body.toString().toByteArray())
-            os.flush()
 
             if(conn!!.responseCode == 200) {
                 response = conn!!.inputStream.reader().readText()
@@ -139,59 +131,11 @@ class MyApplication : Application() {
             else if(conn!!.responseCode == 400) {
                 Log.d("test", "Bad request")
             }
-            else if(conn!!.responseCode == 404) {
-                Log.d("test", "Not Found")
-            }
             else if(conn!!.responseCode == 401) {
                 Log.d("test", "Unauthorized")
             }
-        }
-        catch (e: MalformedURLException) {
-            Log.d("test", "올바르지 않은 URL 주소입니다.")
-        } catch (e: IOException) {
-            Log.d("test", "connection 오류")
-        }finally {
-            conn?.disconnect()
-        }
-
-        return response
-    }
-
-    fun read(path:String) : String {
-        val url = URL("http://$ip:$port/folder/read")
-        var conn : HttpURLConnection? = null
-        var response : String = ""
-
-        try {
-            conn = url.openConnection() as HttpURLConnection
-            conn!!.requestMethod = "POST"
-            conn!!.connectTimeout = 10000;
-            conn!!.readTimeout = 100000;
-            conn!!.setRequestProperty("Content-Type", "application/json")
-            conn!!.setRequestProperty("Accept", "application/json")
-
-            conn!!.doOutput = true
-            conn!!.doInput = true
-
-            val body = JSONObject()
-            body.put("userEmail", sharedPref.getString("userEmail", ""))
-            body.put("path", path)
-
-            val os = conn!!.outputStream
-            os.write(body.toString().toByteArray())
-            os.flush()
-
-            if(conn!!.responseCode == 200) {
-                response = conn!!.inputStream.reader().readText()
-            }
-            else if(conn!!.responseCode == 400) {
-                Log.d("test", "Bad request")
-            }
             else if(conn!!.responseCode == 404) {
                 Log.d("test", "Not Found")
-            }
-            else if(conn!!.responseCode == 401) {
-                Log.d("test", "Unauthorized")
             }
         }
         catch (e: MalformedURLException) {
@@ -206,15 +150,15 @@ class MyApplication : Application() {
     }
 
     fun moveFolder(originalPath:ArrayList<String>, modifiedPath:String) : Int {
-        val url = URL("http://$ip:$port/folder/move")
+        val url = URL("http://$ip:$port/folder/path")
         var conn : HttpURLConnection? = null
         var responseCode = -1
 
         try {
             conn = url.openConnection() as HttpURLConnection
-            conn!!.requestMethod = "POST"
-            conn!!.connectTimeout = 10000;
-            conn!!.readTimeout = 100000;
+            conn!!.requestMethod = "PUT"
+            conn!!.connectTimeout = 10000
+            conn!!.readTimeout = 100000
             conn!!.setRequestProperty("Content-Type", "application/json")
             conn!!.setRequestProperty("Accept", "application/json")
 
@@ -223,7 +167,7 @@ class MyApplication : Application() {
             val originalPathJsonArr = JSONArray(originalPath)
 
             val body = JSONObject()
-            body.put("userEmail", sharedPref!!.getString("userEmail", ""))
+            body.put("email", sharedPref!!.getString("email", ""))
             body.put("originalPaths", originalPathJsonArr)
             body.put("modifiedPath", modifiedPath)
 
@@ -243,24 +187,26 @@ class MyApplication : Application() {
         return responseCode
     }
 
-    fun deleteFolder(path:String) : Int {
-        val url = URL("http://$ip:$port/folder/delete")
+    fun deleteFolder(selectedFolders:ArrayList<String>) : Int {
+        val url = URL("http://$ip:$port/folder")
         var conn : HttpURLConnection? = null
         var responseCode = -1
 
         try {
             conn = url.openConnection() as HttpURLConnection
-            conn!!.requestMethod = "POST"
-            conn!!.connectTimeout = 10000;
-            conn!!.readTimeout = 100000;
+            conn!!.requestMethod = "DELETE"
+            conn!!.connectTimeout = 10000
+            conn!!.readTimeout = 100000
             conn!!.setRequestProperty("Content-Type", "application/json")
             conn!!.setRequestProperty("Accept", "application/json")
 
             conn!!.doOutput = true
 
+            val paths = JSONArray(selectedFolders)
+
             val body = JSONObject()
-            body.put("userEmail", sharedPref!!.getString("userEmail", ""))
-            body.put("path", path)
+            body.put("email", sharedPref!!.getString("email", ""))
+            body.put("paths", paths)
 
             val os = conn!!.outputStream
             os.write(body.toString().toByteArray())

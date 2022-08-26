@@ -54,7 +54,7 @@ class LinkyFragment : Fragment() {
 
         // json 파싱
         thread {
-            val jsonStr = app.readFolder(path)
+            val jsonStr = app.read(path, false)
 
             mainActivity.runOnUiThread {
                 if (jsonStr != "") {
@@ -193,7 +193,7 @@ class LinkyFragment : Fragment() {
             if(responseCode == 200) {
                 var jsonStr = ""
                 thread {
-                    jsonStr = app.readFolder(path)
+                    jsonStr = app.read(path, false)
 
                     if (jsonStr != "") {
                         mainActivity.runOnUiThread {

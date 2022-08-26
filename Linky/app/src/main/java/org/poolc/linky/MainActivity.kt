@@ -106,7 +106,7 @@ class MainActivity : AppCompatActivity() {
                 var jsonStr = ""
                 if (path == "") {
                     thread {
-                        jsonStr = app.readFolder(path)
+                        jsonStr = app.read(path, false)
 
                         runOnUiThread {
                             linkyFragment.update(jsonStr)
@@ -115,7 +115,7 @@ class MainActivity : AppCompatActivity() {
                 } else {
                     val fragment = fm.findFragmentByTag(path) as LinkySubFragment
                     thread {
-                        jsonStr = app.read(path)
+                        jsonStr = app.read(path, true)
 
                         runOnUiThread {
                             fragment.update(jsonStr)
@@ -165,20 +165,14 @@ class MainActivity : AppCompatActivity() {
     }
 
     fun createFragment(path:String, folderName:String) {
-        // folder json 파싱
-        var jsonStr = ""
-        thread {
-            jsonStr = app.read(path)
+        val nextFragment = LinkySubFragment()
+        val bundle = Bundle()
+        bundle.putString("path", path)
+        bundle.putString("folderName", folderName)
 
-            val nextFragment = LinkySubFragment()
-            val bundle = Bundle()
-            bundle.putString("path", path)
-            bundle.putString("folderName", folderName)
-            bundle.putString("jsonStr", jsonStr)
-            this.path = path
-            this.folderName = folderName
-            now = "sub"
-            changeFragment(nextFragment, bundle, true)
-        }
+        this.path = path
+        this.folderName = folderName
+        now = "sub"
+        changeFragment(nextFragment, bundle, true)
     }
 }

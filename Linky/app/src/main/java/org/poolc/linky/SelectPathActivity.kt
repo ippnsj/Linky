@@ -46,7 +46,7 @@ class SelectPathActivity : AppCompatActivity() {
         // json 가져오기
         var jsonStr = ""
         thread {
-            jsonStr = app.readFolder(newPath)
+            jsonStr = app.read(newPath, false)
 
             val fragment = FolderListFragment()
             val bundle = Bundle()

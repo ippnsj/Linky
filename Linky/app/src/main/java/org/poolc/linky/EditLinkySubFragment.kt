@@ -54,7 +54,7 @@ class EditLinkySubFragment : Fragment() {
         binding = FragmentEditLinkySubBinding.bind(view)
 
         thread {
-            val jsonStr = app.read(path)
+            val jsonStr = app.read(path, true)
 
             editActivity.runOnUiThread {
                 if (jsonStr != "") {

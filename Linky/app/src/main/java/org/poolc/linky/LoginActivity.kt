@@ -120,7 +120,7 @@ class LoginActivity : AppCompatActivity() {
         imm.hideSoftInputFromWindow(currentFocus?.windowToken, InputMethodManager.HIDE_NOT_ALWAYS)
 
         if(verifyEmailAddress(binding.emailTextInput.text.toString()) && verifyPassword(binding.passwordTextInput.text.toString())) {
-            val url = URL("http://${MyApplication.ip}:${MyApplication.port}/auth/login")
+            val url = URL("http://${MyApplication.ip}:${MyApplication.port}/login")
             var conn : HttpURLConnection? = null
 
             thread {
@@ -136,8 +136,8 @@ class LoginActivity : AppCompatActivity() {
                     conn!!.doInput = true
 
                     val body = JSONObject()
-                    body.put("userEmail", binding.emailTextInput.text.toString())
-                    body.put("userPassword", binding.passwordTextInput.text.toString())
+                    body.put("email", binding.emailTextInput.text.toString())
+                    body.put("password", binding.passwordTextInput.text.toString())
 
                     val os = conn!!.outputStream
                     os.write(body.toString().toByteArray())
@@ -148,7 +148,7 @@ class LoginActivity : AppCompatActivity() {
                         val responseJson = JSONObject(response)
 
                         val editSharedPref = MyApplication.sharedPref.edit()
-                        editSharedPref.putString("userEmail", responseJson.getString("userEmail")).apply()
+                        editSharedPref.putString("email", responseJson.getString("email")).apply()
 
                         val intent = Intent(this, MainActivity::class.java)
                         intent.putExtra("from", "login")
@@ -163,8 +163,10 @@ class LoginActivity : AppCompatActivity() {
                         }
                     }
                     else if(conn!!.responseCode == 404) {
-                        // TODO
-                        Log.d("test", "존재하지 않는 유저입니다.")
+                        val message = "존재하지 않는 유저입니다."
+                        runOnUiThread {
+                            showFailedLoginDialog(message)
+                        }
                     }
                 }
                 catch (e: MalformedURLException) {

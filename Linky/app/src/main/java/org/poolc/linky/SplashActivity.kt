@@ -19,7 +19,7 @@ class SplashActivity : AppCompatActivity() {
         setContentView(binding.root)
 
         Handler(Looper.getMainLooper()).postDelayed({
-            val userEmail = MyApplication.sharedPref.getString("userEmail", "")
+            val userEmail = MyApplication.sharedPref.getString("email", "")
             if(userEmail == "") {
                 var intent = Intent(this, LoginRegisterActivity::class.java)
                 startActivity(intent)

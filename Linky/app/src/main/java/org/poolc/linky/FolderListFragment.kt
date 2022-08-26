@@ -121,7 +121,7 @@ class FolderListFragment : Fragment() {
             if(responseCode == 200) {
                 var jsonStr = ""
                 thread {
-                    jsonStr = app.readFolder(path)
+                    jsonStr = app.read(path, false)
 
                     if (jsonStr != "") {
                         selectPathActivity.runOnUiThread {

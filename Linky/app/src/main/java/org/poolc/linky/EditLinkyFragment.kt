@@ -30,7 +30,7 @@ class EditLinkyFragment : Fragment() {
     private lateinit var folderAdapter: FolderAdapter
     private lateinit var path : String
     private lateinit var editActivity: EditActivity
-    private var moveFolders = ArrayList<String>()
+    private var selectedFolders = ArrayList<String>()
     private val folderResultLauncher = registerForActivityResult(
         ActivityResultContracts.StartActivityForResult()) { result ->
             if(result.resultCode == AppCompatActivity.RESULT_OK) {
@@ -49,7 +49,7 @@ class EditLinkyFragment : Fragment() {
                 }
                 else {
                     thread {
-                        val responseCode = app.moveFolder(moveFolders, movePath!!)
+                        val responseCode = app.moveFolder(selectedFolders, movePath!!)
 
                         editActivity.runOnUiThread {
                             if (responseCode == 200) {
@@ -127,7 +127,7 @@ class EditLinkyFragment : Fragment() {
 
         thread {
             // json 파싱
-            val jsonStr = app.readFolder(path)
+            val jsonStr = app.read(path, false)
 
             editActivity.runOnUiThread {
                 if(jsonStr != "") {
@@ -197,7 +197,7 @@ class EditLinkyFragment : Fragment() {
     private fun update() {
         thread {
             // json 파싱
-            val jsonStr = app.readFolder(path)
+            val jsonStr = app.read(path, false)
 
             editActivity.runOnUiThread {
                 folders.clear()
@@ -235,12 +235,12 @@ class EditLinkyFragment : Fragment() {
         }
     }
 
-    private fun getMoveFolders() {
-        moveFolders.clear()
+    private fun getSelectedFolders() {
+        selectedFolders.clear()
 
         for(pos in 0 until folders.size) {
             if(folders[pos].getIsSelected()) {
-                moveFolders.add(folders[pos].getFolderName())
+                selectedFolders.add(folders[pos].getFolderName())
             }
         }
     }
@@ -258,11 +258,11 @@ class EditLinkyFragment : Fragment() {
             builder.show()
         }
         else {
-            getMoveFolders()
+            getSelectedFolders()
 
             val intent = Intent(editActivity, SelectPathActivity::class.java)
             intent.putExtra("path", path)
-            intent.putExtra("folders", moveFolders)
+            intent.putExtra("folders", selectedFolders)
             folderResultLauncher.launch(intent)
         }
     }
@@ -285,51 +285,48 @@ class EditLinkyFragment : Fragment() {
             var message = ""
 
             thread {
-                for (pos in 0 until folders.size) {
-                    if (folders[pos].getIsSelected()) {
-                        val responseCode = app.deleteFolder("${folders[pos].getFolderName()}/")
+                getSelectedFolders()
 
-                        if (responseCode != 200) {
-                            when (responseCode) {
-                                400 -> {
-                                    message = "폴더 삭제에 실패하였습니다."
-                                    positiveButtonFunc = object : DialogInterface.OnClickListener {
-                                        override fun onClick(dialog: DialogInterface?, which: Int) {
-                                            update()
-                                        }
-                                    }
-                                }
-                                404 -> {
-                                    message = "존재하지 않는 폴더가 있습니다."
-                                    positiveButtonFunc = object : DialogInterface.OnClickListener {
-                                        override fun onClick(dialog: DialogInterface?, which: Int) {
-                                            update()
-                                        }
-                                    }
-                                }
-                                401 -> {
-                                    message = "사용자 인증 오류로 인해 자동 로그아웃 됩니다."
-                                    positiveButtonFunc = object : DialogInterface.OnClickListener {
-                                        override fun onClick(dialog: DialogInterface?, which: Int) {
-                                            editActivity.finishAffinity()
-                                            System.exit(0)
-                                        }
-                                    }
-                                }
-                                else -> {
-                                    message = "폴더 삭제에 실패하였습니다."
-                                    positiveButtonFunc = object : DialogInterface.OnClickListener {
-                                        override fun onClick(dialog: DialogInterface?, which: Int) {
-                                            update()
-                                        }
-                                    }
+                val responseCode = app.deleteFolder(selectedFolders)
+
+                if (responseCode != 200) {
+                    when (responseCode) {
+                        400 -> {
+                            message = "폴더 삭제에 실패하였습니다."
+                            positiveButtonFunc = object : DialogInterface.OnClickListener {
+                                override fun onClick(dialog: DialogInterface?, which: Int) {
+                                    update()
                                 }
                             }
-
-                            completeDeletion = false
-                            break
+                        }
+                        404 -> {
+                            message = "존재하지 않는 폴더가 있습니다."
+                            positiveButtonFunc = object : DialogInterface.OnClickListener {
+                                override fun onClick(dialog: DialogInterface?, which: Int) {
+                                    update()
+                                }
+                            }
+                        }
+                        401 -> {
+                            message = "사용자 인증 오류로 인해 자동 로그아웃 됩니다."
+                            positiveButtonFunc = object : DialogInterface.OnClickListener {
+                                override fun onClick(dialog: DialogInterface?, which: Int) {
+                                    editActivity.finishAffinity()
+                                    System.exit(0)
+                                }
+                            }
+                        }
+                        else -> {
+                            message = "폴더 삭제에 실패하였습니다."
+                            positiveButtonFunc = object : DialogInterface.OnClickListener {
+                                override fun onClick(dialog: DialogInterface?, which: Int) {
+                                    update()
+                                }
+                            }
                         }
                     }
+
+                    completeDeletion = false
                 }
 
                 editActivity.runOnUiThread {

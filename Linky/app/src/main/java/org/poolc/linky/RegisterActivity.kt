@@ -69,8 +69,8 @@ class RegisterActivity : AppCompatActivity() {
         }
     }
 
-    private fun register(email:String, password:String, nickname:String, profilePicture:String) {
-        val url = URL("http://${MyApplication.ip}:${MyApplication.port}/auth/signUp")
+    private fun register(email:String, password:String, nickname:String, imageUrl:String) {
+        val url = URL("http://${MyApplication.ip}:${MyApplication.port}/member")
         var conn : HttpURLConnection? = null
 
         thread {
@@ -84,10 +84,10 @@ class RegisterActivity : AppCompatActivity() {
                 conn!!.doInput = true
 
                 val body = JSONObject()
-                body.put("userEmail", email)
-                body.put("userPassword", password)
-                body.put("userNickname", nickname)
-                body.put("profilePicture", profilePicture)
+                body.put("email", email)
+                body.put("password", password)
+                body.put("nickname", nickname)
+                body.put("imageUrl", imageUrl)
 
                 val os = conn!!.outputStream
                 os.write(body.toString().toByteArray())
