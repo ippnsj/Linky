@@ -2,44 +2,57 @@ package org.poolc.linky
 
 import android.content.Context
 import android.os.Bundle
+import android.util.Log
 import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.activity.OnBackPressedCallback
+import org.json.JSONObject
 import org.poolc.linky.databinding.FragmentMoreBinding
+import kotlin.concurrent.thread
 
 class MoreFragment : Fragment() {
     private lateinit var binding : FragmentMoreBinding
     private lateinit var mainActivity : MainActivity
-    private lateinit var backCallback : OnBackPressedCallback
+    private lateinit var app : MyApplication
+
+    override fun onAttach(context: Context) {
+        super.onAttach(context)
+        mainActivity = context as MainActivity
+        app = mainActivity.application as MyApplication
+    }
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View? {
-        return inflater.inflate(R.layout.fragment_more, container, false)
+        val view = inflater.inflate(R.layout.fragment_more, container, false)
+        binding = FragmentMoreBinding.bind(view)
+
+        return view
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        binding = FragmentMoreBinding.bind(view)
+
+        with(binding) {
+            mainActivity.changeChildFragment(InformationFragment(), null, false)
+        }
     }
 
-    override fun onAttach(context: Context) {
-        super.onAttach(context)
-        mainActivity = context as MainActivity
+    override fun onHiddenChanged(hidden: Boolean) {
+        super.onHiddenChanged(hidden)
 
-        backCallback = object : OnBackPressedCallback(true) {
-            override fun handleOnBackPressed() {
-                mainActivity.finish()
+        if(!hidden) {
+            val fragment = childFragmentManager.findFragmentById(R.id.more_fragment_container)
+
+            if(fragment is InformationFragment) {
+                fragment.update()
+            }
+            else if(fragment is EditProfileFragment) {
+                fragment.update()
             }
         }
-        mainActivity.onBackPressedDispatcher?.addCallback(this, backCallback)
-    }
-
-    override fun onDetach() {
-        super.onDetach()
-        backCallback.remove()
     }
 }

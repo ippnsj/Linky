@@ -52,7 +52,7 @@ class AddLinkyActivity : AppCompatActivity() {
         binding = ActivityAddLinkyBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        if(MyApplication.sharedPref.getString("userEmail", "") == "") {
+        if(MyApplication.sharedPref.getString("email", "") == "") {
             val intent = Intent(this, LoginRegisterActivity::class.java)
             intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
             startActivity(intent)
@@ -541,7 +541,7 @@ class AddLinkyActivity : AppCompatActivity() {
                     intent.flags =
                         Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
                     startActivity(intent)
-                    finish()
+                    finishAndRemoveTask()
                 }
                 400 -> {
                     Log.d("test", "Bad request")

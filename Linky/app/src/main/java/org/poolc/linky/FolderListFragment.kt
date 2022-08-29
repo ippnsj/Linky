@@ -35,17 +35,13 @@ class FolderListFragment : Fragment() {
         // activity에 path값 넘김
         selectPathActivity.setCurrentPath(path)
 
+        val view = inflater.inflate(R.layout.fragment_folders, container, false)
+        binding = FragmentFoldersBinding.bind(view)
+
         val jsonStr = arguments?.getString("jsonStr")
         if (jsonStr != "") {
             setFolders(jsonStr!!)
         }
-
-        return inflater.inflate(R.layout.fragment_folders, container, false)
-    }
-
-    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-        super.onViewCreated(view, savedInstanceState)
-        binding = FragmentFoldersBinding.bind(view)
 
         folderListAdapter = FolderListAdapter(folders, object : FolderListAdapter.OnItemClickListener {
             override fun onItemClick(folderName: String) {
@@ -55,9 +51,18 @@ class FolderListFragment : Fragment() {
         })
 
         with(binding) {
+            folderListRecycler.adapter = folderListAdapter
+        }
+
+        return view
+    }
+
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+
+        with(binding) {
             currentPath.text = path
 
-            folderListRecycler.adapter = folderListAdapter
             folderListRecycler.addItemDecoration(DividerItemDecoration(activity, 1))
 
             addFolder.setOnClickListener {

@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".LinkyOutsideFolderFragment">
+
+    <com.google.android.material.textfield.TextInputLayout
+        android:id="@+id/searchbarLayout"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:paddingLeft="20dp"
+        android:paddingTop="20dp"
+        android:paddingRight="20dp"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintRight_toRightOf="parent"
+        app:layout_constraintTop_toTopOf="parent">
+
+        <com.google.android.material.textfield.TextInputEditText
+            android:id="@+id/searchbarTextInput"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@drawable/searchbar_background"
+            android:drawableStart="@drawable/searchbar"
+            android:drawablePadding="10dp"
+            android:paddingLeft="10dp"
+            android:paddingTop="8dp"
+            android:paddingRight="10dp"
+            android:paddingBottom="8dp"
+            android:singleLine="true" />
+    </com.google.android.material.textfield.TextInputLayout>
+
+    <Space
+        android:id="@+id/space1"
+        android:layout_width="0dp"
+        android:layout_height="15dp"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintRight_toRightOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/searchbarLayout" />
+
+    <TextView
+        android:id="@+id/edit"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginRight="20dp"
+        android:text="편집"
+        app:layout_constraintRight_toRightOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/space1" />
+
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/folderRecycler"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:paddingLeft="20dp"
+        android:paddingTop="10dp"
+        android:paddingRight="20dp"
+        app:layoutManager="androidx.recyclerview.widget.GridLayoutManager"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintRight_toRightOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/edit"
+        app:spanCount="3" >
+
+    </androidx.recyclerview.widget.RecyclerView>
+
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+        android:id="@+id/add_folder"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:clickable="true"
+        android:contentDescription="폴더추가"
+        android:src="@drawable/add_folder"
+        app:backgroundTint="@color/primary"
+        app:fabSize="mini"
+        app:layout_constraintBottom_toBottomOf="@id/add"
+        app:layout_constraintStart_toStartOf="@id/add"
+        app:layout_constraintEnd_toEndOf="@id/add"
+        app:layout_constraintTop_toTopOf="@id/add"/>
+
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+        android:id="@+id/add"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginRight="30dp"
+        android:layout_marginBottom="30dp"
+        android:clickable="true"
+        android:contentDescription="추가"
+        app:backgroundTint="@color/primary"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:srcCompat="@drawable/add" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>

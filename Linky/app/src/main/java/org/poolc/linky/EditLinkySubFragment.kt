@@ -46,46 +46,43 @@ class EditLinkySubFragment : Fragment() {
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View? {
-        return inflater.inflate(R.layout.fragment_edit_linky_sub, container, false)
+        val view = inflater.inflate(R.layout.fragment_edit_linky_sub, container, false)
+        binding = FragmentEditLinkySubBinding.bind(view)
+
+        folderSubAdapter = FolderSubAdapter(folders, object : FolderSubAdapter.OnItemClickListener {
+            override fun onItemClick(pos:Int) {
+                folders[pos].switchIsSelected()
+                totalSelectedFolder = if(folders[pos].getIsSelected()) { totalSelectedFolder + 1 } else { totalSelectedFolder - 1 }
+                folderSubAdapter.notifyItemChanged(pos)
+            }
+        }, true)
+
+        linkySubAdapter = LinkyAdapter(links, object : LinkyAdapter.OnItemClickListener {
+            override fun onItemClick(pos: Int) {
+                links[pos].switchIsSelected()
+                totalSelectedLink = if(links[pos].getIsSelected()) { totalSelectedLink + 1 } else { totalSelectedLink - 1 }
+                linkySubAdapter.notifyItemChanged(pos)
+            }
+        }, true)
+
+        with(binding) {
+            folderSubRecycler.adapter = folderSubAdapter
+            linkySubRecycler.adapter = linkySubAdapter
+        }
+
+        return view
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        binding = FragmentEditLinkySubBinding.bind(view)
 
         thread {
             val jsonStr = app.read(path, true)
 
             editActivity.runOnUiThread {
-                if (jsonStr != "") {
-                    setFolders(jsonStr!!)
-                    setLinks(jsonStr!!)
-                }
-                else {
-                    folders.clear()
-                    links.clear()
-                }
-
-                folderSubAdapter = FolderSubAdapter(folders, object : FolderSubAdapter.OnItemClickListener {
-                    override fun onItemClick(pos:Int) {
-                        folders[pos].switchIsSelected()
-                        totalSelectedFolder = if(folders[pos].getIsSelected()) { totalSelectedFolder + 1 } else { totalSelectedFolder - 1 }
-                        folderSubAdapter.notifyItemChanged(pos)
-                    }
-                }, true)
-
-                linkySubAdapter = LinkyAdapter(links, object : LinkyAdapter.OnItemClickListener {
-                    override fun onItemClick(pos: Int) {
-                        links[pos].switchIsSelected()
-                        totalSelectedLink = if(links[pos].getIsSelected()) { totalSelectedLink + 1 } else { totalSelectedLink - 1 }
-                        linkySubAdapter.notifyItemChanged(pos)
-                    }
-                }, true)
+                update(jsonStr)
 
                 with(binding) {
-                    folderSubRecycler.adapter = folderSubAdapter
-                    linkySubRecycler.adapter = linkySubAdapter
-
                     folderSubRecycler.addItemDecoration(object : RecyclerView.ItemDecoration() {
                         override fun getItemOffsets(
                             outRect: Rect,
@@ -155,7 +152,7 @@ class EditLinkySubFragment : Fragment() {
             val linkObj = linksArr.getJSONObject(idx)
             val id = linkObj.getString("id")
             val keywordsArr = linkObj.getJSONArray("keywords")
-            val title = linkObj.getString("title")
+            val title = linkObj.getString("name")
             val imgUrl = linkObj.getString("imageUrl")
             val url = linkObj.getString("url")
 

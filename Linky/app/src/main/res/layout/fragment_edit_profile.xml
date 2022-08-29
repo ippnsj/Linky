@@ -1,0 +1,142 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:paddingTop="50dp"
+    tools:context=".EditProfileFragment">
+
+    <de.hdodenhof.circleimageview.CircleImageView
+        android:id="@+id/edit_profile_image"
+        android:layout_width="150dp"
+        android:layout_height="150dp"
+        android:adjustViewBounds="false"
+        android:scaleType="centerCrop"
+        android:src="@drawable/profile"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintRight_toRightOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <TextView
+        android:id="@+id/change_profile_image"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="20dp"
+        android:text="프로필 사진 변경"
+        android:textSize="20sp"
+        android:textStyle="bold"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintRight_toRightOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/edit_profile_image" />
+
+    <View
+        android:id="@+id/divider1"
+        android:layout_width="0dp"
+        android:layout_height="2dp"
+        android:layout_marginTop="20dp"
+        android:background="#F5F5F5"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintRight_toRightOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/change_profile_image"
+        app:layout_constraintWidth_percent="0.8" />
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="20dp"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintRight_toRightOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/divider1"
+        app:layout_constraintWidth_percent="0.8">
+
+        <TextView
+            android:id="@+id/nickname_label"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginLeft="10dp"
+            android:layout_marginRight="20dp"
+            android:text="닉네임"
+            android:textSize="16sp"
+            app:layout_constraintLeft_toLeftOf="parent"
+            app:layout_constraintRight_toLeftOf="@id/nicknameLayout"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/nicknameLayout"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            app:counterEnabled="true"
+            app:counterMaxLength="10"
+            app:helperText="@string/helper_nickname"
+            app:layout_constraintBaseline_toBaselineOf="@id/nickname_label"
+            app:layout_constraintLeft_toRightOf="@id/nickname_label"
+            app:layout_constraintRight_toRightOf="parent">
+
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/nicknameTextInput"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:imeOptions="actionDone"
+                android:inputType="textPersonName"
+                android:maxLength="10" />
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <View
+            android:id="@+id/divider2"
+            android:layout_width="0dp"
+            android:layout_height="2dp"
+            android:layout_marginTop="10dp"
+            android:background="#F5F5F5"
+            app:layout_constraintLeft_toLeftOf="@id/nicknameLayout"
+            app:layout_constraintRight_toRightOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/nicknameLayout" />
+
+        <TextView
+            android:id="@+id/email_label"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginLeft="10dp"
+            android:layout_marginTop="20dp"
+            android:layout_marginRight="20dp"
+            android:text="이메일"
+            android:textSize="16sp"
+            app:layout_constraintLeft_toLeftOf="parent"
+            app:layout_constraintRight_toLeftOf="@id/email"
+            app:layout_constraintTop_toTopOf="@id/divider2" />
+
+        <TextView
+            android:id="@+id/email"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:maxLines="1"
+            android:scrollbarAlwaysDrawHorizontalTrack="true"
+            android:scrollbars="horizontal"
+            android:text="poolc.official@gmail.com poolc.official@gmail.com poolc.official@gmail.com"
+            app:layout_constraintBottom_toBottomOf="@id/email_label"
+            app:layout_constraintLeft_toRightOf="@id/email_label"
+            app:layout_constraintRight_toRightOf="parent"
+            app:layout_constraintTop_toTopOf="@id/email_label" />
+
+        <View
+            android:id="@+id/divider3"
+            android:layout_width="0dp"
+            android:layout_height="2dp"
+            android:layout_marginTop="20dp"
+            android:background="#F5F5F5"
+            app:layout_constraintLeft_toLeftOf="@id/email"
+            app:layout_constraintRight_toRightOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/email" />
+
+        <Button
+            android:id="@+id/save_profile"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="20dp"
+            android:text="저장"
+            app:layout_constraintRight_toRightOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/divider3"
+            style="@style/PrimaryButton" />
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+</androidx.constraintlayout.widget.ConstraintLayout>

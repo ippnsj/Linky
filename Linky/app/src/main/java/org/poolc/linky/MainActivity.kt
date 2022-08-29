@@ -6,31 +6,21 @@ import android.view.View
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.Fragment
-import androidx.fragment.app.FragmentManager
 import org.poolc.linky.databinding.ActivityMainBinding
-import kotlin.concurrent.thread
 
 class MainActivity : AppCompatActivity() {
-
     private lateinit var binding : ActivityMainBinding
     private var path = ""
     private var folderName = ""
-    private var now = ""
-    private lateinit var fm : FragmentManager
-    private val linkyFragment = LinkyFragment()
-    private val searchFragment = SearchFragment()
-    private val moreFragment = MoreFragment()
-    private var newb = true
-
-    private lateinit var app : MyApplication
+    private var linkyFragment : LinkyFragment? = null
+    private var searchFragment : SearchFragment? =null
+    private var moreFragment : MoreFragment? = null
+    private var parentFragment : Fragment? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
-
-        fm = supportFragmentManager
-        app = application as MyApplication
 
         with(binding) {
             // topbar 설정
@@ -39,44 +29,17 @@ class MainActivity : AppCompatActivity() {
             topbarTitle.text = "내 링키"
 
             // bottom navigatonbar 설정
-            var bundle : Bundle? = null
             bottomNavigation.itemIconTintList = null
             bottomNavigation.setOnItemSelectedListener { item ->
                 when(item.itemId) {
                     R.id.linky -> {
-                        if (now != "linky" && now != "sub") {
-                            topbarTitle.text = "내 링키"
-                            if (path == "") {
-                                now = "linky"
-
-                                bundle = Bundle()
-                                bundle?.putString("path", path)
-                                bundle?.putString("folderName", folderName)
-                                changeFragment(linkyFragment, bundle, false)
-                            } else {
-                                val fragment = fm.findFragmentByTag(path)
-                                now = "sub"
-
-                                bundle = Bundle()
-                                bundle?.putString("path", path)
-                                bundle?.putString("folderName", folderName)
-                                changeFragment(fragment!!, bundle, false)
-                            }
-                        }
+                        moveToLinky()
                     }
                     R.id.search -> {
-                        if(now != "search") {
-                            topbarTitle.text = "둘러보기"
-                            now = "search"
-                            changeFragment(searchFragment, bundle, false)
-                        }
+                        moveToSearch()
                     }
                     R.id.more -> {
-                        if(now != "more") {
-                            topbarTitle.text = "설정"
-                            now = "more"
-                            changeFragment(moreFragment, bundle, false)
-                        }
+                        moveToMore()
                     }
                 }
                 true
@@ -97,53 +60,86 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    override fun onStart() {
-        super.onStart()
-        if(!newb) {
-            if (now == "linky" || now == "sub") {
-                var bundle: Bundle? = null
-                // json 가져오기
-                var jsonStr = ""
-                if (path == "") {
-                    thread {
-                        jsonStr = app.read(path, false)
+    private fun moveToLinky() {
+        val fragment = supportFragmentManager.findFragmentByTag("linky")
 
-                        runOnUiThread {
-                            linkyFragment.update(jsonStr)
-                        }
-                    }
-                } else {
-                    val fragment = fm.findFragmentByTag(path) as LinkySubFragment
-                    thread {
-                        jsonStr = app.read(path, true)
-
-                        runOnUiThread {
-                            fragment.update(jsonStr)
-                        }
-                    }
-                }
-            }
+        if(fragment == null) {
+            linkyFragment = LinkyFragment()
+            parentFragment = linkyFragment
+            supportFragmentManager.beginTransaction()
+                .add(R.id.folderFragmentContainer, linkyFragment!!, "linky")
+                .commit()
         }
         else {
-            newb = false
+            parentFragment = linkyFragment
+            supportFragmentManager.beginTransaction().show(fragment).commit()
         }
+
+        if(searchFragment != null) supportFragmentManager.beginTransaction().hide(supportFragmentManager.findFragmentByTag("search")!!).commit()
+        if(moreFragment != null) supportFragmentManager.beginTransaction().hide(supportFragmentManager.findFragmentByTag("more")!!).commit()
     }
 
-    private fun changeFragment(fragment:Fragment, bundle: Bundle?, addToStack:Boolean) {
-        val tran = fm.beginTransaction()
+    private fun moveToSearch() {
+        val fragment = supportFragmentManager.findFragmentByTag("search")
+
+        if(fragment == null) {
+            binding.topbarTitle.text = "검색"
+            binding.topbarTitle.visibility = View.VISIBLE
+            binding.topbarFoldername.visibility = View.INVISIBLE
+
+            searchFragment = SearchFragment()
+            parentFragment = searchFragment
+            supportFragmentManager.beginTransaction()
+                .add(R.id.folderFragmentContainer, searchFragment!!, "search")
+                .commit()
+        }
+        else {
+            parentFragment = searchFragment
+            supportFragmentManager.beginTransaction().show(fragment).commit()
+        }
+
+        if(linkyFragment != null) supportFragmentManager.beginTransaction().hide(supportFragmentManager.findFragmentByTag("linky")!!).commit()
+        if(moreFragment != null) supportFragmentManager.beginTransaction().hide(supportFragmentManager.findFragmentByTag("more")!!).commit()
+    }
+
+    private fun moveToMore() {
+        val fragment = supportFragmentManager.findFragmentByTag("more")
+
+        if(fragment == null) {
+            moreFragment = MoreFragment()
+            parentFragment = moreFragment
+            supportFragmentManager.beginTransaction()
+                .add(R.id.folderFragmentContainer, moreFragment!!, "more")
+                .commit()
+        }
+        else {
+            parentFragment = moreFragment
+            supportFragmentManager.beginTransaction().show(fragment).commit()
+        }
+
+        if(linkyFragment != null) supportFragmentManager.beginTransaction().hide(supportFragmentManager.findFragmentByTag("linky")!!).commit()
+        if(searchFragment != null) supportFragmentManager.beginTransaction().hide(supportFragmentManager.findFragmentByTag("search")!!).commit()
+    }
+
+    fun changeChildFragment(fragment:Fragment, bundle:Bundle?, addToStack:Boolean) {
+        val tran = parentFragment!!.childFragmentManager.beginTransaction()
 
         if(bundle != null) {
             fragment.arguments = bundle
         }
 
-        if(addToStack) {
-            if(now == "sub") {
-                tran.replace(R.id.folderFragmentContainer, fragment, path)
-                tran.addToBackStack(null)
-            }
+        if(parentFragment is LinkyFragment) {
+            tran.replace(R.id.linky_fragment_container, fragment)
         }
-        else {
-            tran.replace(R.id.folderFragmentContainer, fragment)
+        else if(parentFragment is SearchFragment) {
+
+        }
+        else if(parentFragment is MoreFragment) {
+            tran.replace(R.id.more_fragment_container, fragment)
+        }
+
+        if(addToStack) {
+            tran.addToBackStack(null)
         }
 
         tran.commit()
@@ -155,24 +151,50 @@ class MainActivity : AppCompatActivity() {
 
     fun setFolderName(folderName:String) {
         this.folderName = folderName
-        if(folderName == "") {
+    }
+
+    fun setTopbarTitle(fragment:String) {
+        if(parentFragment is LinkyFragment) {
+            when(fragment) {
+                "LinkyOutsideFolderFragment" -> {
+                    binding.topbarTitle.text = "내 링키"
+                    binding.topbarTitle.visibility = View.VISIBLE
+                    binding.topbarFoldername.visibility = View.INVISIBLE
+                }
+                "LinkyInsideFolderFragment" -> {
+                    binding.topbarFoldername.text = folderName
+                    binding.topbarTitle.visibility = View.INVISIBLE
+                    binding.topbarFoldername.visibility = View.VISIBLE
+                }
+            }
+        }
+        else if(parentFragment is SearchFragment) {
+            binding.topbarTitle.text = "검색"
+            binding.topbarTitle.visibility = View.VISIBLE
             binding.topbarFoldername.visibility = View.INVISIBLE
         }
-        else {
-            binding.topbarFoldername.visibility = View.VISIBLE
-            binding.topbarFoldername.text = folderName
+        else if(parentFragment is MoreFragment) {
+            when(fragment) {
+                "InformationFragment" -> {
+                    binding.topbarTitle.text = "설정"
+                    binding.topbarTitle.visibility = View.VISIBLE
+                    binding.topbarFoldername.visibility = View.INVISIBLE
+                }
+                "EditProfileFragment" -> {
+                    binding.topbarFoldername.text = "프로필 설정"
+                    binding.topbarTitle.visibility = View.INVISIBLE
+                    binding.topbarFoldername.visibility = View.VISIBLE
+                }
+            }
         }
     }
 
-    fun createFragment(path:String, folderName:String) {
-        val nextFragment = LinkySubFragment()
-        val bundle = Bundle()
-        bundle.putString("path", path)
-        bundle.putString("folderName", folderName)
-
-        this.path = path
-        this.folderName = folderName
-        now = "sub"
-        changeFragment(nextFragment, bundle, true)
+    override fun onBackPressed() {
+        if(parentFragment!!.childFragmentManager.backStackEntryCount > 0) {
+            parentFragment!!.childFragmentManager.popBackStackImmediate()
+        }
+        else {
+            super.onBackPressed()
+        }
     }
 }

@@ -109,12 +109,33 @@ class EditLinkyFragment : Fragment() {
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View? {
-        return inflater.inflate(R.layout.fragment_edit_linky, container, false)
+        val view = inflater.inflate(R.layout.fragment_edit_linky, container, false)
+        binding = FragmentEditLinkyBinding.bind(view)
+
+        folderAdapter = FolderAdapter(folders, object : FolderAdapter.OnItemClickListener {
+            override fun onItemClick(pos:Int) {
+                folders[pos].switchIsSelected()
+                totalSelected = if(folders[pos].getIsSelected()) { totalSelected + 1 } else { totalSelected - 1 }
+                folderAdapter.notifyItemChanged(pos)
+
+                if(totalSelected == folders.size) {
+                    editActivity.setAllSelectButton(true)
+                }
+                else {
+                    editActivity.setAllSelectButton(false)
+                }
+            }
+        }, true)
+
+        with(binding) {
+            folderRecycler.adapter = folderAdapter
+        }
+
+        return view
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        binding = FragmentEditLinkyBinding.bind(view)
 
         thread {
             // json 파싱
@@ -129,24 +150,9 @@ class EditLinkyFragment : Fragment() {
                     totalSelected = 0
                 }
 
-                folderAdapter = FolderAdapter(folders, object : FolderAdapter.OnItemClickListener {
-                    override fun onItemClick(pos:Int) {
-                        folders[pos].switchIsSelected()
-                        totalSelected = if(folders[pos].getIsSelected()) { totalSelected + 1 } else { totalSelected - 1 }
-                        folderAdapter.notifyItemChanged(pos)
-
-                        if(totalSelected == folders.size) {
-                            editActivity.setAllSelectButton(true)
-                        }
-                        else {
-                            editActivity.setAllSelectButton(false)
-                        }
-                    }
-                }, true)
+                folderAdapter.notifyDataSetChanged()
 
                 with(binding) {
-                    folderRecycler.adapter = folderAdapter
-
                     folderRecycler.addItemDecoration(object : RecyclerView.ItemDecoration() {
                         override fun getItemOffsets(
                             outRect: Rect,
