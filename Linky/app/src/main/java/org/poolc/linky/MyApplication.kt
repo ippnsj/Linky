@@ -300,4 +300,41 @@ class MyApplication : Application() {
 
         return responseCode
     }
+
+    fun getFriends() : String {
+        val email = sharedPref!!.getString("email", "")
+        val paramsUrl = "email=$email"
+        val url = URL("http://$ip:$port/friend?$paramsUrl")
+        var conn : HttpURLConnection? = null
+        var response : String = ""
+
+        try {
+            conn = url.openConnection() as HttpURLConnection
+            conn!!.requestMethod = "GET"
+            conn!!.connectTimeout = 10000
+            conn!!.readTimeout = 100000
+            conn!!.setRequestProperty("Accept", "application/json")
+
+            conn!!.doInput = true
+
+            if(conn!!.responseCode == 200) {
+                response = conn!!.inputStream.reader().readText()
+            }
+            else if(conn!!.responseCode == 400) {
+                Log.d("test", "Bad request")
+            }
+            else if(conn!!.responseCode == 401) {
+                Log.d("test", "Unauthorized")
+            }
+        }
+        catch (e: MalformedURLException) {
+            Log.d("test", "올바르지 않은 URL 주소입니다.")
+        } catch (e: IOException) {
+            Log.d("test", "connection 오류")
+        }finally {
+            conn?.disconnect()
+        }
+
+        return response
+    }
 }

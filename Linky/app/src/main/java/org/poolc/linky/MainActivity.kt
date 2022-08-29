@@ -185,6 +185,11 @@ class MainActivity : AppCompatActivity() {
                     binding.topbarTitle.visibility = View.INVISIBLE
                     binding.topbarFoldername.visibility = View.VISIBLE
                 }
+                "FriendFragment" -> {
+                    binding.topbarFoldername.text = "친구 관리"
+                    binding.topbarTitle.visibility = View.INVISIBLE
+                    binding.topbarFoldername.visibility = View.VISIBLE
+                }
             }
         }
     }

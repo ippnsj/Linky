@@ -2,6 +2,7 @@ package org.poolc.linky
 
 import android.content.Context
 import android.content.DialogInterface
+import android.content.Intent
 import android.os.Bundle
 import android.util.Patterns
 import androidx.fragment.app.Fragment
@@ -21,6 +22,7 @@ class EditProfileFragment : Fragment() {
     private lateinit var mainActivity : MainActivity
     private lateinit var app : MyApplication
     private var needImageUrl = false
+    private var imageUrl = ""
 
     override fun onAttach(context: Context) {
         super.onAttach(context)
@@ -46,6 +48,12 @@ class EditProfileFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
 
         with(binding) {
+            editProfileImage.setOnClickListener {
+                val intent = Intent(mainActivity, ProfileImageActivity::class.java)
+                intent.putExtra("imageUrl", imageUrl)
+                startActivity(intent)
+            }
+
             saveProfile.setOnClickListener {
                 editProfile(nicknameTextInput.text.toString())
             }
@@ -84,11 +92,11 @@ class EditProfileFragment : Fragment() {
             builder.show()
         }
         else {
-            var imageUrl = ""
-            if (needImageUrl) {
-                imageUrl = getImageUrl()
-            }
             thread {
+                if (needImageUrl) {
+                    imageUrl = getImageUrl()
+                }
+
                 val responseCode = app.editProfile(newNicknameTrim, imageUrl)
 
                 when(responseCode) {
@@ -124,7 +132,7 @@ class EditProfileFragment : Fragment() {
         thread {
             val jsonStr = app.getProfile()
             val jsonObj = JSONObject(jsonStr)
-            val imageUrl = jsonObj.getString("imageUrl")
+            imageUrl = jsonObj.getString("imageUrl")
 
             if(imageUrl != "") {
                 // TODO url로부터 이미지 가져오는 작업
@@ -134,7 +142,7 @@ class EditProfileFragment : Fragment() {
                 with(binding) {
                     nicknameTextInput.setText(jsonObj.getString("nickname"))
                     // TODO api 수정돼서 email 넘어오면 수정
-                    email.text = mainActivity.getSharedPreferences(getString(R.string.preference_key), AppCompatActivity.MODE_PRIVATE).getString("email", "")
+                    email.text = MyApplication.sharedPref.getString("email", "")
 
                     if(imageUrl != "") {
                         // TODO url로부터 가져온 이미지 display

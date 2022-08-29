@@ -24,6 +24,7 @@
         <entry key="..\:/Users/admin/Desktop/Kotlin/Linky/Linky/app/src/main/res/drawable/border_background.xml" value="0.105" />
         <entry key="..\:/Users/admin/Desktop/Kotlin/Linky/Linky/app/src/main/res/drawable/checkbox.xml" value="0.1" />
         <entry key="..\:/Users/admin/Desktop/Kotlin/Linky/Linky/app/src/main/res/drawable/focusable_text.xml" value="0.1" />
+        <entry key="..\:/Users/admin/Desktop/Kotlin/Linky/Linky/app/src/main/res/drawable/friend_add_button.xml" value="0.1705" />
         <entry key="..\:/Users/admin/Desktop/Kotlin/Linky/Linky/app/src/main/res/drawable/keyword_background.xml" value="0.105" />
         <entry key="..\:/Users/admin/Desktop/Kotlin/Linky/Linky/app/src/main/res/drawable/navi_etc.xml" value="0.1" />
         <entry key="..\:/Users/admin/Desktop/Kotlin/Linky/Linky/app/src/main/res/drawable/navi_linky.xml" value="0.1" />
@@ -36,6 +37,7 @@
         <entry key="..\:/Users/admin/Desktop/Kotlin/Linky/Linky/app/src/main/res/layout/activity_login.xml" value="0.24351851851851852" />
         <entry key="..\:/Users/admin/Desktop/Kotlin/Linky/Linky/app/src/main/res/layout/activity_login_register.xml" value="0.20516304347826086" />
         <entry key="..\:/Users/admin/Desktop/Kotlin/Linky/Linky/app/src/main/res/layout/activity_main.xml" value="0.14209726443768997" />
+        <entry key="..\:/Users/admin/Desktop/Kotlin/Linky/Linky/app/src/main/res/layout/activity_profile_image.xml" value="0.16847826086956522" />
         <entry key="..\:/Users/admin/Desktop/Kotlin/Linky/Linky/app/src/main/res/layout/activity_register.xml" value="0.22" />
         <entry key="..\:/Users/admin/Desktop/Kotlin/Linky/Linky/app/src/main/res/layout/activity_register_main.xml" value="0.22" />
         <entry key="..\:/Users/admin/Desktop/Kotlin/Linky/Linky/app/src/main/res/layout/activity_select_path.xml" value="0.16847826086956522" />
@@ -46,14 +48,19 @@
         <entry key="..\:/Users/admin/Desktop/Kotlin/Linky/Linky/app/src/main/res/layout/fragment_edit_linky.xml" value="0.2692502532928065" />
         <entry key="..\:/Users/admin/Desktop/Kotlin/Linky/Linky/app/src/main/res/layout/fragment_edit_linky_sub.xml" value="0.2692502532928065" />
         <entry key="..\:/Users/admin/Desktop/Kotlin/Linky/Linky/app/src/main/res/layout/fragment_edit_profile.xml" value="0.3333333333333333" />
-        <entry key="..\:/Users/admin/Desktop/Kotlin/Linky/Linky/app/src/main/res/layout/fragment_information.xml" value="0.16847826086956522" />
+        <entry key="..\:/Users/admin/Desktop/Kotlin/Linky/Linky/app/src/main/res/layout/fragment_friend.xml" value="0.5" />
+        <entry key="..\:/Users/admin/Desktop/Kotlin/Linky/Linky/app/src/main/res/layout/fragment_information.xml" value="0.3333333333333333" />
         <entry key="..\:/Users/admin/Desktop/Kotlin/Linky/Linky/app/src/main/res/layout/fragment_linky.xml" value="0.24444444444444444" />
+        <entry key="..\:/Users/admin/Desktop/Kotlin/Linky/Linky/app/src/main/res/layout/fragment_linky_inside_folder.xml" value="0.30117753623188404" />
+        <entry key="..\:/Users/admin/Desktop/Kotlin/Linky/Linky/app/src/main/res/layout/fragment_linky_outside_folder.xml" value="0.30117753623188404" />
         <entry key="..\:/Users/admin/Desktop/Kotlin/Linky/Linky/app/src/main/res/layout/fragment_linky_sub.xml" value="0.2692502532928065" />
         <entry key="..\:/Users/admin/Desktop/Kotlin/Linky/Linky/app/src/main/res/layout/fragment_loading.xml" value="0.24444444444444444" />
         <entry key="..\:/Users/admin/Desktop/Kotlin/Linky/Linky/app/src/main/res/layout/fragment_more.xml" value="0.24444444444444444" />
         <entry key="..\:/Users/admin/Desktop/Kotlin/Linky/Linky/app/src/main/res/layout/fragment_search.xml" value="0.24444444444444444" />
         <entry key="..\:/Users/admin/Desktop/Kotlin/Linky/Linky/app/src/main/res/layout/fragment_share.xml" value="0.1540020263424519" />
         <entry key="..\:/Users/admin/Desktop/Kotlin/Linky/Linky/app/src/main/res/layout/linky_item.xml" value="0.16847826086956522" />
+        <entry key="..\:/Users/admin/Desktop/Kotlin/Linky/Linky/app/src/main/res/layout/profile_item.xml" value="0.16847826086956522" />
+        <entry key="..\:/Users/admin/Desktop/Kotlin/Linky/Linky/app/src/main/res/menu/menu_add_friend.xml" value="0.5260416666666666" />
         <entry key="..\:/Users/admin/Desktop/Kotlin/Linky/Linky/app/src/main/res/menu/menu_add_linky_topbar.xml" value="0.24444444444444444" />
         <entry key="..\:/Users/admin/Desktop/Kotlin/Linky/Linky/app/src/main/res/menu/menu_bottomnavigation.xml" value="0.24444444444444444" />
         <entry key="..\:/Users/admin/Desktop/Kotlin/Linky/Linky/app/src/main/res/menu/menu_edit_linky_bottomnavigation.xml" value="0.27708333333333335" />

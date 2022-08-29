@@ -169,7 +169,7 @@ class LinkyOutsideFolderFragment : Fragment() {
         with(binding) {
             if (isFabOpen) {
                 ObjectAnimator.ofFloat(addFolder, "translationY", 0f).apply { start() }
-                add.setImageResource(R.drawable.add)
+                add.setImageResource(R.drawable.add_friend)
             } else {
                 ObjectAnimator.ofFloat(addFolder, "translationY", -200f).apply { start() }
                 add.setImageResource(R.drawable.close)

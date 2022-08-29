@@ -254,7 +254,7 @@ class LinkyInsideFolderFragment : Fragment() {
             if (isFabOpen) {
                 ObjectAnimator.ofFloat(addFolderSub, "translationY", 0f).apply { start() }
                 ObjectAnimator.ofFloat(addLinkySub, "translationY", 0f).apply { start() }
-                addSub.setImageResource(R.drawable.add)
+                addSub.setImageResource(R.drawable.add_friend)
             } else {
                 ObjectAnimator.ofFloat(addFolderSub, "translationY", -400f).apply { start() }
                 ObjectAnimator.ofFloat(addLinkySub, "translationY", -200f).apply { start() }

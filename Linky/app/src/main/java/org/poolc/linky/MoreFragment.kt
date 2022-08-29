@@ -53,6 +53,9 @@ class MoreFragment : Fragment() {
             else if(fragment is EditProfileFragment) {
                 fragment.update()
             }
+            else if(fragment is FriendFragment) {
+                fragment.update()
+            }
         }
     }
 }
