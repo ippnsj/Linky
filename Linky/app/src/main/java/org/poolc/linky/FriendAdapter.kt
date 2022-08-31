@@ -34,7 +34,7 @@ class FriendAdapter(private val friends:ArrayList<User>, private val listener: F
                 val nickname = friends[pos].getNickname()
                 friendNickname.text = nickname
 
-                friendContainer.setOnClickListener {
+                followingContainer.setOnClickListener {
                     listener.onItemClick(pos)
                 }
             }

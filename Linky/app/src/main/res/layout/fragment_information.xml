@@ -17,7 +17,8 @@
         <androidx.constraintlayout.widget.ConstraintLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:paddingTop="30dp">
+            android:paddingTop="30dp"
+            android:paddingBottom="30dp">
 
             <androidx.constraintlayout.widget.ConstraintLayout
                 android:id="@+id/profile_container"
@@ -49,7 +50,6 @@
                     android:layout_marginLeft="20dp"
                     android:ellipsize="end"
                     android:maxLines="1"
-                    android:text="나는야 링키"
                     android:textSize="16sp"
                     app:layout_constraintBottom_toBottomOf="parent"
                     app:layout_constraintLeft_toRightOf="@id/profile_image"
@@ -69,7 +69,7 @@
             </androidx.constraintlayout.widget.ConstraintLayout>
 
             <androidx.constraintlayout.widget.ConstraintLayout
-                android:id="@+id/friend_container"
+                android:id="@+id/following_container"
                 android:layout_width="0dp"
                 android:layout_height="120dp"
                 android:layout_marginTop="20dp"
@@ -81,34 +81,43 @@
                 app:layout_constraintWidth_percent="0.8">
 
                 <TextView
-                    android:id="@+id/friend_label"
+                    android:id="@+id/following_label"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="친구"
+                    android:text="팔로잉"
                     android:textSize="18sp"
                     android:textStyle="bold"
                     app:layout_constraintLeft_toLeftOf="parent"
                     app:layout_constraintTop_toTopOf="parent" />
 
                 <TextView
-                    android:id="@+id/view_all"
+                    android:id="@+id/followings"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginLeft="8dp"
+                    android:text="0"
+                    app:layout_constraintBaseline_toBaselineOf="@id/following_label"
+                    app:layout_constraintLeft_toRightOf="@id/following_label" />
+
+                <TextView
+                    android:id="@+id/view_all_following"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="모두보기"
-                    app:layout_constraintBaseline_toBaselineOf="@id/friend_label"
+                    app:layout_constraintBaseline_toBaselineOf="@id/following_label"
                     app:layout_constraintRight_toRightOf="parent" />
 
                 <TextView
-                    android:id="@+id/no_friend_notice"
+                    android:id="@+id/no_following_notice"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="아직 친구가 없습니다... 친구를 추가해보세요!"
+                    android:text="아직 팔로잉하는 친구가 없습니다... \n친구를 팔로잉 해보세요!"
                     app:layout_constraintBottom_toBottomOf="parent"
                     app:layout_constraintLeft_toLeftOf="parent"
-                    app:layout_constraintTop_toBottomOf="@id/friend_label" />
+                    app:layout_constraintTop_toBottomOf="@id/following_label" />
 
                 <androidx.recyclerview.widget.RecyclerView
-                    android:id="@+id/friend_recycler_preview"
+                    android:id="@+id/following_recycler_preview"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="horizontal"
@@ -116,7 +125,68 @@
                     app:layout_constraintBottom_toBottomOf="parent"
                     app:layout_constraintLeft_toLeftOf="parent"
                     app:layout_constraintRight_toRightOf="parent"
-                    app:layout_constraintTop_toBottomOf="@id/friend_label" />
+                    app:layout_constraintTop_toBottomOf="@id/following_label" />
+
+            </androidx.constraintlayout.widget.ConstraintLayout>
+
+            <androidx.constraintlayout.widget.ConstraintLayout
+                android:id="@+id/follower_container"
+                android:layout_width="0dp"
+                android:layout_height="120dp"
+                android:layout_marginTop="20dp"
+                android:background="@drawable/border_background"
+                android:padding="20dp"
+                app:layout_constraintLeft_toLeftOf="parent"
+                app:layout_constraintRight_toRightOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/following_container"
+                app:layout_constraintWidth_percent="0.8">
+
+                <TextView
+                    android:id="@+id/follower_label"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="팔로워"
+                    android:textSize="18sp"
+                    android:textStyle="bold"
+                    app:layout_constraintLeft_toLeftOf="parent"
+                    app:layout_constraintTop_toTopOf="parent" />
+
+                <TextView
+                    android:id="@+id/followers"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginLeft="8dp"
+                    android:text="0"
+                    app:layout_constraintBaseline_toBaselineOf="@id/follower_label"
+                    app:layout_constraintLeft_toRightOf="@id/follower_label" />
+
+                <TextView
+                    android:id="@+id/view_all_follower"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="모두보기"
+                    app:layout_constraintBaseline_toBaselineOf="@id/follower_label"
+                    app:layout_constraintRight_toRightOf="parent" />
+
+                <TextView
+                    android:id="@+id/no_follower_notice"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="아직 팔로워가 없습니다."
+                    app:layout_constraintBottom_toBottomOf="parent"
+                    app:layout_constraintLeft_toLeftOf="parent"
+                    app:layout_constraintTop_toBottomOf="@id/follower_label" />
+
+                <androidx.recyclerview.widget.RecyclerView
+                    android:id="@+id/follower_recycler_preview"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
+                    app:layout_constraintBottom_toBottomOf="parent"
+                    app:layout_constraintLeft_toLeftOf="parent"
+                    app:layout_constraintRight_toRightOf="parent"
+                    app:layout_constraintTop_toBottomOf="@id/follower_label" />
 
             </androidx.constraintlayout.widget.ConstraintLayout>
 
@@ -127,7 +197,7 @@
                 android:padding="20dp"
                 app:layout_constraintLeft_toLeftOf="parent"
                 app:layout_constraintRight_toRightOf="parent"
-                app:layout_constraintTop_toBottomOf="@id/friend_container"
+                app:layout_constraintTop_toBottomOf="@id/follower_container"
                 app:layout_constraintWidth_percent="0.8">
 
                 <TextView

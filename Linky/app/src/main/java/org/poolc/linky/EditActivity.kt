@@ -2,6 +2,7 @@ package org.poolc.linky
 
 import android.content.DialogInterface
 import android.os.Bundle
+import android.util.Log
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
@@ -9,7 +10,9 @@ import android.widget.PopupMenu
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.Fragment
+import com.google.android.material.bottomsheet.BottomSheetDialog
 import org.poolc.linky.databinding.ActivityEditBinding
+import org.poolc.linky.databinding.EditBottomSheetLayoutBinding
 import kotlin.concurrent.thread
 
 
@@ -39,25 +42,60 @@ class EditActivity : AppCompatActivity() {
             bottomNavigation.itemIconTintList = null
             bottomNavigation.setOnItemSelectedListener { item ->
                 when(item.itemId) {
+                    R.id.edit -> {
+                        if(path == "") {
+                            editLinkyFragment.edit()
+                        }
+                        else {
+                            val bottomSheetView = layoutInflater.inflate(R.layout.edit_bottom_sheet_layout, null)
+                            val bottomSheetBinding = EditBottomSheetLayoutBinding.bind(bottomSheetView)
+                            val bottomSheetDialog = BottomSheetDialog(this@EditActivity)
+                            bottomSheetDialog.setContentView(bottomSheetView)
+
+                            with(bottomSheetBinding) {
+                                folderButton.text = getString(R.string.edit_folder)
+                                linkButton.text = getString(R.string.edit_link)
+
+                                folderButton.setOnClickListener {
+                                    editLinkySubFragment.edit("folder")
+                                    bottomSheetDialog.dismiss()
+                                }
+                                linkButton.setOnClickListener {
+                                    editLinkySubFragment.edit("link")
+                                    bottomSheetDialog.dismiss()
+                                }
+                            }
+
+                            bottomSheetDialog.show()
+                        }
+                    }
                     R.id.move -> {
                         if(path == "") {
                             editLinkyFragment.move()
                         }
                         else {
+                            val bottomSheetView = layoutInflater.inflate(R.layout.edit_bottom_sheet_layout, null)
+                            val bottomSheetBinding = EditBottomSheetLayoutBinding.bind(bottomSheetView)
+                            val bottomSheetDialog = BottomSheetDialog(this@EditActivity)
+                            bottomSheetDialog.setContentView(bottomSheetView)
 
+                            with(bottomSheetBinding) {
+                                folderButton.text = getString(R.string.move_folder)
+                                linkButton.text = getString(R.string.move_link)
+
+                                folderButton.setOnClickListener {
+                                }
+                                linkButton.setOnClickListener {
+                                }
+                            }
+
+                            bottomSheetDialog.show()
                         }
                     }
                     R.id.delete -> {
                         if (path == "") {
-                            var message = ""
-                            if (path == "") {
-                                message = "선택된 폴더를 모두 삭제하시겠습니까?"
-                            } else {
-                                message = "선택된 폴더 및 링크를 모두 삭제하시겠습니까?"
-                            }
-
                             val builder = AlertDialog.Builder(this@EditActivity)
-                            builder.setMessage(message)
+                            builder.setMessage("선택된 폴더를 모두 삭제하시겠습니까?")
 
                             builder.setPositiveButton("삭제") { dialogInterface: DialogInterface, i: Int ->
                                 editLinkyFragment.delete()
@@ -68,7 +106,46 @@ class EditActivity : AppCompatActivity() {
                             builder.show()
                         }
                         else {
+                            val bottomSheetView = layoutInflater.inflate(R.layout.edit_bottom_sheet_layout, null)
+                            val bottomSheetBinding = EditBottomSheetLayoutBinding.bind(bottomSheetView)
+                            val bottomSheetDialog = BottomSheetDialog(this@EditActivity)
+                            bottomSheetDialog.setContentView(bottomSheetView)
 
+                            with(bottomSheetBinding) {
+                                folderButton.text = getString(R.string.delete_folder)
+                                linkButton.text = getString(R.string.delete_link)
+
+                                folderButton.setOnClickListener {
+                                    bottomSheetDialog.dismiss()
+
+                                    val builder = AlertDialog.Builder(this@EditActivity)
+                                    builder.setMessage("선택된 폴더를 모두 삭제하시겠습니까?")
+
+                                    builder.setPositiveButton("삭제") { dialogInterface: DialogInterface, i: Int ->
+                                        editLinkySubFragment.delete("folder")
+                                    }
+
+                                    builder.setNegativeButton("취소", null)
+
+                                    builder.show()
+                                }
+                                linkButton.setOnClickListener {
+                                    bottomSheetDialog.dismiss()
+
+                                    val builder = AlertDialog.Builder(this@EditActivity)
+                                    builder.setMessage("선택된 링크를 모두 삭제하시겠습니까?")
+
+                                    builder.setPositiveButton("삭제") { dialogInterface: DialogInterface, i: Int ->
+                                        editLinkySubFragment.delete("link")
+                                    }
+
+                                    builder.setNegativeButton("취소", null)
+
+                                    builder.show()
+                                }
+                            }
+
+                            bottomSheetDialog.show()
                         }
                     }
                 }

@@ -151,8 +151,16 @@ class LinkyInsideFolderFragment : Fragment() {
                 builder.setView(dialogView)
 
                 builder.setPositiveButton("추가") { dialogInterface: DialogInterface, i: Int ->
-                    // TODO 글자수가 1자 이상이며 10자를 넘지 않는지 확인
-                    createFolder(dialogBinding.newFolderName.text.toString())
+                    val newFolderName = dialogBinding.newFolderName.text?.trim().toString()
+                    if(newFolderName == "") {
+                        dialogBinding.newFolderName.error = "앞/뒤 공백 없이 1자 이상의 폴더명을 입력해주세요."
+                    }
+                    else if(newFolderName!!.contains("/")) {
+                        dialogBinding.newFolderName.error = "폴더명에는 /가 포함될 수 없습니다."
+                    }
+                    else {
+                        createFolder(newFolderName)
+                    }
                 }
                 builder.setNegativeButton("취소", null)
 
@@ -254,7 +262,7 @@ class LinkyInsideFolderFragment : Fragment() {
             if (isFabOpen) {
                 ObjectAnimator.ofFloat(addFolderSub, "translationY", 0f).apply { start() }
                 ObjectAnimator.ofFloat(addLinkySub, "translationY", 0f).apply { start() }
-                addSub.setImageResource(R.drawable.add_friend)
+                addSub.setImageResource(R.drawable.add)
             } else {
                 ObjectAnimator.ofFloat(addFolderSub, "translationY", -400f).apply { start() }
                 ObjectAnimator.ofFloat(addLinkySub, "translationY", -200f).apply { start() }
@@ -289,8 +297,9 @@ class LinkyInsideFolderFragment : Fragment() {
             val title = linkObj.getString("name")
             val imgUrl = linkObj.getString("imageUrl")
             val url = linkObj.getString("url")
+            val isPublic = linkObj.getString("isPublic")
 
-            val link = Link(id, keywordsArr, title, imgUrl, url, false)
+            val link = Link(id, keywordsArr, title, imgUrl, url, isPublic, false)
             links.add(link)
         }
     }
@@ -300,32 +309,74 @@ class LinkyInsideFolderFragment : Fragment() {
             val responseCode = app.createFolder(folderName, path)
 
             if(responseCode == 200) {
-                var jsonStr = ""
-                thread {
-                    jsonStr = app.read(path, false)
+                mainActivity.runOnUiThread {
+                    val toast =
+                        Toast.makeText(mainActivity, "새 폴더가 추가되었습니다!", Toast.LENGTH_SHORT)
+                    toast.setGravity(Gravity.BOTTOM, 0, 0)
+                    toast.show()
+                    update()
+                }
+            }
+            else {
+                var positiveButtonFunc: DialogInterface.OnClickListener? = null
+                var message = ""
 
-                    if (jsonStr != "") {
-                        mainActivity.runOnUiThread {
-                            folders.clear()
-                            setFolders(jsonStr)
-                            folderSubAdapter.notifyDataSetChanged()
-
-                            val toast =
-                                Toast.makeText(activity, "새 폴더가 추가되었습니다!", Toast.LENGTH_SHORT)
-                            toast.setGravity(Gravity.BOTTOM, 0, 0)
-                            toast.show()
+                when(responseCode) {
+                    400 -> {
+                        message = "폴더이름이 형식과 맞지 않습니다.\n" +
+                                "폴더이름은 최대 10자만 가능하며, /는 포함될 수 없습니다."
+                        positiveButtonFunc = object : DialogInterface.OnClickListener {
+                            override fun onClick(dialog: DialogInterface?, which: Int) {
+                                update()
+                            }
+                        }
+                    }
+                    401 -> {
+                        message = "사용자 인증 오류로 인해 자동 로그아웃 됩니다."
+                        positiveButtonFunc = object : DialogInterface.OnClickListener {
+                            override fun onClick(dialog: DialogInterface?, which: Int) {
+                                mainActivity.finishAffinity()
+                                System.exit(0)
+                            }
+                        }
+                    }
+                    404 -> {
+                        message = "존재하지 않는 폴더입니다."
+                        positiveButtonFunc = object : DialogInterface.OnClickListener {
+                            override fun onClick(dialog: DialogInterface?, which: Int) {
+                                update()
+                            }
+                        }
+                    }
+                    409 -> {
+                        message = "이미 해당 폴더가 존재합니다."
+                        positiveButtonFunc = object : DialogInterface.OnClickListener {
+                            override fun onClick(dialog: DialogInterface?, which: Int) {
+                                update()
+                            }
+                        }
+                    }
+                    else -> {
+                        message = "폴더 수정에 실패하였습니다."
+                        positiveButtonFunc = object : DialogInterface.OnClickListener {
+                            override fun onClick(dialog: DialogInterface?, which: Int) {
+                                update()
+                            }
                         }
                     }
                 }
-            }
-            else if(responseCode == 400) {
-                Log.d("test", "Bad request")
-            }
-            else if(responseCode == 404) {
-                Log.d("test", "Not Found")
-            }
-            else if(responseCode == 401) {
-                Log.d("test", "Unauthorized")
+
+                mainActivity.runOnUiThread {
+                    val builder = AlertDialog.Builder(mainActivity)
+
+                    builder.setIcon(R.drawable.ic_baseline_warning_8)
+                    builder.setTitle("추가 실패")
+                    builder.setMessage(message)
+
+                    builder.setPositiveButton("확인", positiveButtonFunc)
+
+                    builder.show()
+                }
             }
         }
     }

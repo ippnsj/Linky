@@ -48,14 +48,6 @@ class SetProfileActivity : AppCompatActivity() {
                     register(email!!, password!!, nickname, imageUrl)
                 }
             }
-
-            nicknameTextInput.setOnEditorActionListener { v, actionId, event ->
-                if(actionId == EditorInfo.IME_ACTION_DONE) {
-                    register.performClick()
-                    true
-                }
-                false
-            }
         }
     }
 

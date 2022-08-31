@@ -45,6 +45,7 @@
         android:layout_height="?attr/actionBarSize"
         android:background="@color/primary"
         app:itemHorizontalTranslationEnabled="false"
+        app:itemIconTint="@color/icon"
         app:itemTextColor="@color/icon"
         app:labelVisibilityMode="labeled"
         app:layout_constraintBottom_toBottomOf="parent"

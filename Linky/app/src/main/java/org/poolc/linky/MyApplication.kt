@@ -67,7 +67,7 @@ class MyApplication : Application() {
         return responseCode
     }
 
-    fun createLink(public:Boolean, keywords:ArrayList<String>, path:String, name:String, imageUrl:String, linkUrl:String) : Int {
+    fun createLink(path:String, link:Link) : Int {
         val url = URL("http://$ip:$port/link")
         var conn : HttpURLConnection? = null
         var responseCode = -1
@@ -82,16 +82,14 @@ class MyApplication : Application() {
 
             conn!!.doOutput = true
 
-            val keywordsJsonArr = JSONArray(keywords)
-
             val body = JSONObject()
             body.put("email", sharedPref!!.getString("email", ""))
-            body.put("isPublic", public)
-            body.put("keywords", keywordsJsonArr)
+            body.put("isPublic", link.getIsPublic())
+            body.put("keywords", link.getKeywords())
             body.put("path", path)
-            body.put("name", name)
-            body.put("imageUrl", imageUrl)
-            body.put("url", linkUrl)
+            body.put("name", link.getLinkTitle())
+            body.put("imageUrl", link.getImgUrl())
+            body.put("url", link.getUrl())
 
             val os = conn!!.outputStream
             os.write(body.toString().toByteArray())
@@ -113,6 +111,46 @@ class MyApplication : Application() {
         val email = sharedPref!!.getString("email", "")
         val paramsUrl = "email=$email&path=$path&showLink=$showLink"
         val url = URL("http://$ip:$port/folder?$paramsUrl")
+        var conn : HttpURLConnection? = null
+        var response : String = ""
+
+        try {
+            conn = url.openConnection() as HttpURLConnection
+            conn!!.requestMethod = "GET"
+            conn!!.connectTimeout = 10000
+            conn!!.readTimeout = 100000
+            conn!!.setRequestProperty("Accept", "application/json")
+
+            conn!!.doInput = true
+
+            if(conn!!.responseCode == 200) {
+                response = conn!!.inputStream.reader().readText()
+            }
+            else if(conn!!.responseCode == 400) {
+                Log.d("test", "Bad request")
+            }
+            else if(conn!!.responseCode == 401) {
+                Log.d("test", "Unauthorized")
+            }
+            else if(conn!!.responseCode == 404) {
+                Log.d("test", "Not Found")
+            }
+        }
+        catch (e: MalformedURLException) {
+            Log.d("test", "올바르지 않은 URL 주소입니다.")
+        } catch (e: IOException) {
+            Log.d("test", "connection 오류")
+        }finally {
+            conn?.disconnect()
+        }
+
+        return response
+    }
+
+    fun getLinkInfo(path:String, id:String) : String {
+        val email = sharedPref!!.getString("email", "")
+        val paramsUrl = "email=$email&path=$path&id=$id"
+        val url = URL("http://$ip:$port/link?$paramsUrl")
         var conn : HttpURLConnection? = null
         var response : String = ""
 
@@ -187,6 +225,83 @@ class MyApplication : Application() {
         return responseCode
     }
 
+    fun editFolder(path:String, newName:String) : Int {
+        val url = URL("http://$ip:$port/folder")
+        var conn : HttpURLConnection? = null
+        var responseCode = -1
+
+        try {
+            conn = url.openConnection() as HttpURLConnection
+            conn!!.requestMethod = "PUT"
+            conn!!.connectTimeout = 10000
+            conn!!.readTimeout = 100000
+            conn!!.setRequestProperty("Content-Type", "application/json")
+            conn!!.setRequestProperty("Accept", "application/json")
+
+            conn!!.doOutput = true
+
+            val body = JSONObject()
+            body.put("email", sharedPref!!.getString("email", ""))
+            body.put("path", path)
+            body.put("newName", newName)
+
+            val os = conn!!.outputStream
+            os.write(body.toString().toByteArray())
+            os.flush()
+
+            responseCode =  conn!!.responseCode
+        } catch (e: MalformedURLException) {
+            Log.d("test", "올바르지 않은 URL 주소입니다.")
+        } catch (e: IOException) {
+            Log.d("test", "connection 오류")
+        } finally {
+            conn?.disconnect()
+        }
+
+        return responseCode
+    }
+
+    fun editLink(path:String, link:Link) : Int {
+        val url = URL("http://$ip:$port/link")
+        var conn : HttpURLConnection? = null
+        var responseCode = -1
+
+        try {
+            conn = url.openConnection() as HttpURLConnection
+            conn!!.requestMethod = "PUT"
+            conn!!.connectTimeout = 10000
+            conn!!.readTimeout = 100000
+            conn!!.setRequestProperty("Content-Type", "application/json")
+            conn!!.setRequestProperty("Accept", "application/json")
+
+            conn!!.doOutput = true
+
+            val body = JSONObject()
+            body.put("email", sharedPref!!.getString("email", ""))
+            body.put("path", path)
+            body.put("id", link.getId())
+            body.put("name", link.getLinkTitle())
+            body.put("url", link.getUrl())
+            body.put("imageUrl", link.getImgUrl())
+            body.put("keywords", link.getKeywords())
+            body.put("isPublic", link.getIsPublic())
+
+            val os = conn!!.outputStream
+            os.write(body.toString().toByteArray())
+            os.flush()
+
+            responseCode =  conn!!.responseCode
+        } catch (e: MalformedURLException) {
+            Log.d("test", "올바르지 않은 URL 주소입니다.")
+        } catch (e: IOException) {
+            Log.d("test", "connection 오류")
+        } finally {
+            conn?.disconnect()
+        }
+
+        return responseCode
+    }
+
     fun deleteFolder(selectedFolders:ArrayList<String>) : Int {
         val url = URL("http://$ip:$port/folder")
         var conn : HttpURLConnection? = null
@@ -228,7 +343,7 @@ class MyApplication : Application() {
     fun getProfile() : String {
         val email = sharedPref!!.getString("email", "")
         val paramsUrl = "email=$email"
-        val url = URL("http://$ip:$port/my?$paramsUrl")
+        val url = URL("http://$ip:$port/member/me?$paramsUrl")
         var conn : HttpURLConnection? = null
         var response : String = ""
 
@@ -266,7 +381,7 @@ class MyApplication : Application() {
     }
 
     fun editProfile(newNickname:String, newImageUrl:String) : Int {
-        val url = URL("http://$ip:$port/my")
+        val url = URL("http://$ip:$port/member/me")
         var conn : HttpURLConnection? = null
         var responseCode = -1
 
@@ -304,7 +419,7 @@ class MyApplication : Application() {
     fun getFriends() : String {
         val email = sharedPref!!.getString("email", "")
         val paramsUrl = "email=$email"
-        val url = URL("http://$ip:$port/friend?$paramsUrl")
+        val url = URL("http://$ip:$port/follow?$paramsUrl")
         var conn : HttpURLConnection? = null
         var response : String = ""
 
@@ -324,6 +439,8 @@ class MyApplication : Application() {
                 Log.d("test", "Bad request")
             }
             else if(conn!!.responseCode == 401) {
+                Log.d("test", "Unauthorized")
+            }else if(conn!!.responseCode == 404) {
                 Log.d("test", "Unauthorized")
             }
         }

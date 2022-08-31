@@ -1,17 +1,25 @@
 package org.poolc.linky
 
 import android.content.Context
+import android.content.DialogInterface
 import android.content.Intent
 import android.graphics.Rect
 import android.os.Bundle
+import android.util.Log
 import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.view.inputmethod.EditorInfo
+import android.widget.Toast
 import androidx.activity.result.ActivityResultLauncher
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.appcompat.app.AlertDialog
+import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.size
 import androidx.recyclerview.widget.RecyclerView
 import org.json.JSONObject
+import org.poolc.linky.databinding.FoldernameDialogBinding
 import org.poolc.linky.databinding.FragmentEditLinkySubBinding
 import kotlin.concurrent.thread
 import kotlin.math.ceil
@@ -20,16 +28,126 @@ class EditLinkySubFragment : Fragment() {
     private lateinit var binding : FragmentEditLinkySubBinding
     private lateinit var editActivity: EditActivity
     private lateinit var app : MyApplication
+    private lateinit var path : String
     private val folders = ArrayList<Folder>()
     private val links = ArrayList<Link>()
-    private var totalSelectedFolder = 0
-    private var totalSelectedLink = 0
     private lateinit var folderSubAdapter : FolderSubAdapter
     private lateinit var linkySubAdapter: LinkyAdapter
-    private lateinit var path : String
-    private var moveFolders = ArrayList<String>()
-    private var moveLinks = ArrayList<String>()
-    private lateinit var folderResultLauncher: ActivityResultLauncher<Intent>
+    private var totalSelectedFolder = 0
+    private var totalSelectedLink = 0
+    private var selectedFolders = ArrayList<String>()
+    private var selectedLinks = ArrayList<String>()
+    private val editLinkResultLauncher = registerForActivityResult(
+        ActivityResultContracts.StartActivityForResult()) { result ->
+        if(result.resultCode == AppCompatActivity.RESULT_OK) {
+            val responseCode = result.data?.getIntExtra("responseCode", -1)
+
+            if (responseCode == 200) {
+                val toast = Toast.makeText(
+                    editActivity,
+                    "링크 수정이 완료되었습니다~!",
+                    Toast.LENGTH_SHORT
+                )
+                toast.show()
+            } else {
+                val builder = AlertDialog.Builder(editActivity)
+                var positiveButtonFunc: DialogInterface.OnClickListener? = null
+                var message = ""
+
+                when (responseCode) {
+                    401 -> {
+                        message = "사용자 인증 오류로 인해 자동 로그아웃 됩니다."
+                        positiveButtonFunc =
+                            object : DialogInterface.OnClickListener {
+                                override fun onClick(
+                                    dialog: DialogInterface?,
+                                    which: Int
+                                ) {
+                                    editActivity.finishAffinity()
+                                    System.exit(0)
+                                }
+                            }
+                    }
+                    else -> {
+                        message = "링크 수정에 실패하였습니다."
+                    }
+                }
+
+                builder.setIcon(R.drawable.ic_baseline_warning_8)
+                builder.setTitle("수정 실패")
+                builder.setMessage(message)
+
+                builder.setPositiveButton("확인", positiveButtonFunc)
+
+                builder.show()
+            }
+        }
+    }
+    private val moveFolderResultLauncher = registerForActivityResult(
+        ActivityResultContracts.StartActivityForResult()) { result ->
+            if(result.resultCode == AppCompatActivity.RESULT_OK) {
+                val responseCode = result.data?.getIntExtra("responseCode", -1)
+
+                if (responseCode == 200) {
+                    val toast = Toast.makeText(
+                        editActivity,
+                        "폴더 이동이 완료되었습니다~!",
+                        Toast.LENGTH_SHORT
+                    )
+                    toast.show()
+                } else {
+                    val builder = AlertDialog.Builder(editActivity)
+                    var positiveButtonFunc: DialogInterface.OnClickListener? = null
+                    var message = ""
+
+                    when (responseCode) {
+                        401 -> {
+                            message = "사용자 인증 오류로 인해 자동 로그아웃 됩니다."
+                            positiveButtonFunc =
+                                object : DialogInterface.OnClickListener {
+                                    override fun onClick(
+                                        dialog: DialogInterface?,
+                                        which: Int
+                                    ) {
+                                        editActivity.finishAffinity()
+                                        System.exit(0)
+                                    }
+                                }
+                        }
+                        404 -> {
+                            message = "존재하지 않는 폴더가 있습니다."
+                        }
+                        409 -> {
+                            message = "이동하고자 하는 경로에 이미 해당 폴더가 존재합니다."
+                        }
+                        else -> {
+                            message = "폴더 이동에 실패하였습니다."
+                        }
+                    }
+
+                    builder.setIcon(R.drawable.ic_baseline_warning_8)
+                    builder.setTitle("이동 실패")
+                    builder.setMessage(message)
+
+                    builder.setPositiveButton("확인", positiveButtonFunc)
+
+                    builder.show()
+                }
+            } else if(result.resultCode == AppCompatActivity.RESULT_CANCELED) {
+                val reason = result.data?.getStringExtra("reason") ?: ""
+                if(reason == "same path") {
+                    val builder = AlertDialog.Builder(editActivity)
+
+                    builder.setIcon(R.drawable.ic_baseline_warning_8)
+                    builder.setTitle("이동 실패")
+                    builder.setMessage("이동하고자 하는 경로와 현재 경로가 같습니다.")
+
+                    builder.setPositiveButton("확인", null)
+
+                    builder.show()
+                }
+            }
+        }
 
     override fun onAttach(context: Context) {
         super.onAttach(context)
@@ -76,63 +194,59 @@ class EditLinkySubFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        thread {
-            val jsonStr = app.read(path, true)
+        with(binding) {
+            folderSubRecycler.addItemDecoration(object : RecyclerView.ItemDecoration() {
+                override fun getItemOffsets(
+                    outRect: Rect,
+                    view: View,
+                    parent: RecyclerView,
+                    state: RecyclerView.State
+                ) {
+                    val pos = parent.getChildAdapterPosition(view)
 
-            editActivity.runOnUiThread {
-                update(jsonStr)
-
-                with(binding) {
-                    folderSubRecycler.addItemDecoration(object : RecyclerView.ItemDecoration() {
-                        override fun getItemOffsets(
-                            outRect: Rect,
-                            view: View,
-                            parent: RecyclerView,
-                            state: RecyclerView.State
-                        ) {
-                            val pos = parent.getChildAdapterPosition(view)
-
-                            if(pos != 0) {
-                                outRect.left = 60
-                            }
-                        }
-                    })
-
-                    linkySubRecycler.addItemDecoration(object : RecyclerView.ItemDecoration() {
-                        override fun getItemOffsets(
-                            outRect: Rect,
-                            view: View,
-                            parent: RecyclerView,
-                            state: RecyclerView.State
-                        ) {
-                            val pos = parent.getChildAdapterPosition(view)
-                            val size = parent.size
-                            val rows = ceil((size / 2).toDouble())
-
-                            if(pos % 2 == 0) {
-                                outRect.right = 20
-                            }
-                            else {
-                                outRect.left = 20
-                            }
-
-                            if(pos > (rows - 1) * 2) {
-                                outRect.top = 20
-                                outRect.bottom = 40
-                            }
-                            else {
-                                outRect.top = 20
-                                outRect.bottom = 20
-                            }
-                        }
-                    })
+                    if(pos != 0) {
+                        outRect.left = 60
+                    }
                 }
-            }
+            })
+
+            linkySubRecycler.addItemDecoration(object : RecyclerView.ItemDecoration() {
+                override fun getItemOffsets(
+                    outRect: Rect,
+                    view: View,
+                    parent: RecyclerView,
+                    state: RecyclerView.State
+                ) {
+                    val pos = parent.getChildAdapterPosition(view)
+                    val size = parent.size
+                    val rows = ceil((size / 2).toDouble())
+
+                    if(pos % 2 == 0) {
+                        outRect.right = 20
+                    }
+                    else {
+                        outRect.left = 20
+                    }
+
+                    if(pos > (rows - 1) * 2) {
+                        outRect.top = 20
+                        outRect.bottom = 40
+                    }
+                    else {
+                        outRect.top = 20
+                        outRect.bottom = 20
+                    }
+                }
+            })
         }
     }
 
+    override fun onResume() {
+        super.onResume()
+        update()
+    }
+
     private fun setFolders(jsonStr:String) {
-        folders.clear()
         val jsonObj = JSONObject(jsonStr)
         val foldersArr = jsonObj.getJSONArray("folderInfos")
         for (idx in 0 until foldersArr.length()) {
@@ -145,7 +259,6 @@ class EditLinkySubFragment : Fragment() {
     }
 
     private fun setLinks(jsonStr: String) {
-        links.clear()
         val jsonObj = JSONObject(jsonStr)
         val linksArr = jsonObj.getJSONArray("linkInfos")
         for (idx in 0 until linksArr.length()) {
@@ -155,24 +268,32 @@ class EditLinkySubFragment : Fragment() {
             val title = linkObj.getString("name")
             val imgUrl = linkObj.getString("imageUrl")
             val url = linkObj.getString("url")
+            val isPublic = linkObj.getString("isPublic")
 
-            val link = Link(id, keywordsArr, title, imgUrl, url, false)
+            val link = Link(id, keywordsArr, title, imgUrl, url, isPublic, false)
             links.add(link)
         }
     }
 
-    fun update(jsonStr:String) {
-        if (jsonStr != "") {
-            setFolders(jsonStr!!)
-            setLinks(jsonStr!!)
-        }
-        else {
+    fun update() {
+        thread {
             folders.clear()
             links.clear()
-        }
+            totalSelectedFolder = 0
+            totalSelectedLink = 0
 
-        folderSubAdapter.notifyDataSetChanged()
-        linkySubAdapter.notifyDataSetChanged()
+            val jsonStr = app.read(path, true)
+
+            if (jsonStr != "") {
+                setFolders(jsonStr!!)
+                setLinks(jsonStr!!)
+            }
+
+            editActivity.runOnUiThread {
+                folderSubAdapter.notifyDataSetChanged()
+                linkySubAdapter.notifyDataSetChanged()
+            }
+        }
     }
 
     fun selectAllFolders() {
@@ -211,5 +332,356 @@ class EditLinkySubFragment : Fragment() {
                 }
             }
         }
+    }
+
+    private fun getSelectedFolders() {
+        selectedFolders.clear()
+
+        for(pos in 0 until folders.size) {
+            if(folders[pos].getIsSelected()) {
+                selectedFolders.add("$path${folders[pos].getFolderName()}")
+            }
+        }
+    }
+
+    private fun getSelectedLinks() {
+        selectedLinks.clear()
+
+        for(pos in 0 until links.size) {
+            if(links[pos].getIsSelected()) {
+                selectedLinks.add(links[pos].getId())
+            }
+        }
+    }
+
+    fun edit(target:String) {
+        when(target) {
+            "folder" -> {
+                if(totalSelectedFolder == 0) {
+                    val builder = AlertDialog.Builder(editActivity)
+
+                    builder.setIcon(R.drawable.ic_baseline_warning_8)
+                    builder.setTitle("수정 실패")
+                    builder.setMessage("수정할 폴더를 선택해주세요.")
+
+                    builder.setPositiveButton("확인", null)
+
+                    builder.show()
+                }
+                else if(totalSelectedFolder > 1) {
+                    val builder = AlertDialog.Builder(editActivity)
+
+                    builder.setIcon(R.drawable.ic_baseline_warning_8)
+                    builder.setTitle("수정 실패")
+                    builder.setMessage("수정할 폴더를 하나만 선택해주세요.")
+
+                    builder.setPositiveButton("확인", null)
+
+                    builder.show()
+                }
+                else {
+                    val builder = AlertDialog.Builder(editActivity)
+                    builder.setTitle("새로운 폴더명을 입력해주세요")
+                    builder.setIcon(R.drawable.edit_pink)
+
+                    val dialogView = layoutInflater.inflate(R.layout.foldername_dialog, null)
+                    val dialogBinding = FoldernameDialogBinding.bind(dialogView)
+
+                    builder.setView(dialogView)
+
+                    builder.setPositiveButton("추가") { dialogInterface: DialogInterface, i: Int ->
+                        val newFolderName = dialogBinding.newFolderName.text?.trim().toString()
+                        if(newFolderName == "") {
+                            dialogBinding.newFolderName.error = "앞/뒤 공백 없이 1자 이상의 폴더명을 입력해주세요."
+                        }
+                        else if(newFolderName!!.contains("/")) {
+                            dialogBinding.newFolderName.error = "폴더명에는 /가 포함될 수 없습니다."
+                        }
+                        else {
+                            editFolder(newFolderName)
+                        }
+                    }
+                    builder.setNegativeButton("취소", null)
+
+                    val dialog = builder.create()
+
+                    dialog.show()
+
+                    dialogBinding.newFolderName.setOnEditorActionListener { v, actionId, event ->
+                        if(actionId == EditorInfo.IME_ACTION_DONE) {
+                            dialog.getButton(DialogInterface.BUTTON_POSITIVE).performClick()
+                            true
+                        }
+                        false
+                    }
+                }
+            }
+            "link" -> {
+                if(totalSelectedLink == 0) {
+                    val builder = AlertDialog.Builder(editActivity)
+
+                    builder.setIcon(R.drawable.ic_baseline_warning_8)
+                    builder.setTitle("수정 실패")
+                    builder.setMessage("수정할 링크를 선택해주세요.")
+
+                    builder.setPositiveButton("확인", null)
+
+                    builder.show()
+                }
+                else if(totalSelectedLink > 1) {
+                    val builder = AlertDialog.Builder(editActivity)
+
+                    builder.setIcon(R.drawable.ic_baseline_warning_8)
+                    builder.setTitle("수정 실패")
+                    builder.setMessage("수정할 링크를 하나만 선택해주세요.")
+
+                    builder.setPositiveButton("확인", null)
+
+                    builder.show()
+                }
+                else {
+                    editLink()
+                }
+            }
+        }
+    }
+
+    private fun editFolder(newFolderName:String) {
+        getSelectedFolders()
+        val prevFolderName = selectedFolders[0]
+
+        thread {
+            val responseCode = app.editFolder(prevFolderName, newFolderName)
+
+            if(responseCode == 200) {
+                editActivity.runOnUiThread {
+                    val toast = Toast.makeText(
+                        editActivity,
+                        "폴더 수정이 완료되었습니다~!",
+                        Toast.LENGTH_SHORT
+                    )
+                    toast.show()
+                    update()
+                }
+            }
+            else {
+                var positiveButtonFunc: DialogInterface.OnClickListener? = null
+                var message = ""
+
+                when(responseCode) {
+                    401 -> {
+                        message = "사용자 인증 오류로 인해 자동 로그아웃 됩니다."
+                        positiveButtonFunc = object : DialogInterface.OnClickListener {
+                            override fun onClick(dialog: DialogInterface?, which: Int) {
+                                editActivity.finishAffinity()
+                                System.exit(0)
+                            }
+                        }
+                    }
+                    404 -> {
+                        message = "존재하지 않는 폴더입니다."
+                        positiveButtonFunc = object : DialogInterface.OnClickListener {
+                            override fun onClick(dialog: DialogInterface?, which: Int) {
+                                update()
+                            }
+                        }
+                    }
+                    409 -> {
+                        message = "이미 해당 폴더가 존재합니다."
+                        positiveButtonFunc = object : DialogInterface.OnClickListener {
+                            override fun onClick(dialog: DialogInterface?, which: Int) {
+                                update()
+                            }
+                        }
+                    }
+                    else -> {
+                        message = "폴더 수정에 실패하였습니다."
+                        positiveButtonFunc = object : DialogInterface.OnClickListener {
+                            override fun onClick(dialog: DialogInterface?, which: Int) {
+                                update()
+                            }
+                        }
+                    }
+                }
+
+                editActivity.runOnUiThread {
+                    val builder = AlertDialog.Builder(editActivity)
+
+                    builder.setIcon(R.drawable.ic_baseline_warning_8)
+                    builder.setTitle("수정 실패")
+                    builder.setMessage(message)
+
+                    builder.setPositiveButton("확인", positiveButtonFunc)
+
+                    builder.show()
+                }
+            }
+        }
+    }
+
+    private fun editLink() {
+        getSelectedLinks()
+        val id = selectedLinks[0]
+        val intent = Intent(editActivity, AddLinkyActivity::class.java)
+        intent.putExtra("purpose", "edit")
+        intent.putExtra("path", path)
+        intent.putExtra("id", id)
+        editLinkResultLauncher.launch(intent)
+    }
+
+    fun move(target:String) {
+        when(target) {
+            "folder" -> {
+                if(totalSelectedFolder == 0) {
+                    val builder = AlertDialog.Builder(editActivity)
+
+                    builder.setIcon(R.drawable.ic_baseline_warning_8)
+                    builder.setTitle("이동 실패")
+                    builder.setMessage("이동할 폴더를 선택해주세요.")
+
+                    builder.setPositiveButton("확인", null)
+
+                    builder.show()
+                }
+                else {
+                    moveFolder()
+                }
+            }
+            "link" -> {
+                if(totalSelectedLink == 0) {
+                    val builder = AlertDialog.Builder(editActivity)
+
+                    builder.setIcon(R.drawable.ic_baseline_warning_8)
+                    builder.setTitle("이동 실패")
+                    builder.setMessage("이동할 링크를 선택해주세요.")
+
+                    builder.setPositiveButton("확인", null)
+
+                    builder.show()
+                }
+                else {
+                    moveLink()
+                }
+            }
+        }
+    }
+
+    private fun moveFolder() {
+        getSelectedFolders()
+
+        val intent = Intent(editActivity, SelectPathActivity::class.java)
+        intent.putExtra("path", path)
+        intent.putExtra("folders", selectedFolders)
+        intent.putExtra("purpose", "move")
+        moveFolderResultLauncher.launch(intent)
+    }
+
+    private fun moveLink() {
+
+    }
+
+    fun delete(target:String) {
+        when(target) {
+            "folder" -> {
+                if(totalSelectedFolder == 0) {
+                    val builder = AlertDialog.Builder(editActivity)
+
+                    builder.setIcon(R.drawable.ic_baseline_warning_8)
+                    builder.setTitle("삭제 실패")
+                    builder.setMessage("삭제할 폴더를 선택해주세요.")
+
+                    builder.setPositiveButton("확인", null)
+
+                    builder.show()
+                }
+                else {
+                    deleteFolder()
+                }
+            }
+            "link" -> {
+                if(totalSelectedLink == 0) {
+                    val builder = AlertDialog.Builder(editActivity)
+
+                    builder.setIcon(R.drawable.ic_baseline_warning_8)
+                    builder.setTitle("삭제 실패")
+                    builder.setMessage("삭제할 링크를 선택해주세요.")
+
+                    builder.setPositiveButton("확인", null)
+
+                    builder.show()
+                }
+                else {
+                    deleteLink()
+                }
+            }
+        }
+    }
+
+    private fun deleteFolder() {
+        thread {
+            getSelectedFolders()
+
+            val responseCode = app.deleteFolder(selectedFolders)
+
+            if(responseCode == 200) {
+                editActivity.runOnUiThread {
+                    val toast = Toast.makeText(
+                        editActivity,
+                        "폴더 삭제가 완료되었습니다~!",
+                        Toast.LENGTH_SHORT
+                    )
+                    toast.show()
+                    update()
+                }
+            }
+            else if (responseCode != 200) {
+                var positiveButtonFunc: DialogInterface.OnClickListener? = null
+                var message = ""
+
+                when (responseCode) {
+                    401 -> {
+                        message = "사용자 인증 오류로 인해 자동 로그아웃 됩니다."
+                        positiveButtonFunc = object : DialogInterface.OnClickListener {
+                            override fun onClick(dialog: DialogInterface?, which: Int) {
+                                editActivity.finishAffinity()
+                                System.exit(0)
+                            }
+                        }
+                    }
+                    404 -> {
+                        message = "존재하지 않는 폴더가 있습니다."
+                        positiveButtonFunc = object : DialogInterface.OnClickListener {
+                            override fun onClick(dialog: DialogInterface?, which: Int) {
+                                update()
+                            }
+                        }
+                    }
+                    else -> {
+                        message = "폴더 삭제에 실패하였습니다."
+                        positiveButtonFunc = object : DialogInterface.OnClickListener {
+                            override fun onClick(dialog: DialogInterface?, which: Int) {
+                                update()
+                            }
+                        }
+                    }
+                }
+
+                editActivity.runOnUiThread {
+                    val builder = AlertDialog.Builder(editActivity)
+
+                    builder.setIcon(R.drawable.ic_baseline_warning_8)
+                    builder.setTitle("삭제 실패")
+                    builder.setMessage(message)
+
+                    builder.setPositiveButton("확인", positiveButtonFunc)
+
+                    builder.show()
+                }
+            }
+        }
+    }
+
+    private fun deleteLink() {
+
     }
 }

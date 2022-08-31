@@ -141,13 +141,26 @@
             android:layout_height="wrap_content"
             android:background="?attr/selectableItemBackground"
             android:clickable="true"
-            android:drawableEnd="@drawable/checkbox"
-            android:drawablePadding="10dp"
-            android:focusableInTouchMode="false"
-            android:text="개인정보처리방침 &amp; 서비스 이용약관 동의(필수)"
+            android:text="@string/terms_label"
             android:textAppearance="@style/TextAppearance.AppCompat.Body2"
             android:textStyle="bold"
             app:layout_constraintLeft_toLeftOf="parent"
+            app:layout_constraintRight_toLeftOf="@id/terms_agree"
+            app:layout_constraintTop_toBottomOf="@id/space2" />
+
+        <TextView
+            android:id="@+id/terms_agree"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="?attr/selectableItemBackground"
+            android:clickable="true"
+            android:drawableEnd="@drawable/checkbox"
+            android:drawablePadding="10dp"
+            android:focusableInTouchMode="false"
+            android:text="동의(필수)"
+            android:textAppearance="@style/TextAppearance.AppCompat.Body2"
+            android:textStyle="bold"
+            app:layout_constraintLeft_toRightOf="@id/terms"
             app:layout_constraintRight_toRightOf="parent"
             app:layout_constraintTop_toBottomOf="@id/space2" />
 
@@ -157,7 +170,7 @@
             android:layout_height="20dp"
             app:layout_constraintLeft_toLeftOf="parent"
             app:layout_constraintRight_toRightOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/terms"
+            app:layout_constraintTop_toBottomOf="@id/terms_agree"
             app:layout_constraintWidth_percent="1" />
 
         <androidx.appcompat.widget.AppCompatButton

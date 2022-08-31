@@ -43,19 +43,12 @@ class SelectPathActivity : AppCompatActivity() {
             folders = intent.getStringArrayListExtra("folders")
         }
 
-        // json 가져오기
-        var jsonStr = ""
-        thread {
-            jsonStr = app.read(newPath, false)
-
-            val fragment = FolderListFragment()
-            val bundle = Bundle()
-            bundle.putString("path", newPath)
-            bundle.putString("jsonStr", jsonStr)
-            bundle.putStringArrayList("folders", folders)
-            fragment.arguments = bundle
-            setFragment(newPath, fragment)
-        }
+        val fragment = FolderListFragment()
+        val bundle = Bundle()
+        bundle.putString("path", newPath)
+        bundle.putStringArrayList("folders", folders)
+        fragment.arguments = bundle
+        setFragment(newPath, fragment)
     }
 
     fun setCurrentPath(path:String) {
@@ -88,6 +81,7 @@ class SelectPathActivity : AppCompatActivity() {
                 if(intent.getStringExtra("purpose") == "move") {
                     val prevPath = intent.getStringExtra("path")
                     if(prevPath == path) {
+                        intent.putExtra("reason", "same path")
                         setResult(RESULT_CANCELED, intent)
                         finish()
                     }

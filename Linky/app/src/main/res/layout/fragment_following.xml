@@ -4,25 +4,25 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".FriendFragment" >
+    tools:context=".FollowingFragment" >
 
     <androidx.core.widget.NestedScrollView
         android:layout_width="0dp"
         android:layout_height="0dp"
         android:fillViewport="true"
-        android:paddingLeft="30dp"
-        android:paddingTop="25dp"
-        android:paddingRight="30dp"
-        android:paddingBottom="25dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintRight_toRightOf="parent"
         app:layout_constraintTop_toTopOf="parent">
 
         <androidx.constraintlayout.widget.ConstraintLayout
-            android:id="@+id/friend_container"
+            android:id="@+id/following_container"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:layout_marginLeft="30dp"
+            android:layout_marginTop="30dp"
+            android:layout_marginRight="30dp"
+            android:layout_marginBottom="30dp"
             android:background="@drawable/border_background"
             android:padding="20dp">
 

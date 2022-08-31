@@ -21,6 +21,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.RecyclerView
+import org.json.JSONObject
 import org.jsoup.Jsoup
 import org.jsoup.nodes.Document
 import org.poolc.linky.databinding.ActivityAddLinkyBinding
@@ -33,6 +34,9 @@ import kotlin.concurrent.thread
 
 class AddLinkyActivity : AppCompatActivity() {
     private lateinit var binding : ActivityAddLinkyBinding
+    private lateinit var app : MyApplication
+    private lateinit var purpose : String
+    private lateinit var link : Link
     private val keywords = ArrayList<String>()
     private lateinit var keywordAdapter : KeywordAdapter
     private var intentChanged = true
@@ -44,8 +48,7 @@ class AddLinkyActivity : AppCompatActivity() {
         Manifest.permission.ACCESS_MEDIA_LOCATION
     )
 
-    private var imgUrl : String? = null
-    private var url : String? = null
+    private var imgBitmap : Bitmap? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -58,6 +61,8 @@ class AddLinkyActivity : AppCompatActivity() {
             startActivity(intent)
             finish()
         }
+
+        app = application as MyApplication
 
         keywordAdapter = KeywordAdapter(keywords, object : KeywordAdapter.OnItemClickListener {
             override fun onItemClick(pos: Int) {
@@ -129,7 +134,6 @@ class AddLinkyActivity : AppCompatActivity() {
             // topbar 설정
             setSupportActionBar(addLinkyTopbar)
             supportActionBar?.setDisplayShowTitleEnabled(false)
-            addLinkyTopbarTitle.text = "링크 추가하기"
 
             // clear keywords listener 설정
             clearKeywords.setOnClickListener(clearKeywordsListener)
@@ -218,215 +222,305 @@ class AddLinkyActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
+
+        if(intentChanged) {
+            link = Link()
+            intentChanged = false
+            imgBitmap = null
+
+            purpose = intent.getStringExtra("purpose") ?: "add"
+
+            when(purpose) {
+                "add" -> {
+                    binding.addLinkyTopbarTitle.text = "링크 추가하기"
+                    settingForAdd()
+                }
+                "edit" -> {
+                    binding.addLinkyTopbarTitle.text = "링크 수정하기"
+                    settingForEdit()
+                }
+            }
+        }
+    }
+
+    private fun settingForAdd() {
         with(binding) {
-            if(intentChanged) {
-                intentChanged = false
-                imgUrl = null
-                url = null
-                var title : String? = null
-                var doc : Document? = null
-                val pattern = Patterns.WEB_URL
+            var url: String? = null
+            var imgUrl: String? = null
+            var title: String? = null
+            var doc: Document? = null
+            val pattern = Patterns.WEB_URL
 
-                thread {
-                    // 공유하기로부터 온 intent 처리
-                    if (intent.action == Intent.ACTION_SEND) {
-                        if(intent.type == "text/plain") {
-                            runOnUiThread {
-                                veil.visibility = View.VISIBLE
-                            }
-                            val txt = intent.getStringExtra(Intent.EXTRA_TEXT).toString()
-                            val txtDecoded = URLDecoder.decode(txt, "UTF-8")
-
-                            val matcher = pattern.matcher(txtDecoded)
-                            if (matcher.find()) {
-                                url = txtDecoded.substring(matcher.start(0), matcher.end(0))
-                            }
-                        }
-                    } else {
+            thread {
+                // 공유하기로부터 온 intent 처리
+                if (intent.action == Intent.ACTION_SEND) {
+                    if (intent.type == "text/plain") {
                         runOnUiThread {
                             veil.visibility = View.VISIBLE
                         }
-                        url = intent.getStringExtra("url")
-                    }
+                        val txt = intent.getStringExtra(Intent.EXTRA_TEXT).toString()
+                        val txtDecoded = URLDecoder.decode(txt, "UTF-8")
 
-                    if(url != null) {
-                        var conn : HttpURLConnection? = null
-                        try {
-                            conn = URL(url).openConnection() as HttpURLConnection
-                            if (conn.responseCode in 300..399) {
-                                url = conn.getHeaderField("Location")
-                                if(url!!.contains("link.naver.com")) {
-                                    try {
-                                        doc = Jsoup.connect(url).userAgent("Chrome").get()
-                                        var metaUrl = doc!!.select("meta[property=al:android:url]").first()
-                                            ?.attr("content")
-                                        metaUrl = URLDecoder.decode(metaUrl, "UTF-8")
-                                        val matcher = pattern.matcher(metaUrl)
-                                        if(matcher.find()) {
-                                            url = metaUrl!!.substring(
-                                                matcher.start(0),
-                                                matcher.end(0)
-                                            )
-                                        }
-                                    } catch (e: IllegalArgumentException) {
-                                        doc = null
-                                    } catch (e:Exception) {
-                                        Log.d("test", e.stackTraceToString())
-                                        doc = null
-                                    }
-                                }
-                            }
-                            else if(url!!.contains("naver.me")) {
+                        val matcher = pattern.matcher(txtDecoded)
+                        if (matcher.find()) {
+                            url = txtDecoded.substring(matcher.start(0), matcher.end(0))
+                        }
+                    }
+                } else {
+                    runOnUiThread {
+                        veil.visibility = View.VISIBLE
+                    }
+                    url = intent.getStringExtra("url")
+                }
+
+                if (url != null) {
+                    var conn: HttpURLConnection? = null
+                    try {
+                        conn = URL(url).openConnection() as HttpURLConnection
+                        if (conn.responseCode in 300..399) {
+                            url = conn.getHeaderField("Location")
+                            if (url!!.contains("link.naver.com")) {
                                 try {
                                     doc = Jsoup.connect(url).userAgent("Chrome").get()
-                                    var metaUrl = doc!!.select("meta[property=al:android:url]").first()
-                                        ?.attr("content")
+                                    var metaUrl =
+                                        doc!!.select("meta[property=al:android:url]").first()
+                                            ?.attr("content")
                                     metaUrl = URLDecoder.decode(metaUrl, "UTF-8")
                                     val matcher = pattern.matcher(metaUrl)
-                                    if(matcher.find()) {
+                                    if (matcher.find()) {
                                         url = metaUrl!!.substring(
                                             matcher.start(0),
                                             matcher.end(0)
                                         )
                                     }
-                                    val idx = url!!.indexOf("&version")
-                                    if(idx != -1) {
-                                        url = url!!.substring(
-                                            0,
-                                            idx
-                                        )
-                                    }
                                 } catch (e: IllegalArgumentException) {
                                     doc = null
-                                } catch (e:Exception) {
+                                } catch (e: Exception) {
                                     Log.d("test", e.stackTraceToString())
                                     doc = null
                                 }
                             }
-
-                            doc = try {
-                                url = URLDecoder.decode(url, "UTF-8")
-                                Jsoup.connect(url).userAgent("Chrome").get()
+                        } else if (url!!.contains("naver.me")) {
+                            try {
+                                doc = Jsoup.connect(url).userAgent("Chrome").get()
+                                var metaUrl = doc!!.select("meta[property=al:android:url]").first()
+                                    ?.attr("content")
+                                metaUrl = URLDecoder.decode(metaUrl, "UTF-8")
+                                val matcher = pattern.matcher(metaUrl)
+                                if (matcher.find()) {
+                                    url = metaUrl!!.substring(
+                                        matcher.start(0),
+                                        matcher.end(0)
+                                    )
+                                }
+                                val idx = url!!.indexOf("&version")
+                                if (idx != -1) {
+                                    url = url!!.substring(
+                                        0,
+                                        idx
+                                    )
+                                }
                             } catch (e: IllegalArgumentException) {
-                                null
-                            } catch (e:Exception) {
+                                doc = null
+                            } catch (e: Exception) {
                                 Log.d("test", e.stackTraceToString())
-                                null
+                                doc = null
                             }
-                        } catch (e: MalformedURLException) {
-                            Log.d("test", "올바르지 않은 URL 주소입니다.")
-                        } catch (e: IOException) {
-                            Log.d("test", "connection 오류")
-                        }finally {
-                            conn?.disconnect()
+                        }
+
+                        doc = try {
+                            url = URLDecoder.decode(url, "UTF-8")
+                            Jsoup.connect(url).userAgent("Chrome").get()
+                        } catch (e: IllegalArgumentException) {
+                            null
+                        } catch (e: Exception) {
+                            Log.d("test", e.stackTraceToString())
+                            null
+                        }
+                    } catch (e: MalformedURLException) {
+                        Log.d("test", "올바르지 않은 URL 주소입니다.")
+                    } catch (e: IOException) {
+                        Log.d("test", "connection 오류")
+                    } finally {
+                        conn?.disconnect()
+                    }
+                }
+
+                if (doc == null) {
+                    runOnUiThread {
+                        veil.visibility = View.INVISIBLE
+                        val builder = AlertDialog.Builder(this@AddLinkyActivity)
+                        val title = "URL 오류"
+                        val message = "존재하지 않는 url 입니다."
+                        builder.setIcon(R.drawable.ic_baseline_warning_8)
+                        builder.setTitle(title)
+                        builder.setMessage(message)
+
+                        builder.setPositiveButton("확인") { dialogInterface: DialogInterface, i: Int ->
+                            val intent = Intent(this@AddLinkyActivity, MainActivity::class.java)
+                            intent.flags = Intent.FLAG_ACTIVITY_SINGLE_TOP
+                            startActivity(intent)
+                            finishAndRemoveTask()
+                        }
+
+                        builder.show()
+                    }
+                } else {
+                    var metaTags = doc!!.select("meta[property]")
+                    for (meta in metaTags) {
+                        if (title != null && imgUrl != null) {
+                            break
+                        }
+
+                        if (title == null && meta.attr("property").contains("title")) {
+                            title = meta.attr("content")
+                        }
+
+                        if (imgUrl == null && meta.attr("property").contains("image")) {
+                            imgUrl = meta.attr("content")
                         }
                     }
 
-                    if (doc == null) {
-                        runOnUiThread {
-                            veil.visibility = View.INVISIBLE
-                            val builder = AlertDialog.Builder(this@AddLinkyActivity)
-                            val title = "URL 오류"
-                            val message = "존재하지 않는 url 입니다."
-                            builder.setIcon(R.drawable.ic_baseline_warning_8)
-                            builder.setTitle(title)
-                            builder.setMessage(message)
-
-                            builder.setPositiveButton("확인") { dialogInterface: DialogInterface, i: Int ->
-                                val intent = Intent(this@AddLinkyActivity, MainActivity::class.java)
-                                intent.flags = Intent.FLAG_ACTIVITY_SINGLE_TOP
-                                startActivity(intent)
-                                finishAndRemoveTask()
-                            }
-
-                            builder.show()
-                        }
-                    } else {
-                        var metaTags = doc!!.select("meta[property]")
-                        for (meta in metaTags) {
-                            if (title != null && imgUrl != null) {
-                                break
-                            }
-
-                            if (title == null && meta.attr("property").contains("title")) {
-                                title = meta.attr("content")
-                            }
-
-                            if (imgUrl == null && meta.attr("property").contains("image")) {
-                                imgUrl = meta.attr("content")
-                            }
+                    metaTags = doc!!.select("meta[name]")
+                    for (meta in metaTags) {
+                        if (title != null && imgUrl != null) {
+                            break
                         }
 
-                        metaTags = doc!!.select("meta[name]")
-                        for (meta in metaTags) {
-                            if (title != null && imgUrl != null) {
-                                break
-                            }
-
-                            if (title == null && meta.attr("name").contains("title")) {
-                                title = meta.attr("content")
-                            }
-
-                            if (imgUrl == null && meta.attr("name").contains("image")) {
-                                imgUrl = meta.attr("content")
-                            }
+                        if (title == null && meta.attr("name").contains("title")) {
+                            title = meta.attr("content")
                         }
 
-                        // TODO 키워드 제한으로 일단 삭제
-                        /*val keywordsStr : String? =
-                        doc.select("meta[name=keywords]").first()?.attr("content")
-                        if(keywordsStr != null) {
-                            val keywordsArr = keywordsStr.split(",")
-                            keywords.addAll(keywordsArr)
+                        if (imgUrl == null && meta.attr("name").contains("image")) {
+                            imgUrl = meta.attr("content")
+                        }
+                    }
+
+                    // TODO 키워드 제한으로 일단 삭제
+                    /*val keywordsStr : String? =
+                    doc.select("meta[name=keywords]").first()?.attr("content")
+                    if(keywordsStr != null) {
+                        val keywordsArr = keywordsStr.split(",")
+                        keywords.addAll(keywordsArr)
+                    }*/
+
+                    if (title == null) {
+                        title = doc!!.getElementsByTag("title")?.first()?.text()
+                    }
+
+                    if (imgUrl == null) {
+                        imgUrl = doc!!.getElementsByTag("img").first()?.absUrl("src")
+                    }
+
+                    var bitmap: Bitmap? = null
+                    if (imgUrl != null) {
+                        try {
+                            if (!imgUrl!!.contains("http")) {
+                                imgUrl = "http://$imgUrl"
+                            }
+                            val imageUrl: URL? = URL(imgUrl)
+                            val conn: HttpURLConnection? =
+                                imageUrl?.openConnection() as HttpURLConnection
+                            bitmap = BitmapFactory.decodeStream(conn?.inputStream)
+                        } catch (e: MalformedURLException) {
+                            bitmap = null
+                            Log.d("test", "MalformedURLException")
+                        }
+                    }
+
+                    runOnUiThread {
+                        veil.visibility = View.INVISIBLE
+
+                        // 키워드
+                        /*if(keywords.isNotEmpty()) {
+                        keywordAdapter.notifyDataSetChanged()
                         }*/
 
-                        if (title == null) {
-                            title = doc!!.getElementsByTag("title")?.first()?.text()
+                        // 폴더경로
+                        selectPath.visibility = View.VISIBLE
+
+                        // 제목
+                        titleTextInput.setText(title ?: "")
+
+                        // 대표이미지
+                        if (bitmap != null) {
+                            link.setImgUrl(imgUrl ?: "")
+                            linkImage.setImageBitmap(bitmap)
+                        } else {
+                            linkImage.setImageResource(R.mipmap.linky_logo)
                         }
 
-                        if (imgUrl == null) {
-                            imgUrl = doc!!.getElementsByTag("img").first()?.absUrl("src")
-                        }
+                        // 링크주소
+                        link.setUrl(url ?: "")
+                        linkAddressTextInput.setText(url)
+                        linkAddressTextInput.isEnabled = false
+                    }
+                }
+            }
+        }
+    }
 
-                        var bitmap: Bitmap? = null
-                        if (imgUrl != null) {
-                            try {
-                                if (!imgUrl!!.contains("http")) {
-                                    imgUrl = "http://$imgUrl"
-                                }
-                                val imageUrl: URL? = URL(imgUrl)
-                                val conn: HttpURLConnection? =
-                                    imageUrl?.openConnection() as HttpURLConnection
-                                bitmap = BitmapFactory.decodeStream(conn?.inputStream)
-                            } catch (e: MalformedURLException) {
-                                bitmap = null
-                                Log.d("test", "MalformedURLException")
-                            }
-                        }
+    private fun settingForEdit() {
+        with(binding) {
+            thread {
+                val path = intent.getStringExtra("path")
+                val id = intent.getStringExtra("id")
 
-                        runOnUiThread {
-                            veil.visibility = View.INVISIBLE
+                val response = app.getLinkInfo(path!!, id!!)
 
-                            // 키워드
-                            /*if(keywords.isNotEmpty()) {
-                                keywordAdapter.notifyDataSetChanged()
-                            }*/
+                if(response != "") {
+                    val jsonObj = JSONObject(response)
+                    val id = jsonObj.getString("id")
+                    val title = jsonObj.getString("name")
+                    val imgUrl = jsonObj.getString("imageUrl")
+                    val url = jsonObj.getString("url")
+                    val keywordsJsonArr = jsonObj.getJSONArray("keywords")
+                    val isPublic = jsonObj.getString("isPublic").toBoolean()
 
-                            // 제목
-                            titleTextInput.setText(title ?: "")
+                    keywords.clear()
+                    for(idx in 0 until keywordsJsonArr.length()) {
+                        keywords.add(keywordsJsonArr[idx].toString())
+                    }
 
-                            // 대표이미지
-                            if (bitmap != null) {
-                                linkImage.setImageBitmap(bitmap)
-                            } else {
-                                linkImage.setImageResource(R.mipmap.linky_logo)
-                            }
-
-                            // 링크주소
-                            linkAddressTextInput.setText(url)
-                            linkAddressTextInput.isEnabled = false
+                    var bitmap: Bitmap? = null
+                    if (imgUrl != "") {
+                        try {
+                            val imageUrl: URL? = URL(imgUrl)
+                            val conn: HttpURLConnection? =
+                                imageUrl?.openConnection() as HttpURLConnection
+                            bitmap = BitmapFactory.decodeStream(conn?.inputStream)
+                        } catch (e: MalformedURLException) {
+                            bitmap = null
+                            Log.d("test", "MalformedURLException")
                         }
                     }
+
+                    link.setId(id)
+                    runOnUiThread {
+                        switch.isChecked = isPublic
+
+                        keywordAdapter.notifyDataSetChanged()
+
+                        folderPath.text = path
+                        selectPath.visibility = View.INVISIBLE
+
+                        titleTextInput.setText(title)
+
+                        if (bitmap != null) {
+                            link.setImgUrl(imgUrl ?: "")
+                            linkImage.setImageBitmap(bitmap)
+                        } else {
+                            linkImage.setImageResource(R.mipmap.linky_logo)
+                        }
+
+                        link.setUrl(url)
+                        linkAddressTextInput.setText(url)
+                        linkAddressTextInput.isEnabled = false
+                    }
+                }
+                else {
+                    setResult(RESULT_CANCELED)
+                    finish()
                 }
             }
         }
@@ -506,7 +600,7 @@ class AddLinkyActivity : AppCompatActivity() {
                                 "키워드 검색이 불가하더라도 추가하시겠습니까?")
 
                         dialog.setPositiveButton("추가") { dialogInterface: DialogInterface, i: Int ->
-                            createLink()
+                            done()
                         }
 
                         dialog.setNegativeButton("취소", null)
@@ -515,7 +609,7 @@ class AddLinkyActivity : AppCompatActivity() {
                     }
                     else {
                         // 키워드가 있다면
-                        createLink()
+                        done()
                     }
                 }
             }
@@ -523,16 +617,30 @@ class AddLinkyActivity : AppCompatActivity() {
         return super.onOptionsItemSelected(item)
     }
 
-    private fun createLink() {
-        val app = application as MyApplication
-
-        val path = binding.folderPath.text.toString()
+    private fun done() {
         val title = binding.titleTextInput.text.toString()
 
-        // TODO 이미지 URL 인지 BITMAP 인지 확인
+        link.setLinkTitle(title)
+        link.setKeywords(keywords)
+        link.setIsPublic(switch.isChecked.toString())
+
+        // TODO 이미지 URL 인지 BITMAP 인지 확인하고 imgUrl 변경
+
+        when(purpose) {
+            "add" -> {
+                createLink()
+            }
+            "edit" -> {
+                editLink()
+            }
+        }
+    }
+
+    private fun createLink() {
+        val path = binding.folderPath.text.toString()
 
         thread {
-            val responseCode = app.createLink(switch.isChecked, keywords, path, title, imgUrl!!, url!!)
+            val responseCode = app.createLink(path, link)
 
             when (responseCode) {
                 200 -> {
@@ -553,6 +661,17 @@ class AddLinkyActivity : AppCompatActivity() {
                     Log.d("test", "Unauthorized")
                 }
             }
+        }
+    }
+
+    private fun editLink() {
+        val path = binding.folderPath.text.toString()
+
+        thread {
+            val responseCode = app.editLink(path, link)
+            intent.putExtra("responseCode", responseCode)
+            setResult(RESULT_OK, intent)
+            finishAndRemoveTask()
         }
     }
 

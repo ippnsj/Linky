@@ -3,7 +3,6 @@ package org.poolc.linky
 import android.content.Context
 import android.content.Intent
 import android.os.Bundle
-import android.util.Log
 import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
@@ -17,8 +16,8 @@ class InformationFragment : Fragment() {
     private lateinit var binding : FragmentInformationBinding
     private lateinit var mainActivity : MainActivity
     private lateinit var app : MyApplication
-    private lateinit var friendAdapter : FriendAdapter
-    private val friends = ArrayList<User>()
+    private lateinit var followingAdapter : FriendAdapter
+    private val followings = ArrayList<User>()
 
     override fun onAttach(context: Context) {
         super.onAttach(context)
@@ -37,14 +36,14 @@ class InformationFragment : Fragment() {
         val view = inflater.inflate(R.layout.fragment_information, container, false)
         binding = FragmentInformationBinding.bind(view)
 
-        friendAdapter = FriendAdapter(friends, object : FriendAdapter.OnItemClickListener {
+        followingAdapter = FriendAdapter(followings, object : FriendAdapter.OnItemClickListener {
             override fun onItemClick(pos: Int) {
 
             }
         })
 
         with(binding) {
-            friendRecyclerPreview.adapter = friendAdapter
+            followingRecyclerPreview.adapter = followingAdapter
         }
 
         return view
@@ -69,8 +68,8 @@ class InformationFragment : Fragment() {
                 startActivity(intent)
             }
 
-            viewAll.setOnClickListener {
-                mainActivity.changeChildFragment(FriendFragment(), null, true)
+            viewAllFollowing.setOnClickListener {
+                mainActivity.changeChildFragment(FollowingFragment(), null, true)
             }
         }
     }
@@ -85,58 +84,73 @@ class InformationFragment : Fragment() {
 
         thread {
             val jsonStr = app.getProfile()
-            val jsonObj = JSONObject(jsonStr)
-            val imageUrl = jsonObj.getString("imageUrl")
+            if(jsonStr != "") {
+                val jsonObj = JSONObject(jsonStr)
+                val imageUrl = jsonObj.getString("imageUrl")
 
-            if(imageUrl != "") {
-                // TODO url로부터 이미지 가져오는 작업
-            }
+                if (imageUrl != "") {
+                    // TODO url로부터 이미지 가져오는 작업
+                }
 
-            mainActivity.runOnUiThread {
-                with(binding) {
-                    nickname.text = jsonObj.getString("nickname")
+                mainActivity.runOnUiThread {
+                    with(binding) {
+                        nickname.text = jsonObj.getString("nickname")
 
-                    if(imageUrl != "") {
-                        // TODO url로부터 가져온 이미지 display
+                        if (imageUrl != "") {
+                            // TODO url로부터 가져온 이미지 display
+                        }
                     }
                 }
             }
         }
 
         thread {
-            friends.clear()
+            followings.clear()
 
             val jsonStr = app.getFriends()
 
-            mainActivity.runOnUiThread {
-                val jsonObj = JSONObject(jsonStr)
-                val numberOfRequest = jsonObj.getString("numberOfRequest").toInt()
-                val numberOfFriend = jsonObj.getString("numberOfFriend").toInt()
-                val friendsJsonArr = jsonObj.getJSONArray("friends")
-                var limit = numberOfFriend
+            if(jsonStr != "") {
+                mainActivity.runOnUiThread {
+                    val jsonObj = JSONObject(jsonStr)
+                    val numberOfFollowing = jsonObj.getString("numberOfFollowing").toInt()
+                    val numberOfFollower = jsonObj.getString("numberOfFollower").toInt()
+                    var limit = numberOfFollowing
 
-                if(numberOfFriend == 0) {
-                    binding.noFriendNotice.visibility = View.VISIBLE
+                    binding.followings.text = numberOfFollowing.toString()
+                    binding.followers.text = numberOfFollower.toString()
+
+                    if(numberOfFollowing == 0) {
+                        binding.noFollowingNotice.visibility = View.VISIBLE
+                    }
+                    else {
+                        binding.noFollowingNotice.visibility = View.INVISIBLE
+
+                        val followingJsonArr = jsonObj.getJSONArray("followings")
+
+                        if(limit > 5) {
+                            limit = 5
+                        }
+
+                        for(i in 0 until limit) {
+                            val followingJsonObj = followingJsonArr.getJSONObject(i)
+                            val email = followingJsonObj.getString("email")
+                            val nickname = followingJsonObj.getString("nickname")
+                            val imageUrl = followingJsonObj.getString("imageUrl")
+
+                            val friend = User(email, nickname, imageUrl)
+                            followings.add(friend)
+                        }
+
+                        followingAdapter.notifyDataSetChanged()
+                    }
+
+                    if(numberOfFollower == 0) {
+                        binding.noFollowerNotice.visibility = View.VISIBLE
+                    }
+                    else {
+                        binding.noFollowerNotice.visibility = View.INVISIBLE
+                    }
                 }
-                else {
-                    binding.noFriendNotice.visibility = View.INVISIBLE
-                }
-
-                if(limit > 5) {
-                    limit = 5
-                }
-
-                for(i in 0 until limit) {
-                    val friendJsonObj = friendsJsonArr.getJSONObject(i)
-                    val email = friendJsonObj.getString("email")
-                    val nickname = friendJsonObj.getString("nickname")
-                    val imageUrl = friendJsonObj.getString("imageUrl")
-
-                    val friend = User(email, nickname, imageUrl)
-                    friends.add(friend)
-                }
-
-                friendAdapter.notifyDataSetChanged()
             }
         }
     }

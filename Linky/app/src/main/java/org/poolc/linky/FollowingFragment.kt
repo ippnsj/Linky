@@ -8,10 +8,10 @@ import android.view.MenuItem
 import android.view.View
 import android.view.ViewGroup
 import android.widget.PopupMenu
-import org.poolc.linky.databinding.FragmentFriendBinding
+import org.poolc.linky.databinding.FragmentFollowingBinding
 
-class FriendFragment : Fragment() {
-    private lateinit var binding : FragmentFriendBinding
+class FollowingFragment : Fragment() {
+    private lateinit var binding : FragmentFollowingBinding
     private lateinit var mainActivity : MainActivity
     private lateinit var app : MyApplication
 
@@ -29,8 +29,8 @@ class FriendFragment : Fragment() {
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View? {
-        val view = inflater.inflate(R.layout.fragment_friend, container, false)
-        binding = FragmentFriendBinding.bind(view)
+        val view = inflater.inflate(R.layout.fragment_following, container, false)
+        binding = FragmentFollowingBinding.bind(view)
 
         return view
     }

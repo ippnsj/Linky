@@ -2,15 +2,11 @@ package org.poolc.linky
 
 import android.content.Context
 import android.os.Bundle
-import android.util.Log
 import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import androidx.activity.OnBackPressedCallback
-import org.json.JSONObject
 import org.poolc.linky.databinding.FragmentMoreBinding
-import kotlin.concurrent.thread
 
 class MoreFragment : Fragment() {
     private lateinit var binding : FragmentMoreBinding
@@ -53,7 +49,7 @@ class MoreFragment : Fragment() {
             else if(fragment is EditProfileFragment) {
                 fragment.update()
             }
-            else if(fragment is FriendFragment) {
+            else if(fragment is FollowingFragment) {
                 fragment.update()
             }
         }

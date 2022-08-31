@@ -3,6 +3,11 @@
     xmlns:android="http://schemas.android.com/apk/res/android">
 
     <item
+        android:id="@+id/edit"
+        android:icon="@drawable/edit"
+        android:title="수정"
+        app:showAsAction="ifRoom" />
+    <item
         android:id="@+id/move"
         android:icon="@drawable/move"
         android:title="이동"

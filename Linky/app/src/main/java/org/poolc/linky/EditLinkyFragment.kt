@@ -10,6 +10,7 @@ import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.view.inputmethod.EditorInfo
 import android.widget.Toast
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
@@ -18,6 +19,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.size
 import androidx.recyclerview.widget.RecyclerView
 import org.json.JSONObject
+import org.poolc.linky.databinding.FoldernameDialogBinding
 import org.poolc.linky.databinding.FragmentEditLinkyBinding
 import kotlin.concurrent.thread
 import kotlin.math.ceil
@@ -31,7 +33,7 @@ class EditLinkyFragment : Fragment() {
     private lateinit var path : String
     private lateinit var editActivity: EditActivity
     private var selectedFolders = ArrayList<String>()
-    private val folderResultLauncher = registerForActivityResult(
+    private val moveFolderResultLauncher = registerForActivityResult(
         ActivityResultContracts.StartActivityForResult()) { result ->
             if(result.resultCode == AppCompatActivity.RESULT_OK) {
                 val responseCode = result.data?.getIntExtra("responseCode", -1)
@@ -49,12 +51,6 @@ class EditLinkyFragment : Fragment() {
                     var message = ""
 
                     when (responseCode) {
-                        400 -> {
-                            message = "폴더 이동에 실패하였습니다."
-                        }
-                        404 -> {
-                            message = "존재하지 않는 폴더가 있습니다."
-                        }
                         401 -> {
                             message = "사용자 인증 오류로 인해 자동 로그아웃 됩니다."
                             positiveButtonFunc =
@@ -67,6 +63,12 @@ class EditLinkyFragment : Fragment() {
                                         System.exit(0)
                                     }
                                 }
+                        }
+                        404 -> {
+                            message = "존재하지 않는 폴더가 있습니다."
+                        }
+                        409 -> {
+                            message = "이동하고자 하는 경로에 이미 해당 폴더가 존재합니다."
                         }
                         else -> {
                             message = "폴더 이동에 실패하였습니다."
@@ -82,15 +84,18 @@ class EditLinkyFragment : Fragment() {
                     builder.show()
                 }
             } else if(result.resultCode == AppCompatActivity.RESULT_CANCELED) {
-                val builder = AlertDialog.Builder(editActivity)
+                val reason = result.data?.getStringExtra("reason") ?: ""
+                if(reason == "same path") {
+                    val builder = AlertDialog.Builder(editActivity)
 
-                builder.setIcon(R.drawable.ic_baseline_warning_8)
-                builder.setTitle("이동 실패")
-                builder.setMessage("이동하고자 하는 경로와 현재 경로가 같습니다.")
+                    builder.setIcon(R.drawable.ic_baseline_warning_8)
+                    builder.setTitle("이동 실패")
+                    builder.setMessage("이동하고자 하는 경로와 현재 경로가 같습니다.")
 
-                builder.setPositiveButton("확인", null)
+                    builder.setPositiveButton("확인", null)
 
-                builder.show()
+                    builder.show()
+                }
             }
         }
 
@@ -137,46 +142,34 @@ class EditLinkyFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        thread {
-            // json 파싱
-            val jsonStr = app.read(path, false)
+        with(binding) {
+            folderRecycler.addItemDecoration(object : RecyclerView.ItemDecoration() {
+                override fun getItemOffsets(
+                    outRect: Rect,
+                    view: View,
+                    parent: RecyclerView,
+                    state: RecyclerView.State
+                ) {
+                    val pos = parent.getChildAdapterPosition(view)
+                    val size = parent.size
+                    val rows = ceil((size / 3).toDouble())
 
-            editActivity.runOnUiThread {
-                if(jsonStr != "") {
-                    setFolders(jsonStr!!)
+                    if(pos > (rows - 1) * 3) {
+                        outRect.top = 20
+                        outRect.bottom = 40
+                    }
+                    else {
+                        outRect.top = 20
+                        outRect.bottom = 20
+                    }
                 }
-                else {
-                    folders.clear()
-                    totalSelected = 0
-                }
-
-                folderAdapter.notifyDataSetChanged()
-
-                with(binding) {
-                    folderRecycler.addItemDecoration(object : RecyclerView.ItemDecoration() {
-                        override fun getItemOffsets(
-                            outRect: Rect,
-                            view: View,
-                            parent: RecyclerView,
-                            state: RecyclerView.State
-                        ) {
-                            val pos = parent.getChildAdapterPosition(view)
-                            val size = parent.size
-                            val rows = ceil((size / 3).toDouble())
-
-                            if(pos > (rows - 1) * 3) {
-                                outRect.top = 20
-                                outRect.bottom = 40
-                            }
-                            else {
-                                outRect.top = 20
-                                outRect.bottom = 20
-                            }
-                        }
-                    })
-                }
-            }
+            })
         }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        update()
     }
 
     private fun setFolders(jsonStr:String) {
@@ -193,17 +186,17 @@ class EditLinkyFragment : Fragment() {
 
     private fun update() {
         thread {
+            folders.clear()
+            totalSelected = 0
+
             // json 파싱
             val jsonStr = app.read(path, false)
 
+            if (jsonStr != "") {
+                setFolders(jsonStr!!)
+            }
+
             editActivity.runOnUiThread {
-                folders.clear()
-                totalSelected = 0
-
-                if (jsonStr != "") {
-                    setFolders(jsonStr!!)
-                }
-
                 folderAdapter.notifyDataSetChanged()
             }
         }
@@ -242,6 +235,140 @@ class EditLinkyFragment : Fragment() {
         }
     }
 
+    fun edit() {
+        if(totalSelected == 0) {
+            val builder = AlertDialog.Builder(editActivity)
+
+            builder.setIcon(R.drawable.ic_baseline_warning_8)
+            builder.setTitle("수정 실패")
+            builder.setMessage("수정할 폴더를 선택해주세요.")
+
+            builder.setPositiveButton("확인", null)
+
+            builder.show()
+        }
+        else if(totalSelected > 1) {
+            val builder = AlertDialog.Builder(editActivity)
+
+            builder.setIcon(R.drawable.ic_baseline_warning_8)
+            builder.setTitle("수정 실패")
+            builder.setMessage("수정할 폴더를 하나만 선택해주세요.")
+
+            builder.setPositiveButton("확인", null)
+
+            builder.show()
+        }
+        else {
+            val builder = AlertDialog.Builder(editActivity)
+            builder.setTitle("새로운 폴더명을 입력해주세요")
+            builder.setIcon(R.drawable.edit_pink)
+
+            val dialogView = layoutInflater.inflate(R.layout.foldername_dialog, null)
+            val dialogBinding = FoldernameDialogBinding.bind(dialogView)
+
+            builder.setView(dialogView)
+
+            builder.setPositiveButton("추가") { dialogInterface: DialogInterface, i: Int ->
+                val newFolderName = dialogBinding.newFolderName.text?.trim().toString()
+                if(newFolderName == "") {
+                    dialogBinding.newFolderName.error = "앞/뒤 공백 없이 1자 이상의 폴더명을 입력해주세요."
+                }
+                else if(newFolderName!!.contains("/")) {
+                    dialogBinding.newFolderName.error = "폴더명에는 /가 포함될 수 없습니다."
+                }
+                else {
+                    editFolder(newFolderName)
+                }
+            }
+            builder.setNegativeButton("취소", null)
+
+            val dialog = builder.create()
+
+            dialog.show()
+
+            dialogBinding.newFolderName.setOnEditorActionListener { v, actionId, event ->
+                if(actionId == EditorInfo.IME_ACTION_DONE) {
+                    dialog.getButton(DialogInterface.BUTTON_POSITIVE).performClick()
+                    true
+                }
+                false
+            }
+        }
+    }
+
+    private fun editFolder(newFolderName:String) {
+        getSelectedFolders()
+        val prevFolderName = selectedFolders[0]
+
+        thread {
+            val responseCode = app.editFolder("$path/$prevFolderName", newFolderName)
+
+            if(responseCode == 200) {
+                editActivity.runOnUiThread {
+                    val toast = Toast.makeText(
+                        editActivity,
+                        "수정이 완료되었습니다~!",
+                        Toast.LENGTH_SHORT
+                    )
+                    toast.show()
+                    update()
+                }
+            }
+            else {
+                var positiveButtonFunc: DialogInterface.OnClickListener? = null
+                var message = ""
+
+                when(responseCode) {
+                    401 -> {
+                        message = "사용자 인증 오류로 인해 자동 로그아웃 됩니다."
+                        positiveButtonFunc = object : DialogInterface.OnClickListener {
+                            override fun onClick(dialog: DialogInterface?, which: Int) {
+                                editActivity.finishAffinity()
+                                System.exit(0)
+                            }
+                        }
+                    }
+                    404 -> {
+                        message = "존재하지 않는 폴더입니다."
+                        positiveButtonFunc = object : DialogInterface.OnClickListener {
+                            override fun onClick(dialog: DialogInterface?, which: Int) {
+                                update()
+                            }
+                        }
+                    }
+                    409 -> {
+                        message = "이미 해당 폴더가 존재합니다."
+                        positiveButtonFunc = object : DialogInterface.OnClickListener {
+                            override fun onClick(dialog: DialogInterface?, which: Int) {
+                                update()
+                            }
+                        }
+                    }
+                    else -> {
+                        message = "폴더 수정에 실패하였습니다."
+                        positiveButtonFunc = object : DialogInterface.OnClickListener {
+                            override fun onClick(dialog: DialogInterface?, which: Int) {
+                                update()
+                            }
+                        }
+                    }
+                }
+
+                editActivity.runOnUiThread {
+                    val builder = AlertDialog.Builder(editActivity)
+
+                    builder.setIcon(R.drawable.ic_baseline_warning_8)
+                    builder.setTitle("수정 실패")
+                    builder.setMessage(message)
+
+                    builder.setPositiveButton("확인", positiveButtonFunc)
+
+                    builder.show()
+                }
+            }
+        }
+    }
+
     fun move() {
         if(totalSelected == 0) {
             val builder = AlertDialog.Builder(editActivity)
@@ -261,7 +388,7 @@ class EditLinkyFragment : Fragment() {
             intent.putExtra("path", path)
             intent.putExtra("folders", selectedFolders)
             intent.putExtra("purpose", "move")
-            folderResultLauncher.launch(intent)
+            moveFolderResultLauncher.launch(intent)
         }
     }
 
@@ -289,14 +416,6 @@ class EditLinkyFragment : Fragment() {
 
                 if (responseCode != 200) {
                     when (responseCode) {
-                        400 -> {
-                            message = "폴더 삭제에 실패하였습니다."
-                            positiveButtonFunc = object : DialogInterface.OnClickListener {
-                                override fun onClick(dialog: DialogInterface?, which: Int) {
-                                    update()
-                                }
-                            }
-                        }
                         404 -> {
                             message = "존재하지 않는 폴더가 있습니다."
                             positiveButtonFunc = object : DialogInterface.OnClickListener {

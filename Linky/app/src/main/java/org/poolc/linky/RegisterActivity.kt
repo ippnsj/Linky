@@ -1,8 +1,12 @@
 package org.poolc.linky
 
 import android.content.Intent
+import android.graphics.Paint
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import android.text.Spannable
+import android.text.SpannableString
+import android.text.style.UnderlineSpan
 import android.util.Log
 import android.util.Patterns
 import android.view.View
@@ -32,10 +36,30 @@ class RegisterActivity : AppCompatActivity() {
             when(intent.getStringExtra("purpose")) {
                 "register" -> {
                     terms.visibility = View.VISIBLE
+                    termsAgree.visibility = View.VISIBLE
                     doneButton.text = "가입하기"
+
+                    doneButton.setOnClickListener {
+                        val email = emailTextInput.text.toString()
+                        val password = passwordTextInput.text.toString()
+
+                        val intent = Intent(this@RegisterActivity, SetProfileActivity::class.java)
+                        intent.putExtra("email", email)
+                        intent.putExtra("password", password)
+                        startActivity(intent)
+                    }
+                    terms.setOnClickListener {
+                        val intent = Intent(this@RegisterActivity, TermsActivity::class.java)
+                        startActivity(intent)
+                    }
+
+                    termsAgree.setOnClickListener {
+                        termsAgree.isSelected = !termsAgree.isSelected
+                    }
                 }
                 "reset" -> {
                     terms.visibility = View.INVISIBLE
+                    termsAgree.visibility = View.INVISIBLE
                     doneButton.text = "비밀번호 재설정"
                 }
             }
@@ -46,16 +70,6 @@ class RegisterActivity : AppCompatActivity() {
                     true
                 }
                 false
-            }
-
-            doneButton.setOnClickListener {
-                val email = emailTextInput.text.toString()
-                val password = passwordTextInput.text.toString()
-
-                val intent = Intent(this@RegisterActivity, SetProfileActivity::class.java)
-                intent.putExtra("email", email)
-                intent.putExtra("password", password)
-                startActivity(intent)
             }
         }
     }

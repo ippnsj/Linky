@@ -4,6 +4,7 @@ import android.content.Context
 import android.content.DialogInterface
 import android.content.Intent
 import android.os.Bundle
+import android.util.Log
 import android.util.Patterns
 import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
@@ -111,15 +112,17 @@ class EditProfileFragment : Fragment() {
                         // TODO 해당 이메일의 유저가 없음? 401과 차이는?
                     }
                     401 -> {
-                        val builder = AlertDialog.Builder(mainActivity)
-                        builder.setIcon(R.drawable.ic_baseline_warning_8)
-                        builder.setTitle("프로필 수정 실패")
-                        builder.setMessage("사용자 인증 오류로 인해 자동 로그아웃 됩니다.")
-                        builder.setPositiveButton("확인") { dialogInterface: DialogInterface, i: Int ->
-                            mainActivity.finishAffinity()
-                            System.exit(0)
+                        mainActivity.runOnUiThread {
+                            val builder = AlertDialog.Builder(mainActivity)
+                            builder.setIcon(R.drawable.ic_baseline_warning_8)
+                            builder.setTitle("프로필 수정 실패")
+                            builder.setMessage("사용자 인증 오류로 인해 자동 로그아웃 됩니다.")
+                            builder.setPositiveButton("확인") { dialogInterface: DialogInterface, i: Int ->
+                                mainActivity.finishAffinity()
+                                System.exit(0)
+                            }
+                            builder.show()
                         }
-                        builder.show()
                     }
                 }
             }
@@ -131,21 +134,23 @@ class EditProfileFragment : Fragment() {
 
         thread {
             val jsonStr = app.getProfile()
-            val jsonObj = JSONObject(jsonStr)
-            imageUrl = jsonObj.getString("imageUrl")
+            if(jsonStr != "") {
+                val jsonObj = JSONObject(jsonStr)
+                imageUrl = jsonObj.getString("imageUrl")
 
-            if(imageUrl != "") {
-                // TODO url로부터 이미지 가져오는 작업
-            }
+                if (imageUrl != "") {
+                    // TODO url로부터 이미지 가져오는 작업
+                }
 
-            mainActivity.runOnUiThread {
-                with(binding) {
-                    nicknameTextInput.setText(jsonObj.getString("nickname"))
-                    // TODO api 수정돼서 email 넘어오면 수정
-                    email.text = MyApplication.sharedPref.getString("email", "")
+                mainActivity.runOnUiThread {
+                    with(binding) {
+                        nicknameTextInput.setText(jsonObj.getString("nickname"))
+                        // TODO api 수정돼서 email 넘어오면 수정
+                        email.text = MyApplication.sharedPref.getString("email", "")
 
-                    if(imageUrl != "") {
-                        // TODO url로부터 가져온 이미지 display
+                        if (imageUrl != "") {
+                            // TODO url로부터 가져온 이미지 display
+                        }
                     }
                 }
             }
