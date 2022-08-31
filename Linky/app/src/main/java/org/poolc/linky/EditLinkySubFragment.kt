@@ -682,6 +682,66 @@ class EditLinkySubFragment : Fragment() {
     }
 
     private fun deleteLink() {
+        thread {
+            getSelectedLinks()
 
+            val responseCode = app.deleteLink(path, selectedLinks)
+
+            if(responseCode == 200) {
+                editActivity.runOnUiThread {
+                    val toast = Toast.makeText(
+                        editActivity,
+                        "링크 삭제가 완료되었습니다~!",
+                        Toast.LENGTH_SHORT
+                    )
+                    toast.show()
+                    update()
+                }
+            }
+            else if (responseCode != 200) {
+                var positiveButtonFunc: DialogInterface.OnClickListener? = null
+                var message = ""
+
+                when (responseCode) {
+                    401 -> {
+                        message = "사용자 인증 오류로 인해 자동 로그아웃 됩니다."
+                        positiveButtonFunc = object : DialogInterface.OnClickListener {
+                            override fun onClick(dialog: DialogInterface?, which: Int) {
+                                editActivity.finishAffinity()
+                                System.exit(0)
+                            }
+                        }
+                    }
+                    404 -> {
+                        message = "해당 경로에 삭제하고자 하는 링크가 존재하지 않습니다."
+                        positiveButtonFunc = object : DialogInterface.OnClickListener {
+                            override fun onClick(dialog: DialogInterface?, which: Int) {
+                                update()
+                            }
+                        }
+                    }
+                    else -> {
+                        message = "링크 삭제에 실패하였습니다."
+                        positiveButtonFunc = object : DialogInterface.OnClickListener {
+                            override fun onClick(dialog: DialogInterface?, which: Int) {
+                                update()
+                            }
+                        }
+                    }
+                }
+
+                editActivity.runOnUiThread {
+                    val builder = AlertDialog.Builder(editActivity)
+
+                    builder.setIcon(R.drawable.ic_baseline_warning_8)
+                    builder.setTitle("삭제 실패")
+                    builder.setMessage(message)
+
+                    builder.setPositiveButton("확인", positiveButtonFunc)
+
+                    builder.show()
+                }
+            }
+        }
     }
 }

@@ -339,6 +339,44 @@ class MyApplication : Application() {
         return responseCode
     }
 
+    fun deleteLink(path:String, selectedLinks:ArrayList<String>) : Int {
+        val url = URL("http://$ip:$port/link")
+        var conn : HttpURLConnection? = null
+        var responseCode = -1
+
+        try {
+            conn = url.openConnection() as HttpURLConnection
+            conn!!.requestMethod = "DELETE"
+            conn!!.connectTimeout = 10000
+            conn!!.readTimeout = 100000
+            conn!!.setRequestProperty("Content-Type", "application/json")
+            conn!!.setRequestProperty("Accept", "application/json")
+
+            conn!!.doOutput = true
+
+            val ids = JSONArray(selectedLinks)
+
+            val body = JSONObject()
+            body.put("email", sharedPref!!.getString("email", ""))
+            body.put("path", path)
+            body.put("ids", ids)
+
+            val os = conn!!.outputStream
+            os.write(body.toString().toByteArray())
+            os.flush()
+
+            responseCode =  conn!!.responseCode
+        } catch (e: MalformedURLException) {
+            Log.d("test", "올바르지 않은 URL 주소입니다.")
+        } catch (e: IOException) {
+            Log.d("test", "connection 오류")
+        } finally {
+            conn?.disconnect()
+        }
+
+        return responseCode
+    }
+
     // Member
     fun getProfile() : String {
         val email = sharedPref!!.getString("email", "")

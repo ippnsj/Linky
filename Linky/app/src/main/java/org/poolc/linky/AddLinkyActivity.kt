@@ -597,7 +597,7 @@ class AddLinkyActivity : AppCompatActivity() {
                         dialog.setIcon(R.drawable.no_keyword)
                         dialog.setTitle("키워드 없음")
                         dialog.setMessage("설정된 키워드가 없습니다.\n" +
-                                "키워드 검색이 불가하더라도 추가하시겠습니까?")
+                                "키워드 검색이 불가하더라도 계속하시겠습니까?")
 
                         dialog.setPositiveButton("추가") { dialogInterface: DialogInterface, i: Int ->
                             done()
