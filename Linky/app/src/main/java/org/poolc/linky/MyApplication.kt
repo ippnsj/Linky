@@ -187,44 +187,6 @@ class MyApplication : Application() {
         return response
     }
 
-    fun moveFolder(originalPath:ArrayList<String>, modifiedPath:String) : Int {
-        val url = URL("http://$ip:$port/folder/path")
-        var conn : HttpURLConnection? = null
-        var responseCode = -1
-
-        try {
-            conn = url.openConnection() as HttpURLConnection
-            conn!!.requestMethod = "PUT"
-            conn!!.connectTimeout = 10000
-            conn!!.readTimeout = 100000
-            conn!!.setRequestProperty("Content-Type", "application/json")
-            conn!!.setRequestProperty("Accept", "application/json")
-
-            conn!!.doOutput = true
-
-            val originalPathJsonArr = JSONArray(originalPath)
-
-            val body = JSONObject()
-            body.put("email", sharedPref!!.getString("email", ""))
-            body.put("originalPaths", originalPathJsonArr)
-            body.put("modifiedPath", modifiedPath)
-
-            val os = conn!!.outputStream
-            os.write(body.toString().toByteArray())
-            os.flush()
-
-            responseCode =  conn!!.responseCode
-        } catch (e: MalformedURLException) {
-            Log.d("test", "올바르지 않은 URL 주소입니다.")
-        } catch (e: IOException) {
-            Log.d("test", "connection 오류")
-        } finally {
-            conn?.disconnect()
-        }
-
-        return responseCode
-    }
-
     fun editFolder(path:String, newName:String) : Int {
         val url = URL("http://$ip:$port/folder")
         var conn : HttpURLConnection? = null
@@ -285,6 +247,83 @@ class MyApplication : Application() {
             body.put("imageUrl", link.getImgUrl())
             body.put("keywords", link.getKeywords())
             body.put("isPublic", link.getIsPublic())
+
+            val os = conn!!.outputStream
+            os.write(body.toString().toByteArray())
+            os.flush()
+
+            responseCode =  conn!!.responseCode
+        } catch (e: MalformedURLException) {
+            Log.d("test", "올바르지 않은 URL 주소입니다.")
+        } catch (e: IOException) {
+            Log.d("test", "connection 오류")
+        } finally {
+            conn?.disconnect()
+        }
+
+        return responseCode
+    }
+
+    fun moveFolder(originalPath:ArrayList<String>, modifiedPath:String) : Int {
+        val url = URL("http://$ip:$port/folder/path")
+        var conn : HttpURLConnection? = null
+        var responseCode = -1
+
+        try {
+            conn = url.openConnection() as HttpURLConnection
+            conn!!.requestMethod = "PUT"
+            conn!!.connectTimeout = 10000
+            conn!!.readTimeout = 100000
+            conn!!.setRequestProperty("Content-Type", "application/json")
+            conn!!.setRequestProperty("Accept", "application/json")
+
+            conn!!.doOutput = true
+
+            val originalPathJsonArr = JSONArray(originalPath)
+
+            val body = JSONObject()
+            body.put("email", sharedPref!!.getString("email", ""))
+            body.put("originalPaths", originalPathJsonArr)
+            body.put("modifiedPath", modifiedPath)
+
+            val os = conn!!.outputStream
+            os.write(body.toString().toByteArray())
+            os.flush()
+
+            responseCode =  conn!!.responseCode
+        } catch (e: MalformedURLException) {
+            Log.d("test", "올바르지 않은 URL 주소입니다.")
+        } catch (e: IOException) {
+            Log.d("test", "connection 오류")
+        } finally {
+            conn?.disconnect()
+        }
+
+        return responseCode
+    }
+
+    fun moveLink(originalPath:String, selectedLinks:ArrayList<String>, modifiedPath:String) : Int {
+        val url = URL("http://$ip:$port/link/path")
+        var conn : HttpURLConnection? = null
+        var responseCode = -1
+
+        try {
+            conn = url.openConnection() as HttpURLConnection
+            conn!!.requestMethod = "PUT"
+            conn!!.connectTimeout = 10000
+            conn!!.readTimeout = 100000
+            conn!!.setRequestProperty("Content-Type", "application/json")
+            conn!!.setRequestProperty("Accept", "application/json")
+
+            conn!!.doOutput = true
+
+            val ids = JSONArray(selectedLinks)
+
+            val body = JSONObject()
+            body.put("email", sharedPref!!.getString("email", ""))
+            body.put("originalPath", originalPath)
+            body.put("originalIds", ids)
+            body.put("modifiedPath", modifiedPath)
 
             val os = conn!!.outputStream
             os.write(body.toString().toByteArray())

@@ -148,6 +148,68 @@ class EditLinkySubFragment : Fragment() {
                 }
             }
         }
+    private val moveLinkResultLauncher = registerForActivityResult(
+        ActivityResultContracts.StartActivityForResult()) { result ->
+            if(result.resultCode == AppCompatActivity.RESULT_OK) {
+                val responseCode = result.data?.getIntExtra("responseCode", -1)
+
+                if (responseCode == 200) {
+                    val toast = Toast.makeText(
+                        editActivity,
+                        "링크 이동이 완료되었습니다~!",
+                        Toast.LENGTH_SHORT
+                    )
+                    toast.show()
+                } else {
+                    val builder = AlertDialog.Builder(editActivity)
+                    var positiveButtonFunc: DialogInterface.OnClickListener? = null
+                    var message = ""
+
+                    when (responseCode) {
+                        401 -> {
+                            message = "사용자 인증 오류로 인해 자동 로그아웃 됩니다."
+                            positiveButtonFunc =
+                                object : DialogInterface.OnClickListener {
+                                    override fun onClick(
+                                        dialog: DialogInterface?,
+                                        which: Int
+                                    ) {
+                                        editActivity.finishAffinity()
+                                        System.exit(0)
+                                    }
+                                }
+                        }
+                        404 -> {
+                            message = "이동하고자 하는 링크 중 존재하지 않는 링크가 있습니다."
+                        }
+                        else -> {
+                            message = "링크 이동에 실패하였습니다."
+                        }
+                    }
+
+                    builder.setIcon(R.drawable.ic_baseline_warning_8)
+                    builder.setTitle("이동 실패")
+                    builder.setMessage(message)
+
+                    builder.setPositiveButton("확인", positiveButtonFunc)
+
+                    builder.show()
+                }
+            } else if(result.resultCode == AppCompatActivity.RESULT_CANCELED) {
+                val reason = result.data?.getStringExtra("reason") ?: ""
+                if(reason == "same path") {
+                    val builder = AlertDialog.Builder(editActivity)
+
+                    builder.setIcon(R.drawable.ic_baseline_warning_8)
+                    builder.setTitle("이동 실패")
+                    builder.setMessage("이동하고자 하는 경로와 현재 경로가 같습니다.")
+
+                    builder.setPositiveButton("확인", null)
+
+                    builder.show()
+                }
+            }
+        }
 
     override fun onAttach(context: Context) {
         super.onAttach(context)
@@ -573,11 +635,19 @@ class EditLinkySubFragment : Fragment() {
         intent.putExtra("path", path)
         intent.putExtra("folders", selectedFolders)
         intent.putExtra("purpose", "move")
+        intent.putExtra("target", "folder")
         moveFolderResultLauncher.launch(intent)
     }
 
     private fun moveLink() {
+        getSelectedLinks()
 
+        val intent = Intent(editActivity, SelectPathActivity::class.java)
+        intent.putExtra("path", path)
+        intent.putExtra("links", selectedLinks)
+        intent.putExtra("purpose", "move")
+        intent.putExtra("target", "link")
+        moveLinkResultLauncher.launch(intent)
     }
 
     fun delete(target:String) {

@@ -86,13 +86,29 @@ class SelectPathActivity : AppCompatActivity() {
                         finish()
                     }
                     else {
-                        thread {
-                            val selectedFolders = intent.getStringArrayListExtra("folders")
-                            val responseCode = app.moveFolder(selectedFolders!!, path)
+                        val target = intent.getStringExtra("target")
 
-                            intent.putExtra("responseCode", responseCode)
-                            setResult(RESULT_OK, intent)
-                            finish()
+                        when(target) {
+                            "folder" -> {
+                                thread {
+                                    val selectedFolders = intent.getStringArrayListExtra("folders")
+                                    val responseCode = app.moveFolder(selectedFolders!!, path)
+
+                                    intent.putExtra("responseCode", responseCode)
+                                    setResult(RESULT_OK, intent)
+                                    finish()
+                                }
+                            }
+                            "link" -> {
+                                thread {
+                                    val selectedLinks = intent.getStringArrayListExtra("links")
+                                    val responseCode = app.moveLink(prevPath!!, selectedLinks!! , path)
+
+                                    intent.putExtra("responseCode", responseCode)
+                                    setResult(RESULT_OK, intent)
+                                    finish()
+                                }
+                            }
                         }
                     }
                 }

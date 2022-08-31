@@ -136,8 +136,9 @@ class FolderListFragment : Fragment() {
         for (idx in 0 until foldersArr.length()) {
             val folderObj = foldersArr.getJSONObject(idx)
             val folderName = folderObj.getString("name")
+            val folderNameWithPath = "$path$folderName"
 
-            if(notAllowedFolders == null || !notAllowedFolders.contains(folderName)) {
+            if(notAllowedFolders == null || !notAllowedFolders.contains(folderNameWithPath)) {
                 folders.add(folderName)
             }
         }

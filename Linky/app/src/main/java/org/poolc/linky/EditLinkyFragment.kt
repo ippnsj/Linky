@@ -388,6 +388,7 @@ class EditLinkyFragment : Fragment() {
             intent.putExtra("path", path)
             intent.putExtra("folders", selectedFolders)
             intent.putExtra("purpose", "move")
+            intent.putExtra("target", "folder")
             moveFolderResultLauncher.launch(intent)
         }
     }

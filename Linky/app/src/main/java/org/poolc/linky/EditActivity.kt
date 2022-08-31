@@ -57,12 +57,12 @@ class EditActivity : AppCompatActivity() {
                                 linkButton.text = getString(R.string.edit_link)
 
                                 folderButton.setOnClickListener {
-                                    editLinkySubFragment.edit("folder")
                                     bottomSheetDialog.dismiss()
+                                    editLinkySubFragment.edit("folder")
                                 }
                                 linkButton.setOnClickListener {
-                                    editLinkySubFragment.edit("link")
                                     bottomSheetDialog.dismiss()
+                                    editLinkySubFragment.edit("link")
                                 }
                             }
 
@@ -84,8 +84,12 @@ class EditActivity : AppCompatActivity() {
                                 linkButton.text = getString(R.string.move_link)
 
                                 folderButton.setOnClickListener {
+                                    bottomSheetDialog.dismiss()
+                                    editLinkySubFragment.move("folder")
                                 }
                                 linkButton.setOnClickListener {
+                                    bottomSheetDialog.dismiss()
+                                    editLinkySubFragment.move("link")
                                 }
                             }
 
