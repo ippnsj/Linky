@@ -39,10 +39,10 @@
             app:layout_constraintTop_toBottomOf="@id/textView2">
 
             <ImageView
-                android:id="@+id/imageView4"
+                android:id="@+id/first_profile_image"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
-                android:scaleType="fitXY"
+                android:scaleType="centerCrop"
                 app:srcCompat="@drawable/profile" />
         </androidx.cardview.widget.CardView>
 
@@ -53,6 +53,9 @@
             android:layout_marginTop="10dp"
             app:counterEnabled="true"
             app:counterMaxLength="10"
+            app:helperText="@string/helper_nickname"
+            app:helperTextEnabled="true"
+            app:hintEnabled="false"
             app:layout_constraintLeft_toLeftOf="parent"
             app:layout_constraintRight_toRightOf="parent"
             app:layout_constraintTop_toBottomOf="@id/profile">

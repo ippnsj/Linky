@@ -44,11 +44,16 @@ class LinkyAdapter (private val links:ArrayList<Link>, private val listener:Link
                 thread {
                     val image = links[pos].getImgUrl()
                     if(image != null) {
-                        val imageUrl: URL? = URL(image)
-                        val conn: HttpURLConnection? =
-                            imageUrl?.openConnection() as HttpURLConnection
-                        bitmap =
-                            BitmapFactory.decodeStream(conn?.inputStream)
+                        try {
+                            val imageUrl: URL? = URL(image)
+                            val conn: HttpURLConnection? =
+                                imageUrl?.openConnection() as HttpURLConnection
+                            bitmap =
+                                BitmapFactory.decodeStream(conn?.inputStream)
+                        }
+                        catch (e:Exception) {
+                            e.printStackTrace()
+                        }
                     }
 
                     if(isEditMode) {

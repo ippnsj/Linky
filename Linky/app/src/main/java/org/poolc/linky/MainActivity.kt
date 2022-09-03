@@ -181,12 +181,22 @@ class MainActivity : AppCompatActivity() {
                     binding.topbarFoldername.visibility = View.INVISIBLE
                 }
                 "EditProfileFragment" -> {
-                    binding.topbarFoldername.text = "프로필 설정"
+                    binding.topbarFoldername.text = "프로필 수정"
                     binding.topbarTitle.visibility = View.INVISIBLE
                     binding.topbarFoldername.visibility = View.VISIBLE
                 }
-                "FriendFragment" -> {
-                    binding.topbarFoldername.text = "친구 관리"
+                "FollowingFragment" -> {
+                    binding.topbarFoldername.text = "팔로잉 관리"
+                    binding.topbarTitle.visibility = View.INVISIBLE
+                    binding.topbarFoldername.visibility = View.VISIBLE
+                }
+                "FollowerFragment" -> {
+                    binding.topbarFoldername.text = "팔로워 관리"
+                    binding.topbarTitle.visibility = View.INVISIBLE
+                    binding.topbarFoldername.visibility = View.VISIBLE
+                }
+                "TermsFragment" -> {
+                    binding.topbarFoldername.text = "개인정보 처리방침 및 서비스 이용약관"
                     binding.topbarTitle.visibility = View.INVISIBLE
                     binding.topbarFoldername.visibility = View.VISIBLE
                 }

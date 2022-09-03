@@ -4,21 +4,58 @@ import android.app.Application
 import android.content.SharedPreferences
 import android.util.Log
 import androidx.appcompat.app.AppCompatActivity
+import okhttp3.MultipartBody
+import okhttp3.RequestBody
 import org.json.JSONArray
 import org.json.JSONObject
+import retrofit2.Call
+import retrofit2.Retrofit
+import retrofit2.converter.gson.GsonConverterFactory
+import retrofit2.converter.scalars.ScalarsConverterFactory
+import retrofit2.http.*
 import java.io.IOException
 import java.net.HttpURLConnection
 import java.net.MalformedURLException
 import java.net.URL
+
+interface RetrofitService {
+    // register
+    @Multipart
+    @POST("/member")
+    fun register(
+        @PartMap params: HashMap<String, RequestBody>,
+        @Part multipartFile: MultipartBody.Part?
+    ): Call<String>
+
+    // edit profile
+    @Multipart
+    @PUT("/member/me")
+    fun editProfile(
+        @PartMap params: HashMap<String, RequestBody>,
+        @Part newMultipartFile: MultipartBody.Part?
+    ): Call<String>
+
+    // create link
+    @POST("/link")
+    fun createLink(
+        @Body body: RequestBody
+    ): Call<String>
+
+    // edit link
+    @PUT("/link")
+    fun editLink(
+        @Body body: RequestBody
+    ): Call<String>
+}
 
 class MyApplication : Application() {
     companion object {
         lateinit var ip : String
         lateinit var port : String
         lateinit var sharedPref : SharedPreferences
+        lateinit var service: RetrofitService
     }
 
-    // Folder & Link
     override fun onCreate() {
         val jsonStr = assets.open("server.json").reader().readText()
         val jsonObj = JSONObject(jsonStr)
@@ -28,9 +65,17 @@ class MyApplication : Application() {
             getString(R.string.preference_key),
             AppCompatActivity.MODE_PRIVATE
         )
+
+        val retrofit = Retrofit.Builder().baseUrl("http://$ip:$port")
+            .addConverterFactory(ScalarsConverterFactory.create())
+            .addConverterFactory(GsonConverterFactory.create())
+            .build()
+        service = retrofit.create(RetrofitService::class.java)
+
         super.onCreate()
     }
 
+    // Folder & Link
     fun createFolder(name:String, path:String) : Int {
         val url = URL("http://$ip:$port/folder")
         var conn : HttpURLConnection? = null
@@ -457,46 +502,10 @@ class MyApplication : Application() {
         return response
     }
 
-    fun editProfile(newNickname:String, newImageUrl:String) : Int {
-        val url = URL("http://$ip:$port/member/me")
-        var conn : HttpURLConnection? = null
-        var responseCode = -1
-
-        try {
-            conn = url.openConnection() as HttpURLConnection
-            conn!!.requestMethod = "PUT"
-            conn!!.connectTimeout = 10000
-            conn!!.readTimeout = 100000
-            conn!!.setRequestProperty("Content-Type", "application/json")
-            conn!!.setRequestProperty("Accept", "application/json")
-
-            conn!!.doOutput = true
-
-            val body = JSONObject()
-            body.put("email", sharedPref!!.getString("email", ""))
-            body.put("newNickname", newNickname)
-            body.put("newImageUrl", newImageUrl)
-
-            val os = conn!!.outputStream
-            os.write(body.toString().toByteArray())
-            os.flush()
-
-            responseCode =  conn!!.responseCode
-        } catch (e: MalformedURLException) {
-            Log.d("test", "올바르지 않은 URL 주소입니다.")
-        } catch (e: IOException) {
-            Log.d("test", "connection 오류")
-        } finally {
-            conn?.disconnect()
-        }
-
-        return responseCode
-    }
-
-    fun getFriends() : String {
+    fun getFollowPreview() : String {
         val email = sharedPref!!.getString("email", "")
         val paramsUrl = "email=$email"
-        val url = URL("http://$ip:$port/follow?$paramsUrl")
+        val url = URL("http://$ip:$port/follow/small?$paramsUrl")
         var conn : HttpURLConnection? = null
         var response : String = ""
 

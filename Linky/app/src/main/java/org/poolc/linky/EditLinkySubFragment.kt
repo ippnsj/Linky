@@ -57,19 +57,23 @@ class EditLinkySubFragment : Fragment() {
                 when (responseCode) {
                     401 -> {
                         message = "사용자 인증 오류로 인해 자동 로그아웃 됩니다."
-                        positiveButtonFunc =
-                            object : DialogInterface.OnClickListener {
-                                override fun onClick(
-                                    dialog: DialogInterface?,
-                                    which: Int
-                                ) {
-                                    editActivity.finishAffinity()
-                                    System.exit(0)
-                                }
+                        positiveButtonFunc = object : DialogInterface.OnClickListener {
+                            override fun onClick(
+                                dialog: DialogInterface?,
+                                which: Int
+                            ) {
+                                val editSharedPref = MyApplication.sharedPref.edit()
+                                editSharedPref.remove("email").apply()
+
+                                val intent = Intent(editActivity, LoginRegisterActivity::class.java)
+                                intent.flags = Intent.FLAG_ACTIVITY_CLEAR_TASK or Intent.FLAG_ACTIVITY_NEW_TASK
+                                startActivity(intent)
                             }
+                        }
                     }
                     else -> {
-                        message = "링크 수정에 실패하였습니다."
+                        message = "서버 문제로 링크 수정에 실패하였습니다.\n" +
+                                "잠시후 다시 시도해주세요."
                     }
                 }
 

@@ -110,7 +110,9 @@
     <string name="navi_search">검색</string>
     <string name="navi_more">더보기</string>
 
-    <string name="helper_keyword">키워드 입력 후, 엔터를 누르면 키워드가 추가됩니다.</string>
+    <string name="helper_keyword">
+        키워드 입력 후, 엔터를 누르면 키워드가 추가됩니다. \n공백은 허용되지 않습니다.
+    </string>
     <string name="default_path">링크를 저장할 경로를 선택해 주세요</string>
     <string name="helper_nickname">사이 공백 포함 1~10자 이내로 한글, 영어만 가능합니다.</string>
 

@@ -51,7 +51,7 @@ class FollowingFragment : Fragment() {
     }
 
     fun update() {
-        mainActivity.setTopbarTitle("FriendFragment")
+        mainActivity.setTopbarTitle("FollowingFragment")
     }
 
     private fun showDropdown(view:View) {

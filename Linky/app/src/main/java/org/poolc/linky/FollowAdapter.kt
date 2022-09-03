@@ -5,7 +5,7 @@ import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
 import org.poolc.linky.databinding.ProfileItemBinding
 
-class FriendAdapter(private val friends:ArrayList<User>, private val listener: FriendAdapter.OnItemClickListener) : RecyclerView.Adapter<FriendAdapter.ViewHolder>() {
+class FollowAdapter(private val friends:ArrayList<User>, private val listener: FollowAdapter.OnItemClickListener) : RecyclerView.Adapter<FollowAdapter.ViewHolder>() {
     public interface OnItemClickListener {
         fun onItemClick(pos:Int)
     }
@@ -34,7 +34,7 @@ class FriendAdapter(private val friends:ArrayList<User>, private val listener: F
                 val nickname = friends[pos].getNickname()
                 friendNickname.text = nickname
 
-                followingContainer.setOnClickListener {
+                followContainer.setOnClickListener {
                     listener.onItemClick(pos)
                 }
             }

@@ -2,7 +2,9 @@ package org.poolc.linky
 
 import android.content.Context
 import android.content.Intent
+import android.graphics.BitmapFactory
 import android.os.Bundle
+import android.util.Log
 import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
@@ -10,14 +12,18 @@ import android.view.ViewGroup
 import android.widget.Toast
 import org.json.JSONObject
 import org.poolc.linky.databinding.FragmentInformationBinding
+import java.net.HttpURLConnection
+import java.net.URL
 import kotlin.concurrent.thread
 
 class InformationFragment : Fragment() {
     private lateinit var binding : FragmentInformationBinding
     private lateinit var mainActivity : MainActivity
     private lateinit var app : MyApplication
-    private lateinit var followingAdapter : FriendAdapter
+    private lateinit var followingAdapter : FollowAdapter
+    private lateinit var followerAdapter : FollowAdapter
     private val followings = ArrayList<User>()
+    private val followers = ArrayList<User>()
 
     override fun onAttach(context: Context) {
         super.onAttach(context)
@@ -36,7 +42,13 @@ class InformationFragment : Fragment() {
         val view = inflater.inflate(R.layout.fragment_information, container, false)
         binding = FragmentInformationBinding.bind(view)
 
-        followingAdapter = FriendAdapter(followings, object : FriendAdapter.OnItemClickListener {
+        followingAdapter = FollowAdapter(followings, object : FollowAdapter.OnItemClickListener {
+            override fun onItemClick(pos: Int) {
+
+            }
+        })
+
+        followerAdapter = FollowAdapter(followers, object : FollowAdapter.OnItemClickListener {
             override fun onItemClick(pos: Int) {
 
             }
@@ -44,6 +56,7 @@ class InformationFragment : Fragment() {
 
         with(binding) {
             followingRecyclerPreview.adapter = followingAdapter
+            followerRecyclerPreview.adapter = followerAdapter
         }
 
         return view
@@ -71,6 +84,14 @@ class InformationFragment : Fragment() {
             viewAllFollowing.setOnClickListener {
                 mainActivity.changeChildFragment(FollowingFragment(), null, true)
             }
+
+            viewAllFollower.setOnClickListener {
+
+            }
+
+            viewTerms.setOnClickListener {
+                mainActivity.changeChildFragment(TermsFragment(), null, true)
+            }
         }
     }
 
@@ -88,17 +109,22 @@ class InformationFragment : Fragment() {
                 val jsonObj = JSONObject(jsonStr)
                 val imageUrl = jsonObj.getString("imageUrl")
 
-                if (imageUrl != "") {
-                    // TODO url로부터 이미지 가져오는 작업
+                mainActivity.runOnUiThread {
+                    binding.nickname.text = jsonObj.getString("nickname")
                 }
 
-                mainActivity.runOnUiThread {
-                    with(binding) {
-                        nickname.text = jsonObj.getString("nickname")
-
-                        if (imageUrl != "") {
-                            // TODO url로부터 가져온 이미지 display
+                if (imageUrl != "") {
+                    try {
+                        val url: URL? = URL(imageUrl)
+                        val conn: HttpURLConnection? =
+                            url?.openConnection() as HttpURLConnection
+                        val image = BitmapFactory.decodeStream(conn?.inputStream)
+                        mainActivity.runOnUiThread {
+                            binding.profileImage.setImageBitmap(image)
                         }
+                    }
+                    catch (e:Exception) {
+                        e.printStackTrace()
                     }
                 }
             }
@@ -106,51 +132,72 @@ class InformationFragment : Fragment() {
 
         thread {
             followings.clear()
+            followers.clear()
 
-            val jsonStr = app.getFriends()
+            val jsonStr = app.getFollowPreview()
 
             if(jsonStr != "") {
-                mainActivity.runOnUiThread {
-                    val jsonObj = JSONObject(jsonStr)
-                    val numberOfFollowing = jsonObj.getString("numberOfFollowing").toInt()
-                    val numberOfFollower = jsonObj.getString("numberOfFollower").toInt()
-                    var limit = numberOfFollowing
+                val jsonObj = JSONObject(jsonStr)
+                val numberOfFollowing = jsonObj.getString("numberOfFollowing").toInt()
+                val numberOfFollower = jsonObj.getString("numberOfFollower").toInt()
 
+                mainActivity.runOnUiThread {
                     binding.followings.text = numberOfFollowing.toString()
                     binding.followers.text = numberOfFollower.toString()
+                }
 
-                    if(numberOfFollowing == 0) {
+                if(numberOfFollowing == 0) {
+                    mainActivity.runOnUiThread {
                         binding.noFollowingNotice.visibility = View.VISIBLE
                     }
-                    else {
+                }
+                else {
+                    mainActivity.runOnUiThread {
                         binding.noFollowingNotice.visibility = View.INVISIBLE
-
-                        val followingJsonArr = jsonObj.getJSONArray("followings")
-
-                        if(limit > 5) {
-                            limit = 5
-                        }
-
-                        for(i in 0 until limit) {
-                            val followingJsonObj = followingJsonArr.getJSONObject(i)
-                            val email = followingJsonObj.getString("email")
-                            val nickname = followingJsonObj.getString("nickname")
-                            val imageUrl = followingJsonObj.getString("imageUrl")
-
-                            val friend = User(email, nickname, imageUrl)
-                            followings.add(friend)
-                        }
-
-                        followingAdapter.notifyDataSetChanged()
                     }
 
-                    if(numberOfFollower == 0) {
-                        binding.noFollowerNotice.visibility = View.VISIBLE
-                    }
-                    else {
-                        binding.noFollowerNotice.visibility = View.INVISIBLE
+                    val followingJsonArr = jsonObj.getJSONArray("followings")
+
+                    for(i in 0 until followingJsonArr.length()) {
+                        val followingJsonObj = followingJsonArr.getJSONObject(i)
+                        val email = followingJsonObj.getString("email")
+                        val nickname = followingJsonObj.getString("nickname")
+                        val imageUrl = followingJsonObj.getString("imageUrl")
+                        val following = followingJsonObj.getString("following").toBoolean()
+
+                        val follow = User(email, nickname, imageUrl, following)
+                        followings.add(follow)
                     }
                 }
+
+                if(numberOfFollower == 0) {
+                    mainActivity.runOnUiThread {
+                        binding.noFollowerNotice.visibility = View.VISIBLE
+                    }
+                }
+                else {
+                    mainActivity.runOnUiThread {
+                        binding.noFollowerNotice.visibility = View.INVISIBLE
+                    }
+
+                    val followerJsonArr = jsonObj.getJSONArray("followers")
+
+                    for(i in 0 until followerJsonArr.length()) {
+                        val followerJsonObj = followerJsonArr.getJSONObject(i)
+                        val email = followerJsonObj.getString("email")
+                        val nickname = followerJsonObj.getString("nickname")
+                        val imageUrl = followerJsonObj.getString("imageUrl")
+                        val following = followerJsonObj.getString("following").toBoolean()
+
+                        val follow = User(email, nickname, imageUrl, following)
+                        followers.add(follow)
+                    }
+                }
+            }
+
+            mainActivity.runOnUiThread {
+                followingAdapter.notifyDataSetChanged()
+                followerAdapter.notifyDataSetChanged()
             }
         }
     }

@@ -69,7 +69,7 @@
             </androidx.constraintlayout.widget.ConstraintLayout>
 
             <androidx.constraintlayout.widget.ConstraintLayout
-                android:id="@+id/following_container"
+                android:id="@+id/following_container_preview"
                 android:layout_width="0dp"
                 android:layout_height="120dp"
                 android:layout_marginTop="20dp"
@@ -130,7 +130,7 @@
             </androidx.constraintlayout.widget.ConstraintLayout>
 
             <androidx.constraintlayout.widget.ConstraintLayout
-                android:id="@+id/follower_container"
+                android:id="@+id/follower_container_preview"
                 android:layout_width="0dp"
                 android:layout_height="120dp"
                 android:layout_marginTop="20dp"
@@ -138,7 +138,7 @@
                 android:padding="20dp"
                 app:layout_constraintLeft_toLeftOf="parent"
                 app:layout_constraintRight_toRightOf="parent"
-                app:layout_constraintTop_toBottomOf="@id/following_container"
+                app:layout_constraintTop_toBottomOf="@id/following_container_preview"
                 app:layout_constraintWidth_percent="0.8">
 
                 <TextView
@@ -197,7 +197,7 @@
                 android:padding="20dp"
                 app:layout_constraintLeft_toLeftOf="parent"
                 app:layout_constraintRight_toRightOf="parent"
-                app:layout_constraintTop_toBottomOf="@id/follower_container"
+                app:layout_constraintTop_toBottomOf="@id/follower_container_preview"
                 app:layout_constraintWidth_percent="0.8">
 
                 <TextView
@@ -227,6 +227,15 @@
                     android:text="로그아웃"
                     app:layout_constraintLeft_toLeftOf="parent"
                     app:layout_constraintTop_toBottomOf="@id/change_password" />
+
+                <TextView
+                    android:id="@+id/delete_account"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="10dp"
+                    android:text="계정탈퇴"
+                    app:layout_constraintLeft_toLeftOf="parent"
+                    app:layout_constraintTop_toBottomOf="@id/logout" />
 
             </androidx.constraintlayout.widget.ConstraintLayout>
 
@@ -268,6 +277,15 @@
                     android:text="문의 / 의견 보내기"
                     app:layout_constraintLeft_toLeftOf="parent"
                     app:layout_constraintTop_toBottomOf="@id/system_label" />
+
+                <TextView
+                    android:id="@+id/view_terms"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="10dp"
+                    android:text="개인정보처리방침 및 서비스 이용약관"
+                    app:layout_constraintLeft_toLeftOf="parent"
+                    app:layout_constraintTop_toBottomOf="@id/send_comment" />
             </androidx.constraintlayout.widget.ConstraintLayout>
 
             <View
@@ -278,35 +296,6 @@
                 app:layout_constraintLeft_toLeftOf="parent"
                 app:layout_constraintRight_toRightOf="parent"
                 app:layout_constraintTop_toBottomOf="@id/system_container"
-                app:layout_constraintWidth_percent="0.8" />
-
-            <androidx.constraintlayout.widget.ConstraintLayout
-                android:id="@+id/etc_container"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:padding="20dp"
-                app:layout_constraintLeft_toLeftOf="parent"
-                app:layout_constraintRight_toRightOf="parent"
-                app:layout_constraintTop_toBottomOf="@id/system_container"
-                app:layout_constraintWidth_percent="0.8">
-
-                <TextView
-                    android:id="@+id/textView9"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="개인정보처리방침 및 이용약관"
-                    app:layout_constraintLeft_toLeftOf="parent"
-                    app:layout_constraintTop_toTopOf="parent" />
-            </androidx.constraintlayout.widget.ConstraintLayout>
-
-            <View
-                android:id="@+id/divider6"
-                android:layout_width="0dp"
-                android:layout_height="2dp"
-                android:background="#F5F5F5"
-                app:layout_constraintLeft_toLeftOf="parent"
-                app:layout_constraintRight_toRightOf="parent"
-                app:layout_constraintTop_toBottomOf="@id/etc_container"
                 app:layout_constraintWidth_percent="0.8" />
 
         </androidx.constraintlayout.widget.ConstraintLayout>
