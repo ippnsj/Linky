@@ -21,7 +21,7 @@ import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.RecyclerView
 import org.json.JSONObject
 import org.poolc.linky.databinding.AddLinkDialogBinding
-import org.poolc.linky.databinding.FoldernameDialogBinding
+import org.poolc.linky.databinding.DialogInputtext10limitBinding
 import org.poolc.linky.databinding.FragmentLinkyInsideFolderBinding
 import kotlin.concurrent.thread
 import kotlin.math.ceil
@@ -74,7 +74,6 @@ class LinkyInsideFolderFragment : Fragment() {
                 val intent = Intent(Intent.ACTION_VIEW, Uri.parse(links[pos].getUrl()))
                 startActivity(intent)
             }
-
         }, false)
 
         with(binding) {
@@ -135,6 +134,11 @@ class LinkyInsideFolderFragment : Fragment() {
                 }
             })
 
+            searchbarTextInput.setOnClickListener {
+                val intent = Intent(mainActivity, SearchMeActivity::class.java)
+                startActivity(intent)
+            }
+
             edit.setOnClickListener {
                 val intent = Intent(mainActivity, EditActivity::class.java)
                 intent.putExtra("path", path)
@@ -145,18 +149,18 @@ class LinkyInsideFolderFragment : Fragment() {
                 val builder = AlertDialog.Builder(mainActivity)
                 builder.setTitle("추가할 폴더명을 입력해주세요")
 
-                val dialogView = layoutInflater.inflate(R.layout.foldername_dialog, null)
-                val dialogBinding = FoldernameDialogBinding.bind(dialogView)
+                val dialogView = layoutInflater.inflate(R.layout.dialog_inputtext_10limit, null)
+                val dialogBinding = DialogInputtext10limitBinding.bind(dialogView)
 
                 builder.setView(dialogView)
 
                 builder.setPositiveButton("추가") { dialogInterface: DialogInterface, i: Int ->
-                    val newFolderName = dialogBinding.newFolderName.text?.trim().toString()
+                    val newFolderName = dialogBinding.inputText.text?.trim().toString()
                     if(newFolderName == "") {
-                        dialogBinding.newFolderName.error = "앞/뒤 공백 없이 1자 이상의 폴더명을 입력해주세요."
+                        dialogBinding.inputText.error = "앞/뒤 공백 없이 1자 이상의 폴더명을 입력해주세요."
                     }
                     else if(newFolderName!!.contains("/")) {
-                        dialogBinding.newFolderName.error = "폴더명에는 /가 포함될 수 없습니다."
+                        dialogBinding.inputText.error = "폴더명에는 /가 포함될 수 없습니다."
                     }
                     else {
                         createFolder(newFolderName)
@@ -168,7 +172,7 @@ class LinkyInsideFolderFragment : Fragment() {
 
                 dialog.show()
 
-                dialogBinding.newFolderName.setOnEditorActionListener { v, actionId, event ->
+                dialogBinding.inputText.setOnEditorActionListener { v, actionId, event ->
                     if(actionId == EditorInfo.IME_ACTION_DONE) {
                         dialog.getButton(DialogInterface.BUTTON_POSITIVE).performClick()
                         true

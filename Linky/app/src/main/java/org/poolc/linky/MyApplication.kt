@@ -4,6 +4,7 @@ import android.app.Application
 import android.content.SharedPreferences
 import android.util.Log
 import androidx.appcompat.app.AppCompatActivity
+import com.google.gson.JsonElement
 import okhttp3.MultipartBody
 import okhttp3.RequestBody
 import org.json.JSONArray
@@ -46,6 +47,40 @@ interface RetrofitService {
     fun editLink(
         @Body body: RequestBody
     ): Call<String>
+
+    // follow
+    @POST("/follow")
+    fun follow(
+        @Body body: RequestBody
+    ): Call<JsonElement>
+
+    // following
+    @GET("/following")
+    fun getFollowing(
+        @Query("email") email: String
+    ): Call<JsonElement>
+
+    // follower
+    @GET("/follower")
+    fun getFollower(
+        @Query("email") email: String
+    ): Call<JsonElement>
+
+    // search folder
+    @GET("/folder/elastic")
+    fun searchFolder(
+        @Query("email") email:String,
+        @Query("keyword") keyword:String,
+        @Query("searchMe") searchMe:String
+    ): Call<JsonElement>
+
+    // search link
+    @GET("/link/elastic")
+    fun searchLink(
+        @Query("email") email:String,
+        @Query("keyword") keyword:String,
+        @Query("searchMe") searchMe:String
+    ): Call<JsonElement>
 }
 
 class MyApplication : Application() {
@@ -112,50 +147,10 @@ class MyApplication : Application() {
         return responseCode
     }
 
-    fun createLink(path:String, link:Link) : Int {
-        val url = URL("http://$ip:$port/link")
-        var conn : HttpURLConnection? = null
-        var responseCode = -1
-
-        try {
-            conn = url.openConnection() as HttpURLConnection
-            conn!!.requestMethod = "POST"
-            conn!!.connectTimeout = 10000
-            conn!!.readTimeout = 100000
-            conn!!.setRequestProperty("Content-Type", "application/json")
-            conn!!.setRequestProperty("Accept", "application/json")
-
-            conn!!.doOutput = true
-
-            val body = JSONObject()
-            body.put("email", sharedPref!!.getString("email", ""))
-            body.put("isPublic", link.getIsPublic())
-            body.put("keywords", link.getKeywords())
-            body.put("path", path)
-            body.put("name", link.getLinkTitle())
-            body.put("imageUrl", link.getImgUrl())
-            body.put("url", link.getUrl())
-
-            val os = conn!!.outputStream
-            os.write(body.toString().toByteArray())
-            os.flush()
-
-            responseCode =  conn!!.responseCode
-        } catch (e: MalformedURLException) {
-            Log.d("test", "올바르지 않은 URL 주소입니다.")
-        } catch (e: IOException) {
-            Log.d("test", "connection 오류")
-        } finally {
-            conn?.disconnect()
-        }
-
-        return responseCode
-    }
-
     fun read(path:String, showLink:Boolean) : String {
         val email = sharedPref!!.getString("email", "")
         val paramsUrl = "email=$email&path=$path&showLink=$showLink"
-        val url = URL("http://$ip:$port/folder?$paramsUrl")
+        val url = URL("http://$ip:$port/folder/me?$paramsUrl")
         var conn : HttpURLConnection? = null
         var response : String = ""
 
@@ -173,6 +168,42 @@ class MyApplication : Application() {
             }
             else if(conn!!.responseCode == 400) {
                 Log.d("test", "Bad request")
+            }
+            else if(conn!!.responseCode == 401) {
+                Log.d("test", "Unauthorized")
+            }
+            else if(conn!!.responseCode == 404) {
+                Log.d("test", "Not Found")
+            }
+        }
+        catch (e: MalformedURLException) {
+            Log.d("test", "올바르지 않은 URL 주소입니다.")
+        } catch (e: IOException) {
+            Log.d("test", "connection 오류")
+        }finally {
+            conn?.disconnect()
+        }
+
+        return response
+    }
+
+    fun readOther(email:String, path:String) : String {
+        val paramsUrl = "email=$email&path=$path"
+        val url = URL("http://$ip:$port/folder?$paramsUrl")
+        var conn : HttpURLConnection? = null
+        var response : String = ""
+
+        try {
+            conn = url.openConnection() as HttpURLConnection
+            conn!!.requestMethod = "GET"
+            conn!!.connectTimeout = 10000
+            conn!!.readTimeout = 100000
+            conn!!.setRequestProperty("Accept", "application/json")
+
+            conn!!.doInput = true
+
+            if(conn!!.responseCode == 200) {
+                response = conn!!.inputStream.reader().readText()
             }
             else if(conn!!.responseCode == 401) {
                 Log.d("test", "Unauthorized")
@@ -251,47 +282,6 @@ class MyApplication : Application() {
             body.put("email", sharedPref!!.getString("email", ""))
             body.put("path", path)
             body.put("newName", newName)
-
-            val os = conn!!.outputStream
-            os.write(body.toString().toByteArray())
-            os.flush()
-
-            responseCode =  conn!!.responseCode
-        } catch (e: MalformedURLException) {
-            Log.d("test", "올바르지 않은 URL 주소입니다.")
-        } catch (e: IOException) {
-            Log.d("test", "connection 오류")
-        } finally {
-            conn?.disconnect()
-        }
-
-        return responseCode
-    }
-
-    fun editLink(path:String, link:Link) : Int {
-        val url = URL("http://$ip:$port/link")
-        var conn : HttpURLConnection? = null
-        var responseCode = -1
-
-        try {
-            conn = url.openConnection() as HttpURLConnection
-            conn!!.requestMethod = "PUT"
-            conn!!.connectTimeout = 10000
-            conn!!.readTimeout = 100000
-            conn!!.setRequestProperty("Content-Type", "application/json")
-            conn!!.setRequestProperty("Accept", "application/json")
-
-            conn!!.doOutput = true
-
-            val body = JSONObject()
-            body.put("email", sharedPref!!.getString("email", ""))
-            body.put("path", path)
-            body.put("id", link.getId())
-            body.put("name", link.getLinkTitle())
-            body.put("url", link.getUrl())
-            body.put("imageUrl", link.getImgUrl())
-            body.put("keywords", link.getKeywords())
-            body.put("isPublic", link.getIsPublic())
 
             val os = conn!!.outputStream
             os.write(body.toString().toByteArray())

@@ -18,7 +18,7 @@
         <item name="alertDialogTheme">@style/AlertDialogTheme</item>
     </style>
 
-    <style name="Theme.Login" parent="Theme.AppCompat.Light.NoActionBar">
+    <style name="Theme.White" parent="Theme.AppCompat.Light.NoActionBar">
         <item name="android:statusBarColor">?attr/colorPrimary</item>
         <item name="android:windowLightStatusBar">true</item>
         <item name="alertDialogTheme">@style/AlertDialogTheme</item>

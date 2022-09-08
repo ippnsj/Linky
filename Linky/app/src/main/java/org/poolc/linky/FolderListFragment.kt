@@ -3,7 +3,6 @@ package org.poolc.linky
 import android.content.Context
 import android.content.DialogInterface
 import android.os.Bundle
-import android.util.Log
 import android.view.*
 import androidx.fragment.app.Fragment
 import android.view.inputmethod.EditorInfo
@@ -11,7 +10,7 @@ import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.recyclerview.widget.DividerItemDecoration
 import org.json.JSONObject
-import org.poolc.linky.databinding.FoldernameDialogBinding
+import org.poolc.linky.databinding.DialogInputtext10limitBinding
 import org.poolc.linky.databinding.FragmentFoldersBinding
 import kotlin.concurrent.thread
 
@@ -72,18 +71,18 @@ class FolderListFragment : Fragment() {
                 builder.setTitle("추가할 폴더명을 입력해주세요")
                 builder.setIcon(R.drawable.add_folder_pink)
 
-                val dialogView = layoutInflater.inflate(R.layout.foldername_dialog, null)
-                val dialogBinding = FoldernameDialogBinding.bind(dialogView)
+                val dialogView = layoutInflater.inflate(R.layout.dialog_inputtext_10limit, null)
+                val dialogBinding = DialogInputtext10limitBinding.bind(dialogView)
 
                 builder.setView(dialogView)
 
                 builder.setPositiveButton("추가") { dialogInterface: DialogInterface, i: Int ->
-                    val newFolderName = dialogBinding.newFolderName.text?.trim().toString()
+                    val newFolderName = dialogBinding.inputText.text?.trim().toString()
                     if(newFolderName == "") {
-                        dialogBinding.newFolderName.error = "앞/뒤 공백 없이 1자 이상의 폴더명을 입력해주세요."
+                        dialogBinding.inputText.error = "앞/뒤 공백 없이 1자 이상의 폴더명을 입력해주세요."
                     }
                     else if(newFolderName!!.contains("/")) {
-                        dialogBinding.newFolderName.error = "폴더명에는 /가 포함될 수 없습니다."
+                        dialogBinding.inputText.error = "폴더명에는 /가 포함될 수 없습니다."
                     }
                     else {
                         createFolder(newFolderName)
@@ -95,7 +94,7 @@ class FolderListFragment : Fragment() {
 
                 dialog.show()
 
-                dialogBinding.newFolderName.setOnEditorActionListener { v, actionId, event ->
+                dialogBinding.inputText.setOnEditorActionListener { v, actionId, event ->
                     if(actionId == EditorInfo.IME_ACTION_DONE) {
                         dialog.getButton(DialogInterface.BUTTON_POSITIVE).performClick()
                         true

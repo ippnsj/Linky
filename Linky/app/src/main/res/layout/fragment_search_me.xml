@@ -5,7 +5,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:paddingTop="30dp"
-    tools:context=".SearchFragment">
+    tools:context=".SearchMeFragment">
 
     <androidx.appcompat.widget.SearchView
         android:id="@+id/search_view"
@@ -15,9 +15,7 @@
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintRight_toRightOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintWidth_percent="0.9" >
-
-    </androidx.appcompat.widget.SearchView>
+        app:layout_constraintWidth_percent="0.9" />
 
     <com.google.android.material.tabs.TabLayout
         android:id="@+id/tabs"
@@ -26,7 +24,7 @@
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintRight_toRightOf="parent"
         app:layout_constraintTop_toBottomOf="@id/search_view"
-        app:layout_constraintWidth_percent="0.9">
+        app:layout_constraintWidth_percent="0.8">
 
         <com.google.android.material.tabs.TabItem
             android:layout_width="wrap_content"
@@ -38,10 +36,6 @@
             android:layout_height="wrap_content"
             android:text="링크" />
 
-        <com.google.android.material.tabs.TabItem
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="사용자" />
     </com.google.android.material.tabs.TabLayout>
 
     <androidx.viewpager2.widget.ViewPager2

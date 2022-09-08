@@ -52,6 +52,9 @@ class MoreFragment : Fragment() {
             else if(fragment is FollowingFragment) {
                 fragment.update()
             }
+            else if(fragment is FollowerFragment) {
+                fragment.update()
+            }
             else if(fragment is TermsFragment) {
                 fragment.update()
             }

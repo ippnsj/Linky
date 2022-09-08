@@ -3,8 +3,8 @@
 
     <item
         android:id="@+id/add_by_nickname"
-        android:title="닉네임으로 친구 추가" />
+        android:title="닉네임으로 팔로우 추가" />
     <item
         android:id="@+id/add_by_kakaotalk"
-        android:title="카카오톡으로 친구 초대" />
+        android:title="카카오톡으로 팔로우 신청" />
 </menu>

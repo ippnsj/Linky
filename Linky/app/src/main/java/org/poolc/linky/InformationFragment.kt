@@ -3,13 +3,14 @@ package org.poolc.linky
 import android.content.Context
 import android.content.Intent
 import android.graphics.BitmapFactory
+import android.graphics.Rect
 import android.os.Bundle
-import android.util.Log
 import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
+import androidx.recyclerview.widget.RecyclerView
 import org.json.JSONObject
 import org.poolc.linky.databinding.FragmentInformationBinding
 import java.net.HttpURLConnection
@@ -20,8 +21,8 @@ class InformationFragment : Fragment() {
     private lateinit var binding : FragmentInformationBinding
     private lateinit var mainActivity : MainActivity
     private lateinit var app : MyApplication
-    private lateinit var followingAdapter : FollowAdapter
-    private lateinit var followerAdapter : FollowAdapter
+    private lateinit var followingAdapter : FollowPreviewAdapter
+    private lateinit var followerAdapter : FollowPreviewAdapter
     private val followings = ArrayList<User>()
     private val followers = ArrayList<User>()
 
@@ -42,13 +43,13 @@ class InformationFragment : Fragment() {
         val view = inflater.inflate(R.layout.fragment_information, container, false)
         binding = FragmentInformationBinding.bind(view)
 
-        followingAdapter = FollowAdapter(followings, object : FollowAdapter.OnItemClickListener {
+        followingAdapter = FollowPreviewAdapter(followings, object : FollowPreviewAdapter.OnItemClickListener {
             override fun onItemClick(pos: Int) {
 
             }
         })
 
-        followerAdapter = FollowAdapter(followers, object : FollowAdapter.OnItemClickListener {
+        followerAdapter = FollowPreviewAdapter(followers, object : FollowPreviewAdapter.OnItemClickListener {
             override fun onItemClick(pos: Int) {
 
             }
@@ -65,6 +66,36 @@ class InformationFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         with(binding) {
+            followingRecyclerPreview.addItemDecoration(object : RecyclerView.ItemDecoration() {
+                override fun getItemOffsets(
+                    outRect: Rect,
+                    view: View,
+                    parent: RecyclerView,
+                    state: RecyclerView.State
+                ) {
+                    val pos = parent.getChildAdapterPosition(view)
+
+                    if(pos != 0) {
+                        outRect.left = 20
+                    }
+                }
+            })
+
+            followerRecyclerPreview.addItemDecoration(object : RecyclerView.ItemDecoration() {
+                override fun getItemOffsets(
+                    outRect: Rect,
+                    view: View,
+                    parent: RecyclerView,
+                    state: RecyclerView.State
+                ) {
+                    val pos = parent.getChildAdapterPosition(view)
+
+                    if(pos != 0) {
+                        outRect.left = 20
+                    }
+                }
+            })
+
             profileContainer.setOnClickListener {
                 mainActivity.changeChildFragment(EditProfileFragment(), null, true)
             }
@@ -86,7 +117,7 @@ class InformationFragment : Fragment() {
             }
 
             viewAllFollower.setOnClickListener {
-
+                mainActivity.changeChildFragment(FollowerFragment(), null, true)
             }
 
             viewTerms.setOnClickListener {
@@ -163,7 +194,7 @@ class InformationFragment : Fragment() {
                         val email = followingJsonObj.getString("email")
                         val nickname = followingJsonObj.getString("nickname")
                         val imageUrl = followingJsonObj.getString("imageUrl")
-                        val following = followingJsonObj.getString("following").toBoolean()
+                        val following = followingJsonObj.getBoolean("following")
 
                         val follow = User(email, nickname, imageUrl, following)
                         followings.add(follow)
@@ -187,7 +218,7 @@ class InformationFragment : Fragment() {
                         val email = followerJsonObj.getString("email")
                         val nickname = followerJsonObj.getString("nickname")
                         val imageUrl = followerJsonObj.getString("imageUrl")
-                        val following = followerJsonObj.getString("following").toBoolean()
+                        val following = followerJsonObj.getBoolean("following")
 
                         val follow = User(email, nickname, imageUrl, following)
                         followers.add(follow)

@@ -1,5 +1,6 @@
 package org.poolc.linky
 
+import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
@@ -19,6 +20,7 @@ import java.net.URL
 import kotlin.concurrent.thread
 
 class LinkyAdapter (private val links:ArrayList<Link>, private val listener:LinkyAdapter.OnItemClickListener, private val isEditMode:Boolean) : RecyclerView.Adapter<LinkyAdapter.ViewHolder>() {
+    private lateinit var content: Activity
 
     public interface OnItemClickListener {
         fun onItemClick(pos:Int)
@@ -26,6 +28,7 @@ class LinkyAdapter (private val links:ArrayList<Link>, private val listener:Link
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
         val binding = LinkyItemBinding.inflate(LayoutInflater.from(parent.context), parent, false)
+        content = parent.context as Activity
         return ViewHolder(parent, binding)
     }
 
@@ -41,39 +44,30 @@ class LinkyAdapter (private val links:ArrayList<Link>, private val listener:Link
         fun bind(pos:Int) {
             with(binding) {
                 var bitmap : Bitmap? = null
-                thread {
-                    val image = links[pos].getImgUrl()
-                    if(image != null) {
+
+                val image = links[pos].getImgUrl()
+                if(image != "null") {
+                    thread {
                         try {
                             val imageUrl: URL? = URL(image)
                             val conn: HttpURLConnection? =
                                 imageUrl?.openConnection() as HttpURLConnection
                             bitmap =
                                 BitmapFactory.decodeStream(conn?.inputStream)
-                        }
-                        catch (e:Exception) {
+
+                            content.runOnUiThread {
+                                linkyImage.setImageBitmap(bitmap)
+                            }
+                        } catch (e: Exception) {
+                            content.runOnUiThread {
+                                linkyImage.setImageResource(R.mipmap.linky_logo)
+                            }
                             e.printStackTrace()
                         }
                     }
-
-                    if(isEditMode) {
-                        val context = parent.context as EditActivity
-
-                        if(bitmap != null) {
-                            context.runOnUiThread {
-                                linkyImage.setImageBitmap(bitmap)
-                            }
-                        }
-                    }
-                    else {
-                        val context = parent.context as MainActivity
-
-                        if(bitmap != null) {
-                            context.runOnUiThread {
-                                linkyImage.setImageBitmap(bitmap)
-                            }
-                        }
-                    }
+                }
+                else {
+                    linkyImage.setImageResource(R.mipmap.linky_logo)
                 }
 
                 linkyTitle.text = links[pos].getLinkTitle()

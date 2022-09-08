@@ -4,18 +4,18 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".EditLinkySubFragment" >
+    android:paddingTop="30dp"
+    tools:context=".EditLinkySubFragment">
 
     <com.google.android.material.textfield.TextInputLayout
         android:id="@+id/searchbarLayout"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:paddingLeft="20dp"
-        android:paddingTop="20dp"
-        android:paddingRight="20dp"
+        app:hintEnabled="false"
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintRight_toRightOf="parent"
-        app:layout_constraintTop_toTopOf="parent">
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintWidth_percent="0.9">
 
         <com.google.android.material.textfield.TextInputEditText
             android:id="@+id/searchbarTextInput"
@@ -24,6 +24,8 @@
             android:background="@drawable/searchbar_background"
             android:drawableStart="@drawable/searchbar"
             android:drawablePadding="10dp"
+            android:editable="false"
+            android:focusableInTouchMode="false"
             android:paddingLeft="10dp"
             android:paddingTop="8dp"
             android:paddingRight="10dp"

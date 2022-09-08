@@ -11,6 +11,10 @@ class Link {
     private var isPublic : String = "false"
     private var isSelected : Boolean = false
 
+    private var nickName : String = ""
+    private var ownerId : String = ""
+    private var path : String = ""
+
     constructor()
 
     constructor(id:String, keywords:JSONArray, linkTitle:String, imgUrl:String, url:String, isPublic:String, isSelected:Boolean) {
@@ -21,6 +25,17 @@ class Link {
         this.url = url
         this.isPublic = isPublic
         this.isSelected = isSelected
+    }
+
+    constructor(id: String, keywords: JSONArray, linkTitle: String, imgUrl: String, url: String, nickName: String, ownerId: String, path: String) {
+        this.id = id
+        this.keywords = keywords
+        this.linkTitle = linkTitle
+        this.imgUrl = imgUrl
+        this.url = url
+        this.nickName = nickName
+        this.ownerId = ownerId
+        this.path = path
     }
 
     fun getId() : String {

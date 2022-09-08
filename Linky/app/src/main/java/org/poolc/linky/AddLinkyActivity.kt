@@ -539,9 +539,9 @@ class AddLinkyActivity : AppCompatActivity() {
                             val conn: HttpURLConnection? =
                                 imageUrl?.openConnection() as HttpURLConnection
                             bitmap = BitmapFactory.decodeStream(conn?.inputStream)
-                        } catch (e: MalformedURLException) {
+                        } catch (e: Exception) {
                             bitmap = null
-                            Log.d("test", "MalformedURLException")
+                            e.printStackTrace()
                         }
                     }
 
@@ -606,9 +606,9 @@ class AddLinkyActivity : AppCompatActivity() {
                             val conn: HttpURLConnection? =
                                 imageUrl?.openConnection() as HttpURLConnection
                             bitmap = BitmapFactory.decodeStream(conn?.inputStream)
-                        } catch (e: MalformedURLException) {
+                        } catch (e: Exception) {
                             bitmap = null
-                            Log.d("test", "MalformedURLException")
+                            e.printStackTrace()
                         }
                     }
 

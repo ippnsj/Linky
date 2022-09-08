@@ -9,12 +9,30 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.activity.OnBackPressedCallback
+import androidx.fragment.app.activityViewModels
 import org.poolc.linky.databinding.FragmentSearchBinding
 
 class SearchFragment : Fragment() {
     private lateinit var binding : FragmentSearchBinding
     private lateinit var mainActivity: MainActivity
-    private lateinit var backCallback : OnBackPressedCallback
+    private val model: SearchViewModel by activityViewModels()
+
+    private val fragmentList = ArrayList<Fragment>()
+    private val tabText = ArrayList<String>()
+
+    //private lateinit var backCallback : OnBackPressedCallback
+
+    override fun onAttach(context: Context) {
+        super.onAttach(context)
+        mainActivity = context as MainActivity
+
+//        backCallback = object : OnBackPressedCallback(true) {
+//            override fun handleOnBackPressed() {
+//                mainActivity.finish()
+//            }
+//        }
+//        mainActivity.onBackPressedDispatcher?.addCallback(this, backCallback)
+    }
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -28,20 +46,8 @@ class SearchFragment : Fragment() {
         binding = FragmentSearchBinding.bind(view)
     }
 
-    override fun onAttach(context: Context) {
-        super.onAttach(context)
-        mainActivity = context as MainActivity
-
-        backCallback = object : OnBackPressedCallback(true) {
-            override fun handleOnBackPressed() {
-                mainActivity.finish()
-            }
-        }
-        mainActivity.onBackPressedDispatcher?.addCallback(this, backCallback)
-    }
-
     override fun onDetach() {
         super.onDetach()
-        backCallback.remove()
+//        backCallback.remove()
     }
 }
