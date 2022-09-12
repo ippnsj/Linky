@@ -12,7 +12,7 @@ import java.net.URL
 import kotlin.concurrent.thread
 
 class FollowAdapter(private val follows:ArrayList<User>, private val listener: FollowAdapter.OnItemClickListener) : RecyclerView.Adapter<FollowAdapter.ViewHolder>() {
-    private lateinit var content: MainActivity
+    private lateinit var context: MainActivity
 
     interface OnItemClickListener {
         fun onItemClick(pos:Int)
@@ -20,7 +20,7 @@ class FollowAdapter(private val follows:ArrayList<User>, private val listener: F
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
         val binding = FollowItemBinding.inflate(LayoutInflater.from(parent.context), parent, false)
-        content = parent.context as MainActivity
+        context = parent.context as MainActivity
         return ViewHolder(binding)
     }
 
@@ -44,12 +44,12 @@ class FollowAdapter(private val follows:ArrayList<User>, private val listener: F
                                 url?.openConnection() as HttpURLConnection
                             val image = BitmapFactory.decodeStream(conn?.inputStream)
 
-                            content.runOnUiThread {
+                            context.runOnUiThread {
                                 followProfileImage.setImageBitmap(image)
                             }
                         }
                         catch (e:Exception) {
-                            content.runOnUiThread {
+                            context.runOnUiThread {
                                 followProfileImage.setImageResource(R.drawable.profile)
                             }
                             e.printStackTrace()
@@ -61,7 +61,7 @@ class FollowAdapter(private val follows:ArrayList<User>, private val listener: F
 
                 val following = follows[pos].getFollowing()
                 if(following) {
-                    followProfileImage.borderColor = content.getColor(R.color.primary)
+                    followProfileImage.borderColor = context.getColor(R.color.primary)
                     followProfileImage.borderWidth = 7
                 }
 

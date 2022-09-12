@@ -513,14 +513,6 @@ class AddLinkyActivity : AppCompatActivity() {
                         }
                     }
 
-                    // TODO 키워드 제한으로 일단 삭제
-                    /*val keywordsStr : String? =
-                    doc.select("meta[name=keywords]").first()?.attr("content")
-                    if(keywordsStr != null) {
-                        val keywordsArr = keywordsStr.split(",")
-                        keywords.addAll(keywordsArr)
-                    }*/
-
                     if (title == null) {
                         title = doc!!.getElementsByTag("title")?.first()?.text()
                     }
@@ -547,11 +539,6 @@ class AddLinkyActivity : AppCompatActivity() {
 
                     runOnUiThread {
                         veil.visibility = View.INVISIBLE
-
-                        // 키워드
-                        /*if(keywords.isNotEmpty()) {
-                        keywordAdapter.notifyDataSetChanged()
-                        }*/
 
                         // 폴더경로
                         selectPath.visibility = View.VISIBLE

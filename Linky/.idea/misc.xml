@@ -4,17 +4,39 @@
     <option name="filePathToZoomLevelMap">
       <map>
         <entry key="..\:/Linky/Linky/app/src/main/res/drawable/navi_linky.xml" value="0.125" />
+        <entry key="..\:/Linky/Linky/app/src/main/res/drawable/owner_nickname_background.xml" value="0.125" />
+        <entry key="..\:/Linky/Linky/app/src/main/res/drawable/owner_nickname_background_following.xml" value="0.125" />
         <entry key="..\:/Linky/Linky/app/src/main/res/drawable/select.xml" value="0.124" />
         <entry key="..\:/Linky/Linky/app/src/main/res/drawable/switch_lock.xml" value="0.1225" />
         <entry key="..\:/Linky/Linky/app/src/main/res/layout/activity_add_linky.xml" value="0.176" />
         <entry key="..\:/Linky/Linky/app/src/main/res/layout/activity_edit.xml" value="0.4" />
         <entry key="..\:/Linky/Linky/app/src/main/res/layout/activity_login.xml" value="0.1125" />
         <entry key="..\:/Linky/Linky/app/src/main/res/layout/activity_main.xml" value="0.1140625" />
+        <entry key="..\:/Linky/Linky/app/src/main/res/layout/activity_search_me.xml" value="0.1125" />
+        <entry key="..\:/Linky/Linky/app/src/main/res/layout/activity_user.xml" value="0.1125" />
         <entry key="..\:/Linky/Linky/app/src/main/res/layout/edit_folder_item.xml" value="0.11302083333333333" />
-        <entry key="..\:/Linky/Linky/app/src/main/res/layout/folder_item.xml" value="0.536" />
+        <entry key="..\:/Linky/Linky/app/src/main/res/layout/folder_item.xml" value="0.4460285132382892" />
+        <entry key="..\:/Linky/Linky/app/src/main/res/layout/folder_item_search.xml" value="0.2" />
+        <entry key="..\:/Linky/Linky/app/src/main/res/layout/folder_item_sub.xml" value="0.536" />
+        <entry key="..\:/Linky/Linky/app/src/main/res/layout/follow_item.xml" value="0.1140625" />
         <entry key="..\:/Linky/Linky/app/src/main/res/layout/fragment_edit_linky.xml" value="0.1140625" />
         <entry key="..\:/Linky/Linky/app/src/main/res/layout/fragment_folders.xml" value="0.1140625" />
+        <entry key="..\:/Linky/Linky/app/src/main/res/layout/fragment_follower.xml" value="0.1140625" />
+        <entry key="..\:/Linky/Linky/app/src/main/res/layout/fragment_following.xml" value="0.1140625" />
         <entry key="..\:/Linky/Linky/app/src/main/res/layout/fragment_linky.xml" value="0.1140625" />
+        <entry key="..\:/Linky/Linky/app/src/main/res/layout/fragment_search.xml" value="0.25364583333333335" />
+        <entry key="..\:/Linky/Linky/app/src/main/res/layout/fragment_search_me.xml" value="0.1140625" />
+        <entry key="..\:/Linky/Linky/app/src/main/res/layout/fragment_search_me_result_folder.xml" value="0.25364583333333335" />
+        <entry key="..\:/Linky/Linky/app/src/main/res/layout/fragment_search_me_result_link.xml" value="0.1140625" />
+        <entry key="..\:/Linky/Linky/app/src/main/res/layout/fragment_search_result_folder.xml" value="0.25364583333333335" />
+        <entry key="..\:/Linky/Linky/app/src/main/res/layout/fragment_search_result_link.xml" value="0.25364583333333335" />
+        <entry key="..\:/Linky/Linky/app/src/main/res/layout/fragment_search_result_user.xml" value="0.1140625" />
+        <entry key="..\:/Linky/Linky/app/src/main/res/layout/fragment_user_info.xml" value="0.1140625" />
+        <entry key="..\:/Linky/Linky/app/src/main/res/layout/fragment_user_linky.xml" value="0.25364583333333335" />
+        <entry key="..\:/Linky/Linky/app/src/main/res/layout/fragment_user_linky_inside_folder.xml" value="0.11302083333333333" />
+        <entry key="..\:/Linky/Linky/app/src/main/res/layout/fragment_user_linky_outside_folder.xml" value="0.11302083333333333" />
+        <entry key="..\:/Linky/Linky/app/src/main/res/layout/linky_item.xml" value="0.1140625" />
+        <entry key="..\:/Linky/Linky/app/src/main/res/layout/linky_item_search.xml" value="0.25364583333333335" />
         <entry key="..\:/Linky/Linky/app/src/main/res/layout/switch_item.xml" value="0.264" />
         <entry key="..\:/Linky/Linky/app/src/main/res/menu/menu_add_linky_topbar.xml" value="0.264" />
         <entry key="..\:/Linky/Linky/app/src/main/res/menu/menu_bottomnavi_edit_linky.xml" value="0.1140625" />

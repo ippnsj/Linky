@@ -1,6 +1,7 @@
 package org.poolc.linky
 
 import android.content.Context
+import android.graphics.Color
 import android.os.Bundle
 import android.util.Log
 import android.view.KeyEvent
@@ -9,7 +10,11 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.activity.OnBackPressedCallback
+import androidx.appcompat.widget.SearchView
 import androidx.fragment.app.activityViewModels
+import androidx.viewpager2.adapter.FragmentStateAdapter
+import com.google.android.material.tabs.TabLayout
+import com.google.android.material.tabs.TabLayoutMediator
 import org.poolc.linky.databinding.FragmentSearchBinding
 
 class SearchFragment : Fragment() {
@@ -20,34 +25,95 @@ class SearchFragment : Fragment() {
     private val fragmentList = ArrayList<Fragment>()
     private val tabText = ArrayList<String>()
 
-    //private lateinit var backCallback : OnBackPressedCallback
-
     override fun onAttach(context: Context) {
         super.onAttach(context)
         mainActivity = context as MainActivity
+    }
 
-//        backCallback = object : OnBackPressedCallback(true) {
-//            override fun handleOnBackPressed() {
-//                mainActivity.finish()
-//            }
-//        }
-//        mainActivity.onBackPressedDispatcher?.addCallback(this, backCallback)
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+
+        fragmentList.add(SearchResultFolderFragment())
+        tabText.add("폴더")
+        fragmentList.add(SearchResultLinkFragment())
+        tabText.add("링크")
+        fragmentList.add(SearchResultUserFragment())
+        tabText.add("유저")
     }
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View? {
-        return inflater.inflate(R.layout.fragment_search, container, false)
+        val view = inflater.inflate(R.layout.fragment_search, container, false)
+        binding = FragmentSearchBinding.bind(view)
+
+        val pagerAdapter = object : FragmentStateAdapter(mainActivity) {
+            override fun getItemCount(): Int {
+                return fragmentList.size
+            }
+
+            override fun createFragment(position: Int): Fragment {
+                return fragmentList[position]
+            }
+        }
+
+        with(binding) {
+            tabs.setSelectedTabIndicatorColor(Color.parseColor("#707070"))
+
+            pager.adapter = pagerAdapter
+
+            TabLayoutMediator(tabs, pager) { tab: TabLayout.Tab, i: Int ->
+                tab.text = tabText[i]
+            }.attach()
+
+            searchView.setOnClickListener {
+                searchView.isIconified = false
+            }
+
+            val queryTextListener = object : SearchView.OnQueryTextListener {
+                override fun onQueryTextSubmit(query: String?): Boolean {
+                    return true
+                }
+
+                override fun onQueryTextChange(newText: String?): Boolean {
+                    model.updateSearchText(newText ?: "")
+
+                    return true
+                }
+
+            }
+
+            searchView.setOnQueryTextListener(queryTextListener)
+        }
+
+        return view
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        binding = FragmentSearchBinding.bind(view)
     }
 
-    override fun onDetach() {
-        super.onDetach()
-//        backCallback.remove()
+    override fun onHiddenChanged(hidden: Boolean) {
+        super.onHiddenChanged(hidden)
+
+        if(!hidden) {
+            val tabIdx = binding.tabs.selectedTabPosition
+
+            when(tabIdx) {
+                0 -> {
+                    val fragment = fragmentList[tabIdx] as SearchResultFolderFragment
+                    fragment.update()
+                }
+                1 -> {
+                    val fragment = fragmentList[tabIdx] as SearchResultLinkFragment
+                    fragment.update()
+                }
+                2 -> {
+                    val fragment = fragmentList[tabIdx] as SearchResultUserFragment
+                    fragment.update()
+                }
+            }
+        }
     }
 }

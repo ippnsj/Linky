@@ -1,25 +1,20 @@
 package org.poolc.linky
 
 import android.app.Activity
-import android.content.Context
-import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
-import android.graphics.drawable.BitmapDrawable
-import android.net.Uri
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.RecyclerView
-import org.json.JSONArray
-import org.poolc.linky.databinding.FolderItemSubBinding
 import org.poolc.linky.databinding.LinkyItemBinding
+import org.poolc.linky.databinding.LinkyItemSearchBinding
 import java.net.HttpURLConnection
 import java.net.URL
 import kotlin.concurrent.thread
 
-class LinkyAdapter (private val links:ArrayList<Link>, private val listener:LinkyAdapter.OnItemClickListener, private val isEditMode:Boolean) : RecyclerView.Adapter<LinkyAdapter.ViewHolder>() {
+class LinkySearchAdapter(private val links:ArrayList<Link>, private val listener:LinkySearchAdapter.OnItemClickListener) : RecyclerView.Adapter<LinkySearchAdapter.ViewHolder>() {
     private lateinit var context: Activity
 
     public interface OnItemClickListener {
@@ -27,7 +22,7 @@ class LinkyAdapter (private val links:ArrayList<Link>, private val listener:Link
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
-        val binding = LinkyItemBinding.inflate(LayoutInflater.from(parent.context), parent, false)
+        val binding = LinkyItemSearchBinding.inflate(LayoutInflater.from(parent.context), parent, false)
         context = parent.context as Activity
         return ViewHolder(binding)
     }
@@ -40,7 +35,7 @@ class LinkyAdapter (private val links:ArrayList<Link>, private val listener:Link
         return links.size
     }
 
-    inner class ViewHolder(val binding : LinkyItemBinding) : RecyclerView.ViewHolder(binding.root) {
+    inner class ViewHolder(val binding : LinkyItemSearchBinding) : RecyclerView.ViewHolder(binding.root) {
         fun bind(pos:Int) {
             with(binding) {
                 var bitmap : Bitmap? = null
@@ -56,21 +51,21 @@ class LinkyAdapter (private val links:ArrayList<Link>, private val listener:Link
                                 BitmapFactory.decodeStream(conn?.inputStream)
 
                             context.runOnUiThread {
-                                linkyImage.setImageBitmap(bitmap)
+                                linkImage.setImageBitmap(bitmap)
                             }
                         } catch (e: Exception) {
                             context.runOnUiThread {
-                                linkyImage.setImageResource(R.mipmap.linky_logo)
+                                linkImage.setImageResource(R.mipmap.linky_logo)
                             }
                             e.printStackTrace()
                         }
                     }
                 }
                 else {
-                    linkyImage.setImageResource(R.mipmap.linky_logo)
+                    linkImage.setImageResource(R.mipmap.linky_logo)
                 }
 
-                linkyTitle.text = links[pos].getLinkTitle()
+                linkTitle.text = links[pos].getLinkTitle()
                 val keywordsArr = links[pos].getKeywords()
                 var keywordStr = ""
                 for(idx in 0 until keywordsArr.length()) {
@@ -81,29 +76,30 @@ class LinkyAdapter (private val links:ArrayList<Link>, private val listener:Link
                         keywordStr += " #${keywordsArr[idx]}"
                     }
                 }
-                linkyKeywords.text = keywordStr
+                linkKeyword.text = keywordStr
 
-                linkyTitle.isSelected = false
-                linkyKeywords.isSelected = false
+                linkTitle.isSelected = false
+                linkKeyword.isSelected = false
 
-                linkyContainer.setOnLongClickListener {
-                    linkyTitle.isSelected = false
-                    linkyTitle.isSelected = true
-                    linkyKeywords.isSelected = false
-                    linkyKeywords.isSelected = true
+                linkContainer.setOnLongClickListener {
+                    linkTitle.isSelected = false
+                    linkTitle.isSelected = true
+                    linkKeyword.isSelected = false
+                    linkKeyword.isSelected = true
                     true
                 }
 
-                linkyContainer.setOnClickListener {
+                linkContainer.setOnClickListener {
                     listener.onItemClick(pos)
                 }
 
-                if(isEditMode) {
-                    selectLink.visibility = View.VISIBLE
-                    selectLink.isSelected = links[pos].getIsSelected()
+                linkOwnerNickname.text = "by ${links[pos].getNickname()}"
+
+                if(links[pos].getFollowing()) {
+                    linkOwnerNickname.background = ContextCompat.getDrawable(context, R.drawable.owner_nickname_background_following)
                 }
                 else {
-                    selectLink.visibility = View.INVISIBLE
+                    linkOwnerNickname.background = ContextCompat.getDrawable(context, R.drawable.owner_nickname_background)
                 }
             }
         }

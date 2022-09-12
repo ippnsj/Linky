@@ -6,6 +6,7 @@ class Folder {
     private var nickName: String = ""
     private var ownerEmail: String = ""
     private var path: String = ""
+    private var following: Boolean = false
 
     constructor(folderName:String, isSelected:Boolean) {
         this.folderName = folderName
@@ -17,6 +18,14 @@ class Folder {
         this.nickName = nickName
         this.ownerEmail = ownerEmail
         this.path = path
+    }
+
+    constructor(folderName: String, nickName: String, ownerEmail: String, path: String, following: Boolean) {
+        this.folderName = folderName
+        this.nickName = nickName
+        this.ownerEmail = ownerEmail
+        this.path = path
+        this.following = following
     }
 
     fun getFolderName() : String {
@@ -35,11 +44,19 @@ class Folder {
         isSelected = !isSelected
     }
 
+    fun getNickname() : String {
+        return nickName
+    }
+
     fun getOwnerEmail() : String {
         return ownerEmail
     }
 
     fun getPath() : String {
         return path
+    }
+
+    fun getFollowing() : Boolean {
+        return following
     }
 }

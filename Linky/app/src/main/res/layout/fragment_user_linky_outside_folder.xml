@@ -4,7 +4,8 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".UserLinkyOutsideFolderFragment" >
+    android:paddingTop="20dp"
+    tools:context=".UserLinkyOutsideFolderFragment">
 
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/folder_recycler"

@@ -12,10 +12,6 @@ class SearchMeActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         binding = ActivitySearchMeBinding.inflate(layoutInflater)
         setContentView(binding.root)
-
-        with(binding) {
-
-        }
     }
 
     fun goToUserLinky(ownerEmail: String, path: String) {

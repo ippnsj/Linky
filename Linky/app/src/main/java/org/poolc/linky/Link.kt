@@ -14,6 +14,7 @@ class Link {
     private var nickName : String = ""
     private var ownerId : String = ""
     private var path : String = ""
+    private var following: Boolean = false
 
     constructor()
 
@@ -36,6 +37,18 @@ class Link {
         this.nickName = nickName
         this.ownerId = ownerId
         this.path = path
+    }
+
+    constructor(id: String, keywords: JSONArray, linkTitle: String, imgUrl: String, url: String, nickName: String, ownerId: String, path: String, following: Boolean) {
+        this.id = id
+        this.keywords = keywords
+        this.linkTitle = linkTitle
+        this.imgUrl = imgUrl
+        this.url = url
+        this.nickName = nickName
+        this.ownerId = ownerId
+        this.path = path
+        this.following = following
     }
 
     fun getId() : String {
@@ -97,5 +110,13 @@ class Link {
 
     fun switchIsSelected() {
         isSelected = !isSelected
+    }
+
+    fun getNickname() : String {
+        return nickName
+    }
+
+    fun getFollowing() : Boolean {
+        return following
     }
 }

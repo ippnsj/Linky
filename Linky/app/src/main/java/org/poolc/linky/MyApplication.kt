@@ -48,11 +48,23 @@ interface RetrofitService {
         @Body body: RequestBody
     ): Call<String>
 
-    // follow
-    @POST("/follow")
+    // follow by nickname
+    @POST("/follow/nickname")
     fun follow(
         @Body body: RequestBody
     ): Call<JsonElement>
+
+    // follow by email
+    @POST("/follow/email")
+    fun followByEmail(
+        @Body body: RequestBody
+    ): Call<JsonElement>
+
+    // unfollow by email
+    @HTTP(method="DELETE", hasBody=true, path="/follow/email")
+    fun unfollowByEmail(
+        @Body body: RequestBody
+    ): Call<String>
 
     // following
     @GET("/following")
@@ -80,6 +92,20 @@ interface RetrofitService {
         @Query("email") email:String,
         @Query("keyword") keyword:String,
         @Query("searchMe") searchMe:String
+    ): Call<JsonElement>
+
+    // search user
+    @GET("/member/nickname")
+    fun searchUser(
+        @Query("email") email: String,
+        @Query("nickname") nickname: String
+    ): Call<JsonElement>
+
+    // get other user's profile
+    @GET("/member/email")
+    fun getUserProfile(
+        @Query("email") email:String,
+        @Query("otherEmail") otherEmail:String
     ): Call<JsonElement>
 }
 

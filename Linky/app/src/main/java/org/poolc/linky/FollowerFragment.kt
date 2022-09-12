@@ -47,7 +47,11 @@ class FollowerFragment : Fragment() {
 
         followerAdapter = FollowAdapter(followers, object : FollowAdapter.OnItemClickListener {
             override fun onItemClick(pos: Int) {
-
+                val intent = Intent(mainActivity, UserActivity::class.java)
+                intent.putExtra("owner", "other")
+                intent.putExtra("email", followers[pos].getEmail())
+                intent.putExtra("path", "")
+                startActivity(intent)
             }
         })
 

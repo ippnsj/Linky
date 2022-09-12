@@ -29,7 +29,8 @@ class UserLinkyOutsideFolderFragment : Fragment() {
 
     override fun onAttach(context: Context) {
         super.onAttach(context)
-        Log.d("test", (context is SearchMeActivity).toString())
+        activity = context as Activity
+        app = activity.application as MyApplication
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -51,12 +52,9 @@ class UserLinkyOutsideFolderFragment : Fragment() {
             override fun onItemClick(pos:Int) {
                 val folderName = folders[pos].getFolderName()
                 val newPath = "${path}${folderName}/"
-                val bundle = Bundle()
-                bundle.putString("owner", owner)
-                bundle.putString("email", email)
-                bundle.putString("path", newPath)
 
-                // mainActivity.changeChildFragment(LinkyInsideFolderFragment(), bundle, true)
+                val parent = parentFragment as UserLinkyFragment
+                parent.setFragment(newPath, true)
             }
         }, false)
 
@@ -97,7 +95,7 @@ class UserLinkyOutsideFolderFragment : Fragment() {
 
     override fun onResume() {
         super.onResume()
-
+        update()
     }
 
     private fun update() {
@@ -115,16 +113,16 @@ class UserLinkyOutsideFolderFragment : Fragment() {
         thread {
             val jsonStr = app.read(path, false)
 
-//            mainActivity.runOnUiThread {
-//                if (jsonStr != "") {
-//                    setFolders(jsonStr!!)
-//                }
-//                else {
-//                    folders.clear()
-//                }
-//
-//                folderAdapter.notifyDataSetChanged()
-//            }
+            activity.runOnUiThread {
+                if (jsonStr != "") {
+                    setFolders(jsonStr!!)
+                }
+                else {
+                    folders.clear()
+                }
+
+                folderAdapter.notifyDataSetChanged()
+            }
         }
     }
 
@@ -132,16 +130,16 @@ class UserLinkyOutsideFolderFragment : Fragment() {
         thread {
             val jsonStr = app.readOther(email, path)
 
-//            mainActivity.runOnUiThread {
-//                if (jsonStr != "") {
-//                    setFolders(jsonStr!!)
-//                }
-//                else {
-//                    folders.clear()
-//                }
-//
-//                folderAdapter.notifyDataSetChanged()
-//            }
+            activity.runOnUiThread {
+                if (jsonStr != "") {
+                    setFolders(jsonStr!!)
+                }
+                else {
+                    folders.clear()
+                }
+
+                folderAdapter.notifyDataSetChanged()
+            }
         }
     }
 

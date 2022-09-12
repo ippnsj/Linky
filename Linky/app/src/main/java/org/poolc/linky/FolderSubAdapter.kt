@@ -28,6 +28,8 @@ class FolderSubAdapter (private val folders:ArrayList<Folder>, private val liste
     inner class ViewHolder(val binding : FolderItemSubBinding) : RecyclerView.ViewHolder(binding.root) {
         fun bind(pos:Int) {
             with(binding) {
+                folderNameSub.isSelected = false
+
                 folderNameSub.text = folders[pos].getFolderName()
                 folderContainerSub.setOnLongClickListener {
                     folderNameSub.isSelected = false

@@ -54,8 +54,8 @@ class UserLinkyInsideFolderFragment : Fragment() {
 
         folderAdapter = FolderSubAdapter(folders, object : FolderSubAdapter.OnItemClickListener {
             override fun onItemClick(pos:Int) {
-                val newFolderName = folders[pos].getFolderName()
-                val newPath = "${path}${newFolderName}/"
+                val folderName = folders[pos].getFolderName()
+                val newPath = "${path}${folderName}/"
 
                 val parent = parentFragment as UserLinkyFragment
                 parent.setFragment(newPath, true)

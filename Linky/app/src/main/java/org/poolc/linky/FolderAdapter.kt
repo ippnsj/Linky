@@ -29,6 +29,8 @@ class FolderAdapter(private val folders:ArrayList<Folder>, private val listener:
     inner class ViewHolder(val binding : FolderItemBinding) : RecyclerView.ViewHolder(binding.root) {
         fun bind(pos:Int) {
             with(binding) {
+                folderName.isSelected = false
+
                 folderName.text = folders[pos].getFolderName()
                 folderContainer.setOnLongClickListener {
                     folderName.isSelected = false

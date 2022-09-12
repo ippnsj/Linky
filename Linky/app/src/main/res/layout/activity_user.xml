@@ -6,13 +6,10 @@
     android:layout_height="match_parent"
     tools:context=".UserActivity">
 
-    <androidx.fragment.app.FragmentContainerView
-        android:id="@+id/user_activity_container"
-        android:name="org.poolc.linky.UserInfoFragment"
-        android:layout_width="0dp"
-        android:layout_height="0dp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintLeft_toLeftOf="parent"
-        app:layout_constraintRight_toRightOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+    <FrameLayout
+        android:id="@+id/user_activity_fragment"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+    </FrameLayout>
 </androidx.constraintlayout.widget.ConstraintLayout>
