@@ -1,5 +1,7 @@
 package org.poolc.linky
 
+import com.google.gson.annotations.Expose
+import com.google.gson.annotations.SerializedName
 import org.json.JSONArray
 
 class Link {

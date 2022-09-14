@@ -4,11 +4,9 @@ import android.app.Activity
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.view.LayoutInflater
-import android.view.View
 import android.view.ViewGroup
 import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.RecyclerView
-import org.poolc.linky.databinding.LinkyItemBinding
 import org.poolc.linky.databinding.LinkyItemSearchBinding
 import java.net.HttpURLConnection
 import java.net.URL

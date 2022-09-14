@@ -95,10 +95,10 @@ interface RetrofitService {
     ): Call<JsonElement>
 
     // search user
-    @GET("/member/nickname")
+    @GET("/user/elastic")
     fun searchUser(
         @Query("email") email: String,
-        @Query("nickname") nickname: String
+        @Query("keyword") keyword: String
     ): Call<JsonElement>
 
     // get other user's profile

@@ -196,7 +196,7 @@ class FolderListFragment : Fragment() {
                         }
                     }
                     else -> {
-                        message = "폴더 수정에 실패하였습니다."
+                        message = "폴더 추가에 실패하였습니다."
                         positiveButtonFunc = object : DialogInterface.OnClickListener {
                             override fun onClick(dialog: DialogInterface?, which: Int) {
                                 update()

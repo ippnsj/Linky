@@ -5,6 +5,7 @@ import android.content.DialogInterface
 import android.content.Intent
 import android.graphics.Rect
 import android.os.Bundle
+import android.util.Log
 import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
@@ -115,9 +116,9 @@ class SearchResultUserFragment : Fragment(), Observer<String> {
 
     private fun getSearchResult() {
         val email = MyApplication.sharedPref.getString("email", "")
-        val nickname = model.searchText.value
+        val keyword = model.searchText.value
 
-        val call = MyApplication.service.searchUser(email!!, nickname!!)
+        val call = MyApplication.service.searchUser(email!!, keyword!!)
 
         call.enqueue(object : Callback<JsonElement> {
             override fun onResponse(call: Call<JsonElement>, response: Response<JsonElement>) {
@@ -130,16 +131,14 @@ class SearchResultUserFragment : Fragment(), Observer<String> {
                         userSearchAdapter.notifyDataSetChanged()
                     }
 
+                    var message = ""
+                    var positiveButtonFunc: DialogInterface.OnClickListener? = null
+
                     when(response.code()) {
-                        400, 401 -> {
-                            mainActivity.runOnUiThread {
-                                val builder = AlertDialog.Builder(mainActivity)
-
-                                builder.setIcon(R.drawable.ic_baseline_warning_8)
-                                builder.setTitle("유저 검색 실패")
-                                builder.setMessage("사용자 인증 오류로 인해 자동 로그아웃 됩니다.")
-
-                                builder.setPositiveButton("확인") { dialogInterface: DialogInterface, i: Int ->
+                        401 -> {
+                            message = "사용자 인증 오류로 인해 자동 로그아웃 됩니다."
+                            positiveButtonFunc = object : DialogInterface.OnClickListener {
+                                override fun onClick(dialog: DialogInterface?, which: Int) {
                                     val editSharedPref = MyApplication.sharedPref.edit()
                                     editSharedPref.remove("email").apply()
 
@@ -147,10 +146,23 @@ class SearchResultUserFragment : Fragment(), Observer<String> {
                                     intent.flags = Intent.FLAG_ACTIVITY_CLEAR_TASK or Intent.FLAG_ACTIVITY_NEW_TASK
                                     startActivity(intent)
                                 }
-
-                                builder.show()
                             }
                         }
+                        else -> {
+                            message = "유저 검색에 실패하였습니다."
+                        }
+                    }
+
+                    mainActivity.runOnUiThread {
+                        val builder = AlertDialog.Builder(mainActivity)
+
+                        builder.setIcon(R.drawable.ic_baseline_warning_8)
+                        builder.setTitle("유저 검색 실패")
+                        builder.setMessage(message)
+
+                        builder.setPositiveButton("확인", positiveButtonFunc)
+
+                        builder.show()
                     }
                 }
             }
@@ -163,7 +175,7 @@ class SearchResultUserFragment : Fragment(), Observer<String> {
                     val builder = AlertDialog.Builder(mainActivity)
 
                     builder.setIcon(R.drawable.ic_baseline_warning_8)
-                    builder.setTitle("검색 실패")
+                    builder.setTitle("유저 검색 실패")
                     builder.setMessage("서버 문제로 검색 정보를 가져오는데 실패하였습니다.\n" +
                             "잠시후 다시 시도해주세요.")
 
@@ -177,7 +189,27 @@ class SearchResultUserFragment : Fragment(), Observer<String> {
 
     private fun setSearchResult(jsonObj: JsonObject) {
         if(!jsonObj.isJsonNull) {
-            // TODO 닉네임 검색이 닉네임을 정확히 검색해야지만 결과가 떠서 수정되면 수정
+            users.clear()
+            val usersArr = jsonObj.getAsJsonArray("users")
+
+            for(i in 0 until usersArr.size()) {
+                val userObj = usersArr[i].asJsonObject
+
+                val email = userObj.get("email").asString
+                val nickname = userObj.get("nickname").asString
+                val imageUrl = userObj.get("imageUrl").asString
+                val isFollowing = userObj.get("isFollowing").asString.toBoolean()
+
+                val user = User(email, nickname, imageUrl, isFollowing)
+
+                users.add(user)
+            }
+
+            userSearchAdapter.notifyDataSetChanged()
+        }
+        else {
+            users.clear()
+            userSearchAdapter.notifyDataSetChanged()
         }
     }
 

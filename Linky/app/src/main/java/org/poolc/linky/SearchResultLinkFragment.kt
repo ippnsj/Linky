@@ -5,7 +5,6 @@ import android.content.Intent
 import android.graphics.Rect
 import android.net.Uri
 import android.os.Bundle
-import android.util.Log
 import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
@@ -159,6 +158,7 @@ class SearchResultLinkFragment : Fragment(), Observer<String> {
     private fun setSearchResult(jsonObj: JsonObject) {
         if(!jsonObj.isJsonNull) {
             links.clear()
+
             val followingLinks = jsonObj.getAsJsonArray("followingLinks")
             val notFollowingLinks = jsonObj.getAsJsonArray("notFollowingLinks")
 
@@ -168,7 +168,7 @@ class SearchResultLinkFragment : Fragment(), Observer<String> {
                 val keywords = followingLink.getAsJsonArray("keywords")
                 val keywordJsonArr = JSONArray()
                 for(keyword in keywords) {
-                    keywordJsonArr.put(keyword)
+                    keywordJsonArr.put(keyword.asString)
                 }
                 val linkName = followingLink.get("linkName").asString
                 val imageUrl = followingLink.get("imageUrl").asString
@@ -188,7 +188,7 @@ class SearchResultLinkFragment : Fragment(), Observer<String> {
                 val keywords = notFollowingLink.getAsJsonArray("keywords")
                 val keywordJsonArr = JSONArray()
                 for(keyword in keywords) {
-                    keywordJsonArr.put(keyword)
+                    keywordJsonArr.put(keyword.asString)
                 }
                 val linkName = notFollowingLink.get("linkName").asString
                 val imageUrl = notFollowingLink.get("imageUrl").asString

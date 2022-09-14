@@ -64,6 +64,9 @@ class FollowAdapter(private val follows:ArrayList<User>, private val listener: F
                     followProfileImage.borderColor = context.getColor(R.color.primary)
                     followProfileImage.borderWidth = 7
                 }
+                else {
+                    followProfileImage.borderWidth = 0
+                }
 
                 val nickname = follows[pos].getNickname()
                 followNickname.text = nickname

@@ -128,7 +128,7 @@ class SearchMeResultLinkFragment : Fragment(), Observer<String> {
                 val keywords = myLink.getAsJsonArray("keywords")
                 val keywordJsonArr = JSONArray()
                 for(keyword in keywords) {
-                    keywordJsonArr.put(keyword)
+                    keywordJsonArr.put(keyword.asString)
                 }
                 val linkName = myLink.get("linkName").asString
                 val imageUrl = myLink.get("imageUrl").asString
