@@ -20,6 +20,12 @@ import java.net.MalformedURLException
 import java.net.URL
 
 interface RetrofitService {
+    // verify email
+    @GET("/email/valid")
+    fun verifyEmail(
+        @Query("email") email:String
+    ): Call<String>
+
     // register
     @Multipart
     @POST("/member")

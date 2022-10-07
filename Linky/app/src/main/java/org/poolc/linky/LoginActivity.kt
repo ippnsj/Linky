@@ -4,8 +4,10 @@ import android.content.Intent
 import android.graphics.Color
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import android.text.InputFilter
 import android.text.Spannable
 import android.text.SpannableStringBuilder
+import android.text.Spanned
 import android.text.style.ForegroundColorSpan
 import android.util.Log
 import android.util.Patterns
@@ -19,6 +21,7 @@ import java.io.IOException
 import java.net.HttpURLConnection
 import java.net.MalformedURLException
 import java.net.URL
+import java.util.regex.Pattern
 import kotlin.concurrent.thread
 
 class LoginActivity : AppCompatActivity() {
@@ -52,8 +55,7 @@ class LoginActivity : AppCompatActivity() {
 
             emailTextInput.setOnEditorActionListener { v, actionId, event ->
                 if(actionId == EditorInfo.IME_ACTION_NEXT) {
-                    verifyEmailAddress(v.text.toString())
-                    true
+                    verifyEmailAddress(v.text.toString().trim())
                 }
                 false
             }
@@ -68,12 +70,18 @@ class LoginActivity : AppCompatActivity() {
                 false
             }
 
-            loginButton.setOnClickListener {
-                login()
-            }
+            passwordTextInput.filters = arrayOf(InputFilter { charSequence: CharSequence, i: Int, i1: Int, spanned: Spanned, i2: Int, i3: Int ->
+                val ps = Pattern.compile("^[a-zA-Z0-9!@#$%^&*]+$")
+                if(!ps.matcher(charSequence).matches()) ""
+                else charSequence
+            }, InputFilter.LengthFilter(15))
 
             passwordTextInput.doAfterTextChanged {
                 passwordLayout.error = null
+            }
+
+            loginButton.setOnClickListener {
+                login()
             }
         }
     }
@@ -108,7 +116,8 @@ class LoginActivity : AppCompatActivity() {
                 binding.passwordTextInput.nextFocusForwardId = R.id.passwordTextInput
                 binding.passwordLayout.error = "비밀번호는 6자리 이상이어야 합니다."
                 return false
-            }else {
+            }
+            else{
                 binding.passwordTextInput.nextFocusDownId = R.id.loginButton
                 return true
             }
@@ -148,7 +157,7 @@ class LoginActivity : AppCompatActivity() {
                         val responseJson = JSONObject(response)
 
                         val editSharedPref = MyApplication.sharedPref.edit()
-                        editSharedPref.putString("email", responseJson.getString("email")).apply()
+                        editSharedPref.putString("token", responseJson.getString("token")).apply()
 
                         val intent = Intent(this, MainActivity::class.java)
                         intent.putExtra("from", "login")
@@ -179,8 +188,7 @@ class LoginActivity : AppCompatActivity() {
             }
         }
         else {
-            val message = "로그인에 실패하였습니다.\n" +
-                    "에러메세지를 확인해주세요."
+            val message = "입력값에 에러가 존재합니다."
             showFailedLoginDialog(message)
         }
     }
