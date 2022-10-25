@@ -25,6 +25,7 @@ import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.RecyclerView
+import com.google.gson.JsonElement
 import okhttp3.MediaType
 import okhttp3.MultipartBody
 import okhttp3.RequestBody
@@ -76,11 +77,36 @@ class AddLinkyActivity : AppCompatActivity() {
         binding = ActivityAddLinkyBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        if(MyApplication.sharedPref.getString("email", "") == "") {
-            val intent = Intent(this, LoginRegisterActivity::class.java)
-            intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
-            startActivity(intent)
-            finish()
+        if(MyApplication.sharedPref.getString("token", "") == "") {
+            val title = "로그인 필요"
+            val message = "로그인이 필요한 서비스 입니다.\n" +
+                    "로그인 후 다시 이용해주세요."
+            val listener = DialogInterface.OnDismissListener {
+                val intent =
+                    Intent(this@AddLinkyActivity, LoginRegisterActivity::class.java)
+                intent.flags =
+                    Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+                startActivity(intent)
+                finish()
+            }
+
+            showDialog(title, message, listener)
+        }
+        else {
+            val call = MyApplication.service.verifyToken()
+            call.enqueue(object : Callback<Void> {
+                override fun onResponse(call: Call<Void>, response: Response<Void>) {
+                }
+
+                override fun onFailure(call: Call<Void>, t: Throwable) {
+                    val title = "서버 오류"
+                    val message = "서버와의 통신 문제로 인해 링크 추가가 불가합니다.\n" +
+                            "잠시후 다시 시도해주세요."
+                    val listener = DialogInterface.OnDismissListener { finish() }
+
+                    showDialog(title, message, listener)
+                }
+            })
         }
 
         app = application as MyApplication
@@ -152,15 +178,9 @@ class AddLinkyActivity : AppCompatActivity() {
                     }
                 }
                 else {
-                    val builder = AlertDialog.Builder(this)
-
-                    builder.setIcon(R.drawable.ic_baseline_warning_8)
-                    builder.setTitle("이미지 변경 실패")
-                    builder.setMessage("'파일 및 미디어' 권한이 허용되어있지 않아 이미지 변경에 실패하였습니다.")
-
-                    builder.setPositiveButton("확인", null)
-
-                    builder.show()
+                    val title = "이미지 변경 실패"
+                    val message = "'파일 및 미디어' 권한이 허용되어있지 않아 이미지 변경에 실패하였습니다."
+                    showDialog(title, message, null)
                 }
             }
 
@@ -331,6 +351,19 @@ class AddLinkyActivity : AppCompatActivity() {
         }
     }
 
+    private fun showDialog(title:String, message:String, listener:DialogInterface.OnDismissListener?) {
+        val builder = AlertDialog.Builder(this)
+        builder.setOnDismissListener(listener)
+
+        builder.setIcon(R.drawable.ic_baseline_warning_8)
+        builder.setTitle(title)
+        builder.setMessage(message)
+
+        builder.setPositiveButton("확인", null)
+
+        builder.show()
+    }
+
     private fun createTempImageFile(mimetype:String, bitmap:Bitmap) {
         var type = mimetype.substring(mimetype.lastIndexOf("/") + 1, mimetype.length)
         if(type != "jpeg" || type != "png") {
@@ -387,7 +420,10 @@ class AddLinkyActivity : AppCompatActivity() {
                     runOnUiThread {
                         veil.visibility = View.VISIBLE
                     }
-                    url = intent.getStringExtra("url")
+                    url = intent.getStringExtra("url") ?: ""
+                    if (!url!!.contains("http")) {
+                        url = "http://$url"
+                    }
                 }
 
                 if (url != null) {
@@ -446,7 +482,6 @@ class AddLinkyActivity : AppCompatActivity() {
                         }
 
                         doc = try {
-                            url = URLDecoder.decode(url, "UTF-8")
                             Jsoup.connect(url).userAgent("Chrome").get()
                         } catch (e: IllegalArgumentException) {
                             null
@@ -566,85 +601,128 @@ class AddLinkyActivity : AppCompatActivity() {
 
     private fun settingForEdit() {
         with(binding) {
-            thread {
-                val path = intent.getStringExtra("path")
-                val id = intent.getStringExtra("id")
+            val path = intent.getStringExtra("path") ?: ""
+            val id = intent.getStringExtra("id") ?: ""
 
-                val response = app.getLinkInfo(path!!, id!!)
+            val call = MyApplication.service.getLinkInfo(path, id)
 
-                if(response != "") {
-                    val jsonObj = JSONObject(response)
-                    val id = jsonObj.getString("id")
-                    val title = jsonObj.getString("name")
-                    val imgUrl = jsonObj.getString("imageUrl")
-                    val url = jsonObj.getString("url")
-                    val keywordsJsonArr = jsonObj.getJSONArray("keywords")
-                    val isPublic = jsonObj.getString("isPublic").toBoolean()
+            call.enqueue(object: Callback<JsonElement> {
+                override fun onResponse(
+                    call: Call<JsonElement>,
+                    response: Response<JsonElement>
+                ) {
+                    if(response.isSuccessful) {
+                        val jsonObj = response.body()!!.asJsonObject
+                        if(!jsonObj.isJsonNull) {
+                            val id = jsonObj.get("id").asString
+                            val title = jsonObj.get("name").asString
+                            val imgUrl = jsonObj.get("imageUrl").asString
+                            val url = jsonObj.get("url").asString
+                            val keywordsArr = jsonObj.getAsJsonArray("keywords")
+                            val keywordsJsonArr = JSONArray()
+                            for(keyword in keywordsArr) {
+                                keywordsJsonArr.put(keyword.asString)
+                            }
+                            val isPublic = jsonObj.get("isPublic").asBoolean
 
-                    keywords.clear()
-                    for(idx in 0 until keywordsJsonArr.length()) {
-                        keywords.add(keywordsJsonArr[idx].toString())
-                    }
+                            keywords.clear()
+                            for(idx in 0 until keywordsJsonArr.length()) {
+                                keywords.add(keywordsJsonArr[idx].toString())
+                            }
 
-                    var bitmap: Bitmap? = null
-                    if (imgUrl != "") {
-                        try {
-                            val imageUrl: URL? = URL(imgUrl)
-                            val conn: HttpURLConnection? =
-                                imageUrl?.openConnection() as HttpURLConnection
-                            bitmap = BitmapFactory.decodeStream(conn?.inputStream)
-                        } catch (e: Exception) {
-                            bitmap = null
-                            e.printStackTrace()
+                            var image: Bitmap? = null
+                            if (imgUrl != "") {
+                                thread {
+                                    image = app.getImageUrl(imgUrl)
+
+                                    if (image != null) {
+                                        runOnUiThread {
+                                            link.setImgUrl(imgUrl ?: "")
+                                            linkImage.setImageBitmap(image)
+                                        }
+                                    } else {
+                                        runOnUiThread {
+                                            linkImage.setImageResource(R.mipmap.linky_logo)
+                                        }
+                                    }
+                                }
+                            }
+                            else {
+                                linkImage.setImageResource(R.mipmap.linky_logo)
+                            }
+
+                            link.setId(id)
+                            switch.isChecked = isPublic
+
+                            keywordAdapter.notifyDataSetChanged()
+
+                            folderPath.text = path
+                            selectPath.visibility = View.INVISIBLE
+
+                            titleTextInput.setText(title)
+
+                            link.setUrl(url)
+                            linkAddressTextInput.setText(url)
+                            linkAddressTextInput.isEnabled = false
+                        }
+                        else {
+                            val title = "링크 정보 가져오기 실패"
+                            val message = "서버 문제로 정보를 가져오는데 실패하였습니다.\n" +
+                                    "잠시후 다시 시도해주세요."
+                            val listener = DialogInterface.OnDismissListener {
+                                setResult(RESULT_CANCELED)
+                                finish()
+                            }
+
+                            showDialog(title, message, listener)
                         }
                     }
-
-                    link.setId(id)
-                    runOnUiThread {
-                        switch.isChecked = isPublic
-
-                        keywordAdapter.notifyDataSetChanged()
-
-                        folderPath.text = path
-                        selectPath.visibility = View.INVISIBLE
-
-                        titleTextInput.setText(title)
-
-                        if (bitmap != null) {
-                            link.setImgUrl(imgUrl ?: "")
-                            linkImage.setImageBitmap(bitmap)
-                        } else {
-                            linkImage.setImageResource(R.mipmap.linky_logo)
+                    else {
+                        val title = "링크 정보 가져오기 실패"
+                        var message = "서버 문제로 인해 정보를 가져오는데 실패하였습니다."
+                        var listener = DialogInterface.OnDismissListener {
+                            setResult(RESULT_CANCELED)
+                            finish()
                         }
 
-                        link.setUrl(url)
-                        linkAddressTextInput.setText(url)
-                        linkAddressTextInput.isEnabled = false
+                        when(response.code()) {
+                            404 -> {
+                                message = "존재하지 않는 링크입니다."
+                            }
+                        }
+
+                        showDialog(title, message, listener)
                     }
                 }
-                else {
-                    setResult(RESULT_CANCELED)
-                    finish()
+
+                override fun onFailure(call: Call<JsonElement>, t: Throwable) {
+                    val title = "링크 정보 가져오기 실패"
+                    val message = "서버와의 통신 문제로 정보를 가져오는데 실패하였습니다.\n" +
+                            "잠시후 다시 시도해주세요."
+                    val listener = DialogInterface.OnDismissListener {
+                        setResult(RESULT_CANCELED)
+                        finish()
+                    }
+
+                    showDialog(title, message, listener)
                 }
-            }
+            })
         }
     }
 
-    private val clearKeywordsListener = object : View.OnClickListener {
-        override fun onClick(v: View?) {
-            val builder = AlertDialog.Builder(this@AddLinkyActivity)
-            val message = "키워드를 전부 삭제하시겠습니까?"
-            builder.setMessage(message)
+    private val clearKeywordsListener = View.OnClickListener {
+        val builder = AlertDialog.Builder(this@AddLinkyActivity)
+        val message = "키워드를 전부 삭제하시겠습니까?"
+        builder.setMessage(message)
 
-            builder.setPositiveButton("삭제") { dialogInterface: DialogInterface, i: Int ->
-                keywords.clear()
-                keywordAdapter.notifyDataSetChanged()
-            }
-
-            builder.setNegativeButton("취소", null)
-
-            builder.show()
+        builder.setPositiveButton("삭제") { dialogInterface: DialogInterface, i: Int ->
+            keywords.clear()
+            keywordAdapter.notifyDataSetChanged()
         }
+
+        builder.setNegativeButton("취소", null)
+
+        builder.show()
     }
 
     private val selectPathListener = View.OnClickListener {
@@ -695,15 +773,9 @@ class AddLinkyActivity : AppCompatActivity() {
 
         for(idx in 0 until grantResults.size) {
             if(grantResults[idx] != PackageManager.PERMISSION_GRANTED) {
-                val builder = AlertDialog.Builder(this)
-
-                builder.setIcon(R.drawable.ic_baseline_warning_8)
-                builder.setTitle("권한 거부됨")
-                builder.setMessage("'파일 및 미디어' 권한이 허용되어야 이미지 변경이 가능합니다.")
-
-                builder.setPositiveButton("확인", null)
-
-                builder.show()
+                val title = "권한 거부됨"
+                val message = "'파일 및 미디어' 권한이 허용되어야 이미지 변경이 가능합니다."
+                showDialog(title, message, null)
                 return
             }
         }
@@ -794,10 +866,8 @@ class AddLinkyActivity : AppCompatActivity() {
             createTempImageFile(mimetype, bitmap!!)
         }
 
-        val email = MyApplication.sharedPref.getString("email", "")
         val path = binding.folderPath.text.toString()
         val body = MultipartBody.Builder()
-            .addFormDataPart("email", email)
             .addFormDataPart("isPublic", link.getIsPublic())
             .addFormDataPart("name", link.getLinkTitle())
             .addFormDataPart("path", path)
@@ -820,22 +890,32 @@ class AddLinkyActivity : AppCompatActivity() {
             body.addFormDataPart("multipartFile", fileName, requestFile)
         }
 
-        thread {
-            val call = MyApplication.service.createLink(body.build())
+        val call = MyApplication.service.createLink(body.build())
 
-            call.enqueue(object : Callback<String> {
-                override fun onResponse(
-                    call: Call<String>,
-                    response: Response<String>
-                ) {
-                    if(imageFile != null) {
-                        imageFile!!.delete()
+        call.enqueue(object : Callback<String> {
+            override fun onResponse(
+                call: Call<String>,
+                response: Response<String>
+            ) {
+                if(imageFile != null) {
+                    imageFile!!.delete()
+                }
+
+                if (response.isSuccessful) {
+                    val jsonObj = JSONObject(response.body())
+                    val imageSuccess = jsonObj.getString("imageSuccess").toBoolean()
+                    if(imageSuccess) {
+                        val intent = Intent(this@AddLinkyActivity, MainActivity::class.java)
+                        intent.putExtra("from", "add")
+                        intent.flags =
+                            Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+                        startActivity(intent)
+                        finishAndRemoveTask()
                     }
-
-                    if (response.isSuccessful) {
-                        val jsonObj = JSONObject(response.body())
-                        val imageSuccess = jsonObj.getString("imageSuccess").toBoolean()
-                        if(imageSuccess) {
+                    else {
+                        val title = "이미지 파일 가져오기 실패"
+                        val message = "이미지 파일을 가져오는데 실패하여 기존 이미지로 추가됩니다."
+                        val listener = DialogInterface.OnDismissListener {
                             val intent = Intent(this@AddLinkyActivity, MainActivity::class.java)
                             intent.putExtra("from", "add")
                             intent.flags =
@@ -843,87 +923,42 @@ class AddLinkyActivity : AppCompatActivity() {
                             startActivity(intent)
                             finishAndRemoveTask()
                         }
-                        else {
-                            runOnUiThread {
-                                val builder = AlertDialog.Builder(this@AddLinkyActivity)
+                        showDialog(title, message, listener)
+                    }
+                } else {
+                    val title = "링크 추가 실패"
+                    var message = "서버 문제로 인해 링크 추가에 실패하였습니다."
+                    var listener: DialogInterface.OnDismissListener? = null
 
-                                builder.setMessage("이미지 파일을 가져오는데 실패하여 기존 이미지로 추가됩니다.")
-
-                                builder.setPositiveButton("확인") { dialogInterface: DialogInterface, i: Int ->
-                                    val intent = Intent(this@AddLinkyActivity, MainActivity::class.java)
-                                    intent.putExtra("from", "add")
-                                    intent.flags =
-                                        Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
-                                    startActivity(intent)
-                                    finishAndRemoveTask()
-                                }
-
-                                builder.show()
-                            }
+                    when (response.code()) {
+                        400 -> {
+                            message = "형식에 맞지 않는 입력값이 있습니다\n" +
+                                    "형식에 알맞게 입력 후, 다시 시도해주세요."
                         }
-                    } else {
-                        var positiveButtonFunc: DialogInterface.OnClickListener? = null
-                        var message = ""
-
-                        when (response.code()) {
-                            400 -> {
-                                message = "형식에 맞지 않는 입력값이 있습니다\n" +
-                                        "형식에 알맞게 입력 후, 다시 시도해주세요."
+                        404 -> {
+                            message = "해당 경로가 존재하지 않습니다.\n" +
+                                    "새로운 경로 설정 후, 다시 시도해주세요."
+                            listener = DialogInterface.OnDismissListener {
+                                binding.folderPath.text = getString(R.string.default_path)
                             }
-                            401 -> {
-                                message = "사용자 인증 오류로 인해 자동 로그아웃 됩니다."
-                                positiveButtonFunc = object : DialogInterface.OnClickListener {
-                                    override fun onClick(dialog: DialogInterface?, which: Int) {
-                                        val editSharedPref = MyApplication.sharedPref.edit()
-                                        editSharedPref.remove("email").apply()
-
-                                        val intent = Intent(this@AddLinkyActivity, LoginRegisterActivity::class.java)
-                                        intent.flags = Intent.FLAG_ACTIVITY_CLEAR_TASK or Intent.FLAG_ACTIVITY_NEW_TASK
-                                        startActivity(intent)
-                                        finishAndRemoveTask()
-                                    }
-                                }
-                            }
-                            else -> {
-                                message = "서버 문제로 링크 추가에 실패하였습니다.\n" +
-                                        "잠시후 다시 시도해주세요."
-                            }
-                        }
-
-                        runOnUiThread {
-                            val builder = AlertDialog.Builder(this@AddLinkyActivity)
-
-                            builder.setIcon(R.drawable.ic_baseline_warning_8)
-                            builder.setTitle("링크 추가 실패")
-                            builder.setMessage(message)
-
-                            builder.setPositiveButton("확인", positiveButtonFunc)
-
-                            builder.show()
                         }
                     }
+
+                    showDialog(title, message, listener)
+                }
+            }
+
+            override fun onFailure(call: Call<String>, t: Throwable) {
+                if(imageFile != null) {
+                    imageFile!!.delete()
                 }
 
-                override fun onFailure(call: Call<String>, t: Throwable) {
-                    if(imageFile != null) {
-                        imageFile!!.delete()
-                    }
-
-                    runOnUiThread {
-                        val builder = AlertDialog.Builder(this@AddLinkyActivity)
-
-                        builder.setIcon(R.drawable.ic_baseline_warning_8)
-                        builder.setTitle("링크 추가 실패")
-                        builder.setMessage("서버 문제로 링크 추가에 실패하였습니다.\n" +
-                                "잠시후 다시 시도해주세요.")
-
-                        builder.setPositiveButton("확인", null)
-
-                        builder.show()
-                    }
-                }
-            })
-        }
+                val title = "링크 추가 실패"
+                val message = "서버와의 통신 문제로 링크 추가에 실패하였습니다.\n" +
+                        "잠시후 다시 시도해주세요."
+                showDialog(title, message, null)
+            }
+        })
     }
 
     private fun editLink() {
@@ -937,10 +972,8 @@ class AddLinkyActivity : AppCompatActivity() {
             createTempImageFile(mimetype, bitmap!!)
         }
 
-        val email = MyApplication.sharedPref.getString("email", "")
         val path = binding.folderPath.text.toString()
         val body = MultipartBody.Builder()
-            .addFormDataPart("email", email)
             .addFormDataPart("id", link.getId())
             .addFormDataPart("imageChange", imageChange.toString())
             .addFormDataPart("isPublic", link.getIsPublic())
@@ -964,59 +997,44 @@ class AddLinkyActivity : AppCompatActivity() {
             body.addFormDataPart("multipartFile", fileName, requestFile)
         }
 
-        thread {
-            val call = MyApplication.service.editLink(body.build())
+        val call = MyApplication.service.editLink(body.build())
 
-            call.enqueue(object : Callback<String> {
-                override fun onResponse(call: Call<String>, response: Response<String>) {
-                    if(imageFile != null) {
-                        imageFile!!.delete()
-                    }
+        call.enqueue(object : Callback<String> {
+            override fun onResponse(call: Call<String>, response: Response<String>) {
+                if(imageFile != null) {
+                    imageFile!!.delete()
+                }
 
-                    if (response.isSuccessful) {
-                        val jsonObj = JSONObject(response.body())
-                        val imageSuccess = jsonObj.getString("imageSuccess").toBoolean()
-                        if(imageSuccess) {
-                            editCompleted(response.code())
-                        }
-                        else {
-                            runOnUiThread {
-                                val builder = AlertDialog.Builder(this@AddLinkyActivity)
-
-                                builder.setMessage("이미지 파일을 가져오는데 실패하여 기존 이미지로 수정됩니다.")
-
-                                builder.setPositiveButton("확인") { dialogInterface: DialogInterface, i: Int ->
-                                    editCompleted(response.code())
-                                }
-
-                                builder.show()
-                            }
-                        }
-                    } else {
+                if (response.isSuccessful) {
+                    val jsonObj = JSONObject(response.body())
+                    val imageSuccess = jsonObj.getString("imageSuccess").toBoolean()
+                    if(imageSuccess) {
                         editCompleted(response.code())
                     }
+                    else {
+                        val title = "이미지 파일 가져오기 실패"
+                        val message = "이미지 파일을 가져오는데 실패하여 기존 이미지로 수정됩니다."
+                        val listener = DialogInterface.OnDismissListener {
+                            editCompleted(response.code())
+                        }
+                        showDialog(title, message, listener)
+                    }
+                } else {
+                    editCompleted(response.code())
+                }
+            }
+
+            override fun onFailure(call: Call<String>, t: Throwable) {
+                if(imageFile != null) {
+                    imageFile!!.delete()
                 }
 
-                override fun onFailure(call: Call<String>, t: Throwable) {
-                    if(imageFile != null) {
-                        imageFile!!.delete()
-                    }
-
-                    runOnUiThread {
-                        val builder = AlertDialog.Builder(this@AddLinkyActivity)
-
-                        builder.setIcon(R.drawable.ic_baseline_warning_8)
-                        builder.setTitle("링크 수정 실패")
-                        builder.setMessage("서버 문제로 링크 수정에 실패하였습니다.\n" +
-                                "잠시후 다시 시도해주세요.")
-
-                        builder.setPositiveButton("확인", null)
-
-                        builder.show()
-                    }
-                }
-            })
-        }
+                val title = "링크 수정 실패"
+                val message =  "서버와의 통신 문제로 링크 수정에 실패하였습니다.\n" +
+                        "잠시후 다시 시도해주세요."
+                showDialog(title, message, null)
+            }
+        })
     }
 
     private fun editCompleted(responseCode: Int) {
@@ -1025,7 +1043,8 @@ class AddLinkyActivity : AppCompatActivity() {
         finishAndRemoveTask()
     }
 
-    private fun showErrorMessage(message:String) {
+    private fun verify():Boolean {
+        var result = false
         var title = ""
         when(purpose) {
             "add" -> {
@@ -1035,29 +1054,21 @@ class AddLinkyActivity : AppCompatActivity() {
                 title = "링크 수정 실패"
             }
         }
+        var message = ""
 
-        val dialog = AlertDialog.Builder(this)
-        dialog.setIcon(R.drawable.ic_baseline_warning_8)
-        dialog.setTitle(title)
-        dialog.setMessage(message)
-
-        dialog.setPositiveButton("확인", null)
-
-        dialog.show()
-    }
-
-    private fun verify():Boolean {
-        var result = false
         with(binding) {
             if (folderPath.text == getString(R.string.default_path)) {
-                showErrorMessage("저장할 위치를 지정해주세요.")
+                message = "저장할 위치를 지정해주세요."
+                showDialog(title, message, null)
             }
             else if(titleTextInput.text.toString().trim() == "") {
-                showErrorMessage("앞/뒤 공백 없이 최소 1자 이상의 제목을 입력해주세요.")
+                message = "앞/뒤 공백 없이 최소 1자 이상의 제목을 입력해주세요."
+                showDialog(title, message, null)
             }
             else if(titleTextInput.text!!.length > 50) {
-                showErrorMessage("제목이 너무 깁니다.\n" +
-                        "50자 이하로 작성해주세요.")
+                message = "제목이 너무 깁니다.\n" +
+                        "50자 이하로 작성해주세요."
+                showDialog(title, message, null)
             }
             else {
                 result = true

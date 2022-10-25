@@ -19,12 +19,11 @@
 
         <com.google.android.material.textfield.TextInputLayout
             android:id="@+id/emailLayout"
-            android:layout_width="0dp"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:enabled="true"
             app:layout_constrainedWidth="false"
             app:layout_constraintLeft_toLeftOf="parent"
-            app:layout_constraintRight_toLeftOf="@id/space1"
             app:layout_constraintTop_toTopOf="parent"
             app:startIconDrawable="@drawable/email">
 
@@ -34,69 +33,19 @@
                 android:layout_height="wrap_content"
                 android:hint="이메일 주소"
                 android:imeActionLabel="전송"
-                android:imeOptions="actionDone"
-                android:inputType="textEmailAddress"
-                android:nextFocusForward="@id/button4" />
+                android:inputType="textEmailAddress" />
 
         </com.google.android.material.textfield.TextInputLayout>
-
-        <Space
-            android:id="@+id/space1"
-            android:layout_width="0dp"
-            android:layout_height="0dp"
-            app:layout_constraintBottom_toBottomOf="@id/emailLayout"
-            app:layout_constraintHeight="match_constraint"
-            app:layout_constraintLeft_toRightOf="@id/emailLayout"
-            app:layout_constraintRight_toLeftOf="@id/button4"
-            app:layout_constraintTop_toTopOf="@id/emailLayout"
-            app:layout_constraintWidth_percent="0.03" />
-
-        <androidx.appcompat.widget.AppCompatButton
-            android:id="@+id/button4"
-            style="@style/PrimaryButton"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="인증번호 전송"
-            app:layout_constraintBottom_toBottomOf="@id/emailLayout"
-            app:layout_constraintRight_toRightOf="parent" />
-
-        <com.google.android.material.textfield.TextInputLayout
-            android:id="@+id/certificateLayout"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            app:errorEnabled="true"
-            app:layout_constraintLeft_toLeftOf="parent"
-            app:layout_constraintRight_toRightOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/emailLayout"
-            app:startIconDrawable="@drawable/security">
-
-            <com.google.android.material.textfield.TextInputEditText
-                android:id="@+id/certificateTextInput"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:hint="인증번호"
-                android:inputType="textPassword"
-                android:maxLength="6" />
-        </com.google.android.material.textfield.TextInputLayout>
-
-        <TextView
-            android:id="@+id/timer"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="5:00"
-            android:textAppearance="@style/TextAppearance.AppCompat.Large"
-            android:textColor="#EBABBF"
-            android:textStyle="bold"
-            android:visibility="visible"
-            app:layout_constraintBaseline_toBaselineOf="@id/certificateLayout"
-            app:layout_constraintRight_toRightOf="parent" />
 
         <com.google.android.material.textfield.TextInputLayout
             android:id="@+id/passwordLayout"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            app:counterEnabled="false"
+            app:helperText="@string/helper_password"
+            app:helperTextEnabled="true"
             app:layout_constraintLeft_toLeftOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/certificateLayout"
+            app:layout_constraintTop_toBottomOf="@id/emailLayout"
             app:passwordToggleEnabled="true"
             app:startIconDrawable="@drawable/password">
 
@@ -104,7 +53,7 @@
                 android:id="@+id/passwordTextInput"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:hint="비밀번호 설정 (6자리 이상)"
+                android:hint="비밀번호 설정"
                 android:inputType="textPassword" />
         </com.google.android.material.textfield.TextInputLayout>
 
@@ -112,6 +61,7 @@
             android:id="@+id/passwordCheckLayout"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            app:errorEnabled="true"
             app:layout_constraintLeft_toLeftOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@id/passwordLayout"
@@ -129,7 +79,7 @@
         <Space
             android:id="@+id/space2"
             android:layout_width="0dp"
-            android:layout_height="20dp"
+            android:layout_height="10dp"
             app:layout_constraintLeft_toLeftOf="parent"
             app:layout_constraintRight_toRightOf="parent"
             app:layout_constraintTop_toBottomOf="@id/passwordCheckLayout"
@@ -178,7 +128,7 @@
             style="@style/PrimaryButton"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:text="가입하기"
+            android:text="프로필 설정하기"
             app:layout_constraintLeft_toLeftOf="parent"
             app:layout_constraintRight_toRightOf="parent"
             app:layout_constraintTop_toBottomOf="@id/space3"

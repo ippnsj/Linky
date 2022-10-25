@@ -1,6 +1,7 @@
 package org.poolc.linky
 
 import android.content.Context
+import android.content.DialogInterface
 import android.graphics.Rect
 import android.os.Bundle
 import androidx.fragment.app.Fragment
@@ -15,10 +16,10 @@ import androidx.recyclerview.widget.RecyclerView
 import com.google.gson.JsonElement
 import com.google.gson.JsonObject
 import org.poolc.linky.databinding.FragmentSearchMeResultFolderBinding
+import org.poolc.linky.viewmodel.SearchViewModel
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
-import kotlin.concurrent.thread
 import kotlin.math.ceil
 
 class SearchMeResultFolderFragment : Fragment(), Observer<String> {
@@ -34,10 +35,6 @@ class SearchMeResultFolderFragment : Fragment(), Observer<String> {
         super.onAttach(context)
         searchMeActivity = context as SearchMeActivity
         app = searchMeActivity.application as MyApplication
-    }
-
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
     }
 
     override fun onCreateView(
@@ -97,6 +94,19 @@ class SearchMeResultFolderFragment : Fragment(), Observer<String> {
         update()
     }
 
+    private fun showDialog(title:String, message:String, listener:DialogInterface.OnDismissListener?) {
+        val builder = AlertDialog.Builder(searchMeActivity)
+        builder.setOnDismissListener(listener)
+
+        builder.setIcon(R.drawable.ic_baseline_warning_8)
+        builder.setTitle(title)
+        builder.setMessage(message)
+
+        builder.setPositiveButton("확인", null)
+
+        builder.show()
+    }
+
     private fun update() {
         if(model.searchText.value == "") {
             binding.guidetextFolderSearch.visibility = View.VISIBLE
@@ -136,45 +146,32 @@ class SearchMeResultFolderFragment : Fragment(), Observer<String> {
     }
 
     private fun getSearchResult() {
-        thread {
-            val email = MyApplication.sharedPref.getString("email", "")
-            val keyword = model.searchText.value
-            val searchMe = "true"
+        val keyword = model.searchText.value
+        val searchMe = "true"
 
-            val call = MyApplication.service.searchFolder(email!!, keyword!!, searchMe)
+        val call = MyApplication.service.searchFolder(keyword!!, searchMe)
 
-            call.enqueue(object : Callback<JsonElement> {
-                override fun onResponse(call: Call<JsonElement>, response: Response<JsonElement>) {
-                    if(response.isSuccessful) {
-                        setSearchResult(response.body()!!.asJsonObject)
-                    }
-                    else {
-                        searchMeActivity.runOnUiThread {
-                            folders.clear()
-                            folderAdapter.notifyDataSetChanged()
-                        }
-                    }
+        call.enqueue(object : Callback<JsonElement> {
+            override fun onResponse(call: Call<JsonElement>, response: Response<JsonElement>) {
+                if(response.isSuccessful) {
+                    setSearchResult(response.body()!!.asJsonObject)
                 }
-
-                override fun onFailure(call: Call<JsonElement>, t: Throwable) {
-                    searchMeActivity.runOnUiThread {
-                        folders.clear()
-                        folderAdapter.notifyDataSetChanged()
-
-                        val builder = AlertDialog.Builder(searchMeActivity)
-
-                        builder.setIcon(R.drawable.ic_baseline_warning_8)
-                        builder.setTitle("검색 실패")
-                        builder.setMessage("서버 문제로 검색 정보를 가져오는데 실패하였습니다.\n" +
-                                "잠시후 다시 시도해주세요.")
-
-                        builder.setPositiveButton("확인", null)
-
-                        builder.show()
-                    }
+                else {
+                    folders.clear()
+                    folderAdapter.notifyDataSetChanged()
                 }
-            })
-        }
+            }
+
+            override fun onFailure(call: Call<JsonElement>, t: Throwable) {
+                folders.clear()
+                folderAdapter.notifyDataSetChanged()
+
+                val title = "폴더 검색 실패"
+                val message = "서버와의 통신 문제로 검색 정보를 가져오는데 실패하였습니다.\n" +
+                        "잠시후 다시 시도해주세요."
+                showDialog(title, message, null)
+            }
+        })
     }
 
     override fun onChanged(t: String?) {

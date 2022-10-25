@@ -2,20 +2,25 @@ package org.poolc.linky
 
 import android.app.Activity
 import android.content.Context
+import android.content.DialogInterface
 import android.content.Intent
 import android.graphics.Rect
 import android.net.Uri
 import android.os.Bundle
-import android.util.Log
 import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.appcompat.app.AlertDialog
 import androidx.core.view.size
 import androidx.recyclerview.widget.RecyclerView
-import org.json.JSONObject
+import com.google.gson.JsonElement
+import com.google.gson.JsonObject
+import org.json.JSONArray
 import org.poolc.linky.databinding.FragmentUserLinkyInsideFolderBinding
-import kotlin.concurrent.thread
+import retrofit2.Call
+import retrofit2.Callback
+import retrofit2.Response
 import kotlin.math.ceil
 
 class UserLinkyInsideFolderFragment : Fragment() {
@@ -132,6 +137,19 @@ class UserLinkyInsideFolderFragment : Fragment() {
         update()
     }
 
+    private fun showDialog(title:String, message:String, listener:DialogInterface.OnDismissListener?) {
+        val builder = AlertDialog.Builder(activity)
+        builder.setOnDismissListener(listener)
+
+        builder.setIcon(R.drawable.ic_baseline_warning_8)
+        builder.setTitle(title)
+        builder.setMessage(message)
+
+        builder.setPositiveButton("확인", null)
+
+        builder.show()
+    }
+
     private fun update() {
         when(owner) {
             "me" -> {
@@ -144,73 +162,148 @@ class UserLinkyInsideFolderFragment : Fragment() {
     }
 
     private fun readMe() {
-        thread {
-            val jsonStr = app.read(path, true)
+        folders.clear()
+        links.clear()
 
-            activity.runOnUiThread {
-                if (jsonStr != "") {
-                    setFolders(jsonStr!!)
-                    setLinks(jsonStr!!)
+        val call = MyApplication.service.read(path, "true")
+
+        call.enqueue(object: Callback<JsonElement> {
+            override fun onResponse(call: Call<JsonElement>, response: Response<JsonElement>) {
+                if(response.isSuccessful) {
+                    setFolders(response.body()!!.asJsonObject)
+                    setLinks(response.body()!!.asJsonObject)
                 }
                 else {
-                    folders.clear()
-                    links.clear()
-                }
+                    val title = "폴더 읽어오기 실패"
+                    var listener: DialogInterface.OnDismissListener? = null
+                    var message = "서버 문제로 인해 정보를 가져오는데 실패하였습니다."
 
+                    when(response.code()) {
+                        404 -> {
+                            message = "현재 폴더가 존재하지 않는 폴더입니다."
+                            listener = DialogInterface.OnDismissListener {
+                                when(activity) {
+                                    is SearchMeActivity -> {
+                                        (activity as SearchMeActivity).supportFragmentManager.popBackStack()
+                                    }
+                                    is UserActivity -> {
+                                        activity.finish()
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    folderAdapter.notifyDataSetChanged()
+                    linkAdapter.notifyDataSetChanged()
+                    showDialog(title, message, listener)
+                }
+            }
+
+            override fun onFailure(call: Call<JsonElement>, t: Throwable) {
                 folderAdapter.notifyDataSetChanged()
                 linkAdapter.notifyDataSetChanged()
+
+                val title = "폴더 읽어오기 실패"
+                val message =  "서버와의 통신 문제로 정보를 가져오는데 실패하였습니다.\n" +
+                        "잠시후 다시 시도해주세요."
+                showDialog(title, message, null)
             }
-        }
+        })
     }
 
     private fun readOther() {
-        thread {
-            val jsonStr = app.readOther(email, path)
+        folders.clear()
+        links.clear()
 
-            activity.runOnUiThread {
-                if (jsonStr != "") {
-                    setFolders(jsonStr!!)
-                    setLinks(jsonStr!!)
+        val call = MyApplication.service.readOther(email, path)
+
+        call.enqueue(object: Callback<JsonElement> {
+            override fun onResponse(call: Call<JsonElement>, response: Response<JsonElement>) {
+                if(response.isSuccessful) {
+                    setFolders(response.body()!!.asJsonObject)
+                    setLinks(response.body()!!.asJsonObject)
                 }
                 else {
-                    folders.clear()
-                    links.clear()
-                }
+                    val title = "폴더 읽어오기 실패"
+                    var message = "서버 문제로 인해 정보를 가져오는데 실패하였습니다."
+                    var listener: DialogInterface.OnDismissListener? = null
 
+                    when(response.code()) {
+                        404 -> {
+                            message = "현재 폴더가 존재하지 않는 폴더입니다."
+                            listener = DialogInterface.OnDismissListener {
+                                when(activity) {
+                                    is SearchMeActivity -> {
+                                        (activity as SearchMeActivity).supportFragmentManager.popBackStack()
+                                    }
+                                    is UserActivity -> {
+                                        activity.finish()
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    folderAdapter.notifyDataSetChanged()
+                    linkAdapter.notifyDataSetChanged()
+                    showDialog(title, message, listener)
+                }
+            }
+
+            override fun onFailure(call: Call<JsonElement>, t: Throwable) {
                 folderAdapter.notifyDataSetChanged()
                 linkAdapter.notifyDataSetChanged()
+
+                val title = "폴더 읽어오기 실패"
+                val message = "서버와의 통신 문제로 정보를 가져오는데 실패하였습니다.\n" +
+                        "잠시후 다시 시도해주세요."
+                showDialog(title, message, null)
+            }
+        })
+    }
+
+    private fun setFolders(jsonObj: JsonObject) {
+        if(!jsonObj.isJsonNull) {
+            val foldersArr = jsonObj.getAsJsonArray("folderInfos")
+            for (idx in 0 until foldersArr.size()) {
+                val folderObj = foldersArr.get(idx).asJsonObject
+                val folderName = folderObj.get("name").asString
+
+                val folder = Folder(folderName, false)
+                folders.add(folder)
             }
         }
+        else {
+            val title = "폴더 읽어오기 실패"
+            val message = "서버 문제로 인해 정보를 가져오는데 실패하였습니다."
+            showDialog(title, message, null)
+        }
+
+        folderAdapter.notifyDataSetChanged()
     }
 
-    private fun setFolders(jsonStr:String) {
-        folders.clear()
-        val jsonObj = JSONObject(jsonStr)
-        val foldersArr = jsonObj.getJSONArray("folderInfos")
-        for (idx in 0 until foldersArr.length()) {
-            val folderObj = foldersArr.getJSONObject(idx)
-            val folderName = folderObj.getString("name")
+    private fun setLinks(jsonObj: JsonObject) {
+        if(!jsonObj.isJsonNull) {
+            val linksArr = jsonObj.getAsJsonArray("linkInfos")
+            for (idx in 0 until linksArr.size()) {
+                val linkObj = linksArr.get(idx).asJsonObject
+                val id = linkObj.get("id").asString
+                val keywords = linkObj.getAsJsonArray("keywords")
+                val keywordsArr = JSONArray()
+                for(keyword in keywords) {
+                    keywordsArr.put(keyword.asString)
+                }
+                val title = linkObj.get("name").asString
+                val imgUrl = linkObj.get("imageUrl").asString
+                val url = linkObj.get("url").asString
+                val isPublic = linkObj.get("isPublic").asString
 
-            val folder = Folder(folderName, false)
-            folders.add(folder)
+                val link = Link(id, keywordsArr, title, imgUrl, url, isPublic, false)
+                links.add(link)
+            }
         }
-    }
 
-    private fun setLinks(jsonStr: String) {
-        links.clear()
-        val jsonObj = JSONObject(jsonStr)
-        val linksArr = jsonObj.getJSONArray("linkInfos")
-        for (idx in 0 until linksArr.length()) {
-            val linkObj = linksArr.getJSONObject(idx)
-            val id = linkObj.getString("id")
-            val keywordsArr = linkObj.getJSONArray("keywords")
-            val title = linkObj.getString("name")
-            val imgUrl = linkObj.getString("imageUrl")
-            val url = linkObj.getString("url")
-            val isPublic = linkObj.getString("isPublic")
-
-            val link = Link(id, keywordsArr, title, imgUrl, url, isPublic, false)
-            links.add(link)
-        }
+        linkAdapter.notifyDataSetChanged()
     }
 }

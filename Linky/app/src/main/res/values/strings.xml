@@ -115,6 +115,7 @@
     </string>
     <string name="default_path">Please select the path</string>
     <string name="helper_nickname"></string>
+    <string name="helper_password"></string>
 
     <string name="edit_folder">Edit Folder</string>
     <string name="edit_link">Edit Link</string>

@@ -13,6 +13,7 @@ import kotlin.concurrent.thread
 
 class FollowAdapter(private val follows:ArrayList<User>, private val listener: FollowAdapter.OnItemClickListener) : RecyclerView.Adapter<FollowAdapter.ViewHolder>() {
     private lateinit var context: MainActivity
+    private lateinit var app:MyApplication
 
     interface OnItemClickListener {
         fun onItemClick(pos:Int)
@@ -21,6 +22,7 @@ class FollowAdapter(private val follows:ArrayList<User>, private val listener: F
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
         val binding = FollowItemBinding.inflate(LayoutInflater.from(parent.context), parent, false)
         context = parent.context as MainActivity
+        app = context.application as MyApplication
         return ViewHolder(binding)
     }
 
@@ -38,21 +40,16 @@ class FollowAdapter(private val follows:ArrayList<User>, private val listener: F
                 val imageUrl = follows[pos].getImageUrl()
                 if(imageUrl != "") {
                     thread {
-                        try {
-                            val url: URL? = URL(imageUrl)
-                            val conn: HttpURLConnection? =
-                                url?.openConnection() as HttpURLConnection
-                            val image = BitmapFactory.decodeStream(conn?.inputStream)
-
+                        val image = app.getImageUrl(imageUrl)
+                        if(image != null) {
                             context.runOnUiThread {
                                 followProfileImage.setImageBitmap(image)
                             }
                         }
-                        catch (e:Exception) {
+                        else {
                             context.runOnUiThread {
                                 followProfileImage.setImageResource(R.drawable.profile)
                             }
-                            e.printStackTrace()
                         }
                     }
                 }else {

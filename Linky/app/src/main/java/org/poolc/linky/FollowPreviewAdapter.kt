@@ -2,6 +2,7 @@ package org.poolc.linky
 
 import android.graphics.BitmapFactory
 import android.graphics.Color
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
@@ -11,7 +12,8 @@ import java.net.URL
 import kotlin.concurrent.thread
 
 class FollowPreviewAdapter(private val follows:ArrayList<User>, private val listener: FollowPreviewAdapter.OnItemClickListener) : RecyclerView.Adapter<FollowPreviewAdapter.ViewHolder>() {
-    private lateinit var content: MainActivity
+    private lateinit var context: MainActivity
+    private lateinit var app:MyApplication
 
     interface OnItemClickListener {
         fun onItemClick(pos:Int)
@@ -19,7 +21,8 @@ class FollowPreviewAdapter(private val follows:ArrayList<User>, private val list
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
         val binding = FollowPreviewItemBinding.inflate(LayoutInflater.from(parent.context), parent, false)
-        content = parent.context as MainActivity
+        context = parent.context as MainActivity
+        app = context.application as MyApplication
         return ViewHolder(binding)
     }
 
@@ -37,20 +40,21 @@ class FollowPreviewAdapter(private val follows:ArrayList<User>, private val list
                 val imageUrl = follows[pos].getImageUrl()
                 if(imageUrl != "") {
                     thread {
-                        try {
-                            val url: URL? = URL(imageUrl)
-                            val conn: HttpURLConnection? =
-                                url?.openConnection() as HttpURLConnection
-                            val image = BitmapFactory.decodeStream(conn?.inputStream)
-
-                            content.runOnUiThread {
+                        val image = app.getImageUrl(imageUrl)
+                        if (image != null) {
+                            context.runOnUiThread {
                                 followPreviewProfileImage.setImageBitmap(image)
                             }
                         }
-                        catch (e:Exception) {
-                            e.printStackTrace()
+                        else {
+                            context.runOnUiThread {
+                                followPreviewProfileImage.setImageResource(R.drawable.profile)
+                            }
                         }
                     }
+                }
+                else {
+                    followPreviewProfileImage.setImageResource(R.drawable.profile)
                 }
 
                 val following = follows[pos].getFollowing()

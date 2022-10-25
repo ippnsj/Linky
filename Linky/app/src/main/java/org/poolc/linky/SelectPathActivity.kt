@@ -1,12 +1,21 @@
 package org.poolc.linky
 
+import android.content.DialogInterface
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.util.Log
 import android.view.Menu
 import android.view.MenuItem
+import androidx.appcompat.app.AlertDialog
 import androidx.fragment.app.Fragment
+import okhttp3.MediaType
+import okhttp3.RequestBody
+import org.json.JSONArray
+import org.json.JSONObject
 import org.poolc.linky.databinding.ActivitySelectPathBinding
+import retrofit2.Call
+import retrofit2.Callback
+import retrofit2.Response
 import kotlin.concurrent.thread
 
 class SelectPathActivity : AppCompatActivity() {
@@ -34,6 +43,19 @@ class SelectPathActivity : AppCompatActivity() {
     override fun onStop() {
         super.onStop()
         finish()
+    }
+
+    private fun showDialog(title:String, message:String, listener:DialogInterface.OnDismissListener?) {
+        val builder = AlertDialog.Builder(this@SelectPathActivity)
+        builder.setOnDismissListener(listener)
+
+        builder.setIcon(R.drawable.ic_baseline_warning_8)
+        builder.setTitle(title)
+        builder.setMessage(message)
+
+        builder.setPositiveButton("확인", null)
+
+        builder.show()
     }
 
     fun createFragment(newPath:String) {
@@ -90,24 +112,59 @@ class SelectPathActivity : AppCompatActivity() {
 
                         when(target) {
                             "folder" -> {
-                                thread {
-                                    val selectedFolders = intent.getStringArrayListExtra("folders")
-                                    val responseCode = app.moveFolder(selectedFolders!!, path)
+                                val selectedFolders = intent.getStringArrayListExtra("folders")
+                                val jsonObj = JSONObject()
+                                jsonObj.put("originalPaths", JSONArray(selectedFolders))
+                                jsonObj.put("modifiedPath", path)
+                                val body = RequestBody.create(MediaType.parse("application/json; charset=utf-8"), jsonObj.toString())
 
-                                    intent.putExtra("responseCode", responseCode)
-                                    setResult(RESULT_OK, intent)
-                                    finish()
-                                }
+                                val call = MyApplication.service.moveFolder(body)
+
+                                call.enqueue(object: Callback<Void> {
+                                    override fun onResponse(
+                                        call: Call<Void>,
+                                        response: Response<Void>
+                                    ) {
+                                        intent.putExtra("responseCode", response.code())
+                                        setResult(RESULT_OK, intent)
+                                        finish()
+                                    }
+
+                                    override fun onFailure(call: Call<Void>, t: Throwable) {
+                                        val title = "폴더 이동 실패"
+                                        val message = "서버와의 통신 문제로 폴더 이동에 실패하였습니다.\n" +
+                                                "잠시후 다시 시도해주세요."
+                                        showDialog(title, message, null)
+                                    }
+                                })
                             }
                             "link" -> {
-                                thread {
-                                    val selectedLinks = intent.getStringArrayListExtra("links")
-                                    val responseCode = app.moveLink(prevPath!!, selectedLinks!! , path)
+                                val selectedLinks = intent.getStringArrayListExtra("links")
+                                val jsonObj = JSONObject()
+                                jsonObj.put("originalPath", prevPath)
+                                jsonObj.put("originalIds", JSONArray(selectedLinks))
+                                jsonObj.put("modifiedPath", path)
+                                val body = RequestBody.create(MediaType.parse("application/json; charset=utf-8"), jsonObj.toString())
 
-                                    intent.putExtra("responseCode", responseCode)
-                                    setResult(RESULT_OK, intent)
-                                    finish()
-                                }
+                                val call = MyApplication.service.moveLink(body)
+
+                                call.enqueue(object: Callback<Void> {
+                                    override fun onResponse(
+                                        call: Call<Void>,
+                                        response: Response<Void>
+                                    ) {
+                                        intent.putExtra("responseCode", response.code())
+                                        setResult(RESULT_OK, intent)
+                                        finish()
+                                    }
+
+                                    override fun onFailure(call: Call<Void>, t: Throwable) {
+                                        val title = "링크 이동 실패"
+                                        val message = "서버와의 통신 문제로 링크 이동에 실패하였습니다.\n" +
+                                                "잠시후 다시 시도해주세요."
+                                        showDialog(title, message, null)
+                                    }
+                                })
                             }
                         }
                     }

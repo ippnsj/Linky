@@ -1,8 +1,8 @@
 package org.poolc.linky
 
 import android.content.Context
+import android.content.DialogInterface
 import android.content.Intent
-import android.graphics.BitmapFactory
 import android.graphics.Rect
 import android.os.Bundle
 import android.util.Log
@@ -11,11 +11,14 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
+import androidx.appcompat.app.AlertDialog
 import androidx.recyclerview.widget.RecyclerView
-import org.json.JSONObject
+import com.google.gson.JsonElement
+import com.google.gson.JsonObject
 import org.poolc.linky.databinding.FragmentInformationBinding
-import java.net.HttpURLConnection
-import java.net.URL
+import retrofit2.Call
+import retrofit2.Callback
+import retrofit2.Response
 import kotlin.concurrent.thread
 
 class InformationFragment : Fragment() {
@@ -31,10 +34,6 @@ class InformationFragment : Fragment() {
         super.onAttach(context)
         mainActivity = context as MainActivity
         app = mainActivity.application as MyApplication
-    }
-
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
     }
 
     override fun onCreateView(
@@ -111,7 +110,7 @@ class InformationFragment : Fragment() {
 
             logout.setOnClickListener {
                 val editSharedPref = MyApplication.sharedPref.edit()
-                editSharedPref.remove("email").apply()
+                editSharedPref.remove("token").apply()
 
                 val toast = Toast.makeText(mainActivity, "로그아웃 되었습니다.", Toast.LENGTH_SHORT)
                 toast.show()
@@ -140,105 +139,193 @@ class InformationFragment : Fragment() {
         update()
     }
 
+    private fun showDialog(title:String, message:String, listener: DialogInterface.OnDismissListener?) {
+        val builder = AlertDialog.Builder(mainActivity)
+        builder.setOnDismissListener(listener)
+
+        builder.setIcon(R.drawable.ic_baseline_warning_8)
+        builder.setTitle(title)
+        builder.setMessage(message)
+
+        builder.setPositiveButton("확인", null)
+
+        builder.show()
+    }
+
     fun update() {
         mainActivity.setTopbarTitle("InformationFragment")
 
-        thread {
-            val jsonStr = app.getProfile()
-            if(jsonStr != "") {
-                val jsonObj = JSONObject(jsonStr)
-                val imageUrl = jsonObj.getString("imageUrl")
+        val call = MyApplication.service.getProfile()
 
-                mainActivity.runOnUiThread {
-                    binding.nickname.text = jsonObj.getString("nickname")
+        call.enqueue(object: Callback<JsonElement> {
+            override fun onResponse(call: Call<JsonElement>, response: Response<JsonElement>) {
+                if(response.isSuccessful) {
+                    setProfile(response.body()!!.asJsonObject)
+                    getFollowPreview()
                 }
+                else {
+                    val title = "유저 정보 가져오기 실패"
+                    var message = "서버 문제로 인해 유저 정보를 가져오는데 실패하였습니다."
+                    var listener:DialogInterface.OnDismissListener? = null
 
-                if (imageUrl != "") {
-                    try {
-                        val url: URL? = URL(imageUrl)
-                        val conn: HttpURLConnection? =
-                            url?.openConnection() as HttpURLConnection
-                        val image = BitmapFactory.decodeStream(conn?.inputStream)
+                    when(response.code()) {
+                        404 -> {
+                            message = "존재하지 않는 유저입니다.\n" +
+                                    "자동 로그아웃됩니다."
+                            listener = DialogInterface.OnDismissListener {
+                                MyApplication.sharedPref.edit().remove("token").apply()
+                                val intent = Intent(mainActivity, LoginRegisterActivity::class.java)
+                                intent.flags = Intent.FLAG_ACTIVITY_CLEAR_TASK or Intent.FLAG_ACTIVITY_NEW_TASK
+                                startActivity(intent)
+                            }
+                        }
+                    }
+
+                    showDialog(title, message, listener)
+                }
+            }
+
+            override fun onFailure(call: Call<JsonElement>, t: Throwable) {
+                val title = "유저 정보 가져오기 실패"
+                val message = "서버와의 통신 문제로 유저 정보를 가져오는데 실패하였습니다.\n" +
+                        "잠시후 다시 시도해주세요."
+                showDialog(title, message, null)
+            }
+        })
+    }
+
+    private fun setProfile(jsonObj: JsonObject) {
+        if(!jsonObj.isJsonNull) {
+            val imageUrl = jsonObj.get("imageUrl").asString
+
+            binding.nickname.text = jsonObj.get("nickname").asString
+
+            if (imageUrl != "") {
+                thread {
+                    val image = app.getImageUrl(imageUrl)
+                    if (image != null) {
                         mainActivity.runOnUiThread {
                             binding.profileImage.setImageBitmap(image)
                         }
                     }
-                    catch (e:Exception) {
-                        e.printStackTrace()
+                    else {
+                        mainActivity.runOnUiThread {
+                            binding.profileImage.setImageResource(R.drawable.profile)
+                        }
                     }
                 }
+            }
+            else {
+                binding.profileImage.setImageResource(R.drawable.profile)
             }
         }
+        else {
+            val title = "유저 정보 가져오기 실패"
+            var message = "서버 문제로 인해 유저 정보를 가져오는데 실패하였습니다."
+            showDialog(title, message, null)
+        }
+    }
 
-        thread {
-            followings.clear()
-            followers.clear()
+    private fun getFollowPreview() {
+        followings.clear()
+        followers.clear()
 
-            val jsonStr = app.getFollowPreview()
+        val call = MyApplication.service.getFollowPreview()
 
-            if(jsonStr != "") {
-                val jsonObj = JSONObject(jsonStr)
-                val numberOfFollowing = jsonObj.getString("numberOfFollowing").toInt()
-                val numberOfFollower = jsonObj.getString("numberOfFollower").toInt()
-
-                mainActivity.runOnUiThread {
-                    binding.followings.text = numberOfFollowing.toString()
-                    binding.followers.text = numberOfFollower.toString()
-                }
-
-                if(numberOfFollowing == 0) {
-                    mainActivity.runOnUiThread {
-                        binding.noFollowingNotice.visibility = View.VISIBLE
-                    }
+        call.enqueue(object:Callback<JsonElement> {
+            override fun onResponse(call: Call<JsonElement>, response: Response<JsonElement>) {
+                if(response.isSuccessful) {
+                    setFollowPreview(response.body()!!.asJsonObject)
                 }
                 else {
-                    mainActivity.runOnUiThread {
-                        binding.noFollowingNotice.visibility = View.INVISIBLE
+                    val title = "유저 정보 가져오기 실패"
+                    var message = "서버 문제로 인해 유저 정보를 가져오는데 실패하였습니다."
+                    var listener:DialogInterface.OnDismissListener? = null
+
+                    when(response.code()) {
+                        404 -> {
+                            message = "존재하지 않는 유저입니다.\n" +
+                                    "자동 로그아웃됩니다."
+                            listener = DialogInterface.OnDismissListener {
+                                MyApplication.sharedPref.edit().remove("token").apply()
+                                val intent = Intent(mainActivity, LoginRegisterActivity::class.java)
+                                intent.flags = Intent.FLAG_ACTIVITY_CLEAR_TASK or Intent.FLAG_ACTIVITY_NEW_TASK
+                                startActivity(intent)
+                            }
+                        }
                     }
 
-                    val followingJsonArr = jsonObj.getJSONArray("followings")
-
-                    for(i in 0 until followingJsonArr.length()) {
-                        val followingJsonObj = followingJsonArr.getJSONObject(i)
-                        val email = followingJsonObj.getString("email")
-                        val nickname = followingJsonObj.getString("nickname")
-                        val imageUrl = followingJsonObj.getString("imageUrl")
-                        val following = followingJsonObj.getBoolean("following")
-
-                        val follow = User(email, nickname, imageUrl, following)
-                        followings.add(follow)
-                    }
-                }
-
-                if(numberOfFollower == 0) {
-                    mainActivity.runOnUiThread {
-                        binding.noFollowerNotice.visibility = View.VISIBLE
-                    }
-                }
-                else {
-                    mainActivity.runOnUiThread {
-                        binding.noFollowerNotice.visibility = View.INVISIBLE
-                    }
-
-                    val followerJsonArr = jsonObj.getJSONArray("followers")
-
-                    for(i in 0 until followerJsonArr.length()) {
-                        val followerJsonObj = followerJsonArr.getJSONObject(i)
-                        val email = followerJsonObj.getString("email")
-                        val nickname = followerJsonObj.getString("nickname")
-                        val imageUrl = followerJsonObj.getString("imageUrl")
-                        val following = followerJsonObj.getBoolean("following")
-
-                        val follow = User(email, nickname, imageUrl, following)
-                        followers.add(follow)
-                    }
+                    followingAdapter.notifyDataSetChanged()
+                    followerAdapter.notifyDataSetChanged()
+                    showDialog(title, message, listener)
                 }
             }
 
-            mainActivity.runOnUiThread {
+            override fun onFailure(call: Call<JsonElement>, t: Throwable) {
                 followingAdapter.notifyDataSetChanged()
                 followerAdapter.notifyDataSetChanged()
+
+                val title = "유저 정보 가져오기 실패"
+                val message = "서버와의 통신 문제로 유저 정보를 가져오는데 실패하였습니다.\n" +
+                        "잠시후 다시 시도해주세요."
+                showDialog(title, message, null)
+            }
+        })
+    }
+
+    private fun setFollowPreview(jsonObj:JsonObject) {
+        if (!jsonObj.isJsonNull) {
+            val numberOfFollowing = jsonObj.get("numberOfFollowing").asInt
+            val numberOfFollower = jsonObj.get("numberOfFollower").asInt
+
+            binding.followings.text = numberOfFollowing.toString()
+            binding.followers.text = numberOfFollower.toString()
+
+            if (numberOfFollowing == 0) {
+                binding.noFollowingNotice.visibility = View.VISIBLE
+            } else {
+                binding.noFollowingNotice.visibility = View.INVISIBLE
+
+                val followingJsonArr = jsonObj.get("followings").asJsonArray
+
+                for (i in 0 until followingJsonArr.size()) {
+                    val followingJsonObj = followingJsonArr.get(i).asJsonObject
+                    val email = followingJsonObj.get("email").asString
+                    val nickname = followingJsonObj.get("nickname").asString
+                    val imageUrl = followingJsonObj.get("imageUrl").asString
+                    val following = followingJsonObj.get("isFollowing").asBoolean
+
+                    val follow = User(email, nickname, imageUrl, following)
+                    followings.add(follow)
+                }
+            }
+
+            if (numberOfFollower == 0) {
+                binding.noFollowerNotice.visibility = View.VISIBLE
+            } else {
+                binding.noFollowerNotice.visibility = View.INVISIBLE
+
+                val followerJsonArr = jsonObj.getAsJsonArray("followers")
+
+                for (i in 0 until followerJsonArr.size()) {
+                    val followerJsonObj = followerJsonArr.get(i).asJsonObject
+                    val email = followerJsonObj.get("email").asString
+                    val nickname = followerJsonObj.get("nickname").asString
+                    val imageUrl = followerJsonObj.get("imageUrl").asString
+                    val following = followerJsonObj.get("isFollowing").asBoolean
+
+                    val follow = User(email, nickname, imageUrl, following)
+                    followers.add(follow)
+                }
             }
         }
+        else {
+            val title = "유저 정보 가져오기 실패"
+            var message = "서버 문제로 인해 유저 정보를 가져오는데 실패하였습니다."
+            showDialog(title, message, null)
+        }
+
+        followingAdapter.notifyDataSetChanged()
+        followerAdapter.notifyDataSetChanged()
     }
 }

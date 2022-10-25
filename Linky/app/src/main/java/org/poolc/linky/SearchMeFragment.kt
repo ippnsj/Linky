@@ -13,6 +13,7 @@ import androidx.viewpager2.adapter.FragmentStateAdapter
 import com.google.android.material.tabs.TabLayout
 import com.google.android.material.tabs.TabLayoutMediator
 import org.poolc.linky.databinding.FragmentSearchMeBinding
+import org.poolc.linky.viewmodel.SearchViewModel
 
 class SearchMeFragment : Fragment() {
     private lateinit var binding: FragmentSearchMeBinding
@@ -85,9 +86,5 @@ class SearchMeFragment : Fragment() {
         }
 
         return view
-    }
-
-    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-        super.onViewCreated(view, savedInstanceState)
     }
 }

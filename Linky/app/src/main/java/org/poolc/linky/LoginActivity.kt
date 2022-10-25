@@ -1,25 +1,29 @@
 package org.poolc.linky
 
+import android.content.DialogInterface
 import android.content.Intent
 import android.graphics.Color
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import android.text.InputFilter
 import android.text.Spannable
 import android.text.SpannableStringBuilder
+import android.text.Spanned
 import android.text.style.ForegroundColorSpan
-import android.util.Log
 import android.util.Patterns
 import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.InputMethodManager
 import androidx.appcompat.app.AlertDialog
 import androidx.core.widget.doAfterTextChanged
+import com.google.gson.JsonElement
+import okhttp3.MediaType
+import okhttp3.RequestBody
 import org.json.JSONObject
 import org.poolc.linky.databinding.ActivityLoginBinding
-import java.io.IOException
-import java.net.HttpURLConnection
-import java.net.MalformedURLException
-import java.net.URL
-import kotlin.concurrent.thread
+import retrofit2.Call
+import retrofit2.Callback
+import retrofit2.Response
+import java.util.regex.Pattern
 
 class LoginActivity : AppCompatActivity() {
 
@@ -52,8 +56,7 @@ class LoginActivity : AppCompatActivity() {
 
             emailTextInput.setOnEditorActionListener { v, actionId, event ->
                 if(actionId == EditorInfo.IME_ACTION_NEXT) {
-                    verifyEmailAddress(v.text.toString())
-                    true
+                    verifyEmailAddress(v.text.toString().trim())
                 }
                 false
             }
@@ -68,14 +71,33 @@ class LoginActivity : AppCompatActivity() {
                 false
             }
 
-            loginButton.setOnClickListener {
-                login()
-            }
+            passwordTextInput.filters = arrayOf(InputFilter { charSequence: CharSequence, i: Int, i1: Int, spanned: Spanned, i2: Int, i3: Int ->
+                val ps = Pattern.compile("^[a-zA-Z0-9!@#$%^&*]+$")
+                if(!ps.matcher(charSequence).matches()) ""
+                else charSequence
+            }, InputFilter.LengthFilter(15))
 
             passwordTextInput.doAfterTextChanged {
                 passwordLayout.error = null
             }
+
+            loginButton.setOnClickListener {
+                login()
+            }
         }
+    }
+
+    private fun showDialog(title:String, message:String, listener:DialogInterface.OnDismissListener?) {
+        val builder = AlertDialog.Builder(this)
+        builder.setOnDismissListener(listener)
+
+        builder.setIcon(R.drawable.ic_baseline_warning_8)
+        builder.setTitle(title)
+        builder.setMessage(message)
+
+        builder.setPositiveButton("확인", null)
+
+        builder.show()
     }
 
     private fun verifyEmailAddress(email:String) : Boolean {
@@ -108,7 +130,8 @@ class LoginActivity : AppCompatActivity() {
                 binding.passwordTextInput.nextFocusForwardId = R.id.passwordTextInput
                 binding.passwordLayout.error = "비밀번호는 6자리 이상이어야 합니다."
                 return false
-            }else {
+            }
+            else{
                 binding.passwordTextInput.nextFocusDownId = R.id.loginButton
                 return true
             }
@@ -120,80 +143,71 @@ class LoginActivity : AppCompatActivity() {
         imm.hideSoftInputFromWindow(currentFocus?.windowToken, InputMethodManager.HIDE_NOT_ALWAYS)
 
         if(verifyEmailAddress(binding.emailTextInput.text.toString()) && verifyPassword(binding.passwordTextInput.text.toString())) {
-            val url = URL("http://${MyApplication.ip}:${MyApplication.port}/login")
-            var conn : HttpURLConnection? = null
+            val email = binding.emailTextInput.text.toString()
+            val password = binding.passwordTextInput.text.toString()
 
-            thread {
-                try {
-                    conn = url.openConnection() as HttpURLConnection
-                    conn!!.requestMethod = "POST"
-                    conn!!.connectTimeout = 10000;
-                    conn!!.readTimeout = 100000;
-                    conn!!.setRequestProperty("Content-Type", "application/json")
-                    conn!!.setRequestProperty("Accept", "application/json")
+            val jsonObj = JSONObject()
+            jsonObj.put("email", email)
+            jsonObj.put("password", password)
+            val body = RequestBody.create(MediaType.parse("application/json; charset=utf-8"), jsonObj.toString())
 
-                    conn!!.doOutput = true
-                    conn!!.doInput = true
+            val call = MyApplication.service.login(body)
 
-                    val body = JSONObject()
-                    body.put("email", binding.emailTextInput.text.toString())
-                    body.put("password", binding.passwordTextInput.text.toString())
+            call.enqueue(object:Callback<JsonElement> {
+                override fun onResponse(call: Call<JsonElement>, response: Response<JsonElement>) {
+                    if(response.isSuccessful) {
+                        val responseJson = response.body()!!.asJsonObject
 
-                    val os = conn!!.outputStream
-                    os.write(body.toString().toByteArray())
-                    os.flush()
+                        if(!responseJson.isJsonNull) {
+                            MyApplication.sharedPref.edit()
+                                .putString("token", responseJson.get("token").asString).apply()
 
-                    if(conn!!.responseCode == 200) {
-                        val response = conn!!.inputStream.reader().readText()
-                        val responseJson = JSONObject(response)
-
-                        val editSharedPref = MyApplication.sharedPref.edit()
-                        editSharedPref.putString("email", responseJson.getString("email")).apply()
-
-                        val intent = Intent(this, MainActivity::class.java)
-                        intent.putExtra("from", "login")
-                        intent.flags = Intent.FLAG_ACTIVITY_CLEAR_TASK or Intent.FLAG_ACTIVITY_NEW_TASK
-                        startActivity(intent)
-                    }
-                    else if(conn!!.responseCode == 400) {
-                        val message = "이메일 또는 비밀번호가 잘못되었습니다.\n" +
-                                "다시 확인 후 로그인 해주세요."
-                        runOnUiThread {
-                            showFailedLoginDialog(message)
+                            val intent = Intent(this@LoginActivity, MainActivity::class.java)
+                            intent.putExtra("from", "login")
+                            intent.flags =
+                                Intent.FLAG_ACTIVITY_CLEAR_TASK or Intent.FLAG_ACTIVITY_NEW_TASK
+                            startActivity(intent)
+                        }
+                        else {
+                            val title = "로그인 실패"
+                            val message = "서버 문제로 인해 로그인에 실패하였습니다."
+                            showDialog(title, message, null)
                         }
                     }
-                    else if(conn!!.responseCode == 404) {
-                        val message = "존재하지 않는 유저입니다."
-                        runOnUiThread {
-                            showFailedLoginDialog(message)
+                    else {
+                        val title = "로그인 실패"
+                        var message = "서버 문제로 인해 로그인에 실패하였습니다."
+
+                        when(response.code()) {
+                            400 -> {
+                                message = "이메일 또는 비밀번호 형식이 잘못되었습니다."
+                            }
+                            404 -> {
+                                message = "이메일 또는 비밀번호가 잘못되었습니다.\n" +
+                                        "다시 확인 후 로그인 해주세요."
+                            }
+                            409 -> {
+                                message = "전송된 인증 이메일 확인 후, 로그인해주세요."
+                            }
                         }
+
+                        showDialog(title, message, null)
                     }
                 }
-                catch (e: MalformedURLException) {
-                    Log.d("test", "올바르지 않은 URL 주소입니다.")
-                } catch (e: IOException) {
-                    Log.d("test", "connection 오류")
-                }finally {
-                    conn?.disconnect()
+
+                override fun onFailure(call: Call<JsonElement>, t: Throwable) {
+                    val title = "로그인 실패"
+                    val message = "서버와의 통신 문제로 로그인에 실패하였습니다.\n" +
+                            "잠시후 다시 시도해주세요."
+                    showDialog(title, message, null)
                 }
-            }
+            })
         }
         else {
-            val message = "로그인에 실패하였습니다.\n" +
-                    "에러메세지를 확인해주세요."
-            showFailedLoginDialog(message)
+            val title = "로그인 실패"
+            val message = "입력값에 에러가 존재합니다.\n" +
+                    "확인 후 다시 입력해주세요."
+            showDialog(title, message, null)
         }
-    }
-
-    private fun showFailedLoginDialog(message:String) {
-        val builder = AlertDialog.Builder(this)
-        val title = "로그인 실패"
-        builder.setIcon(R.drawable.ic_baseline_warning_8)
-        builder.setTitle(title)
-        builder.setMessage(message)
-
-        builder.setPositiveButton("확인", null)
-
-        builder.show()
     }
 }
