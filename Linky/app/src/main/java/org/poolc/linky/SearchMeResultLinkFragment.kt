@@ -1,6 +1,7 @@
 package org.poolc.linky
 
 import android.content.Context
+import android.content.DialogInterface
 import android.content.Intent
 import android.graphics.Rect
 import android.net.Uri
@@ -18,6 +19,7 @@ import com.google.gson.JsonElement
 import com.google.gson.JsonObject
 import org.json.JSONArray
 import org.poolc.linky.databinding.FragmentSearchMeResultLinkBinding
+import org.poolc.linky.viewmodel.SearchViewModel
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
@@ -36,10 +38,6 @@ class SearchMeResultLinkFragment : Fragment(), Observer<String> {
         super.onAttach(context)
         searchMeActivity = context as SearchMeActivity
         app = searchMeActivity.application as MyApplication
-    }
-
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
     }
 
     override fun onCreateView(
@@ -103,6 +101,19 @@ class SearchMeResultLinkFragment : Fragment(), Observer<String> {
         update()
     }
 
+    private fun showDialog(title:String, message:String, listener:DialogInterface.OnDismissListener?) {
+        val builder = AlertDialog.Builder(searchMeActivity)
+        builder.setOnDismissListener(listener)
+
+        builder.setIcon(R.drawable.ic_baseline_warning_8)
+        builder.setTitle(title)
+        builder.setMessage(message)
+
+        builder.setPositiveButton("확인", null)
+
+        builder.show()
+    }
+
     private fun update() {
         if(model.searchText.value == "") {
             binding.guidetextLinkSearch.visibility = View.VISIBLE
@@ -151,11 +162,10 @@ class SearchMeResultLinkFragment : Fragment(), Observer<String> {
     }
 
     private fun getSearchResult() {
-        val email = MyApplication.sharedPref.getString("email", "")
         val keyword = model.searchText.value
         val searchMe = "true"
 
-        val call = MyApplication.service.searchLink(email!!, keyword!!, searchMe)
+        val call = MyApplication.service.searchLink(keyword!!, searchMe)
 
         call.enqueue(object : Callback<JsonElement> {
             override fun onResponse(call: Call<JsonElement>, response: Response<JsonElement>) {
@@ -163,29 +173,19 @@ class SearchMeResultLinkFragment : Fragment(), Observer<String> {
                     setSearchResult(response.body()!!.asJsonObject)
                 }
                 else {
-                    searchMeActivity.runOnUiThread {
-                        links.clear()
-                        linkAdapter.notifyDataSetChanged()
-                    }
+                    links.clear()
+                    linkAdapter.notifyDataSetChanged()
                 }
             }
 
             override fun onFailure(call: Call<JsonElement>, t: Throwable) {
-                searchMeActivity.runOnUiThread {
-                    links.clear()
-                    linkAdapter.notifyDataSetChanged()
+                links.clear()
+                linkAdapter.notifyDataSetChanged()
 
-                    val builder = AlertDialog.Builder(searchMeActivity)
-
-                    builder.setIcon(R.drawable.ic_baseline_warning_8)
-                    builder.setTitle("검색 실패")
-                    builder.setMessage("서버 문제로 검색 정보를 가져오는데 실패하였습니다.\n" +
-                            "잠시후 다시 시도해주세요.")
-
-                    builder.setPositiveButton("확인", null)
-
-                    builder.show()
-                }
+                val title = "링크 검색 실패"
+                val message = "서버와의 통신 문제로 검색 정보를 가져오는데 실패하였습니다.\n" +
+                        "잠시후 다시 시도해주세요."
+                showDialog(title, message, null)
             }
         })
     }

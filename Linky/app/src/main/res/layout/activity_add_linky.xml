@@ -61,6 +61,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginRight="20dp"
+                android:background="?attr/selectableItemBackground"
                 android:text="키워드 전체 삭제"
                 app:layout_constraintBaseline_toBaselineOf="@id/tagLabel"
                 app:layout_constraintRight_toRightOf="parent" />
@@ -127,6 +128,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginRight="20dp"
+                android:background="?attr/selectableItemBackground"
                 android:text="경로선택"
                 app:layout_constraintBaseline_toBaselineOf="@id/folderLabel"
                 app:layout_constraintRight_toRightOf="parent" />
@@ -207,6 +209,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginRight="20dp"
+                android:background="?attr/selectableItemBackground"
                 android:text="이미지 변경"
                 app:layout_constraintBaseline_toBaselineOf="@id/imageLabel"
                 app:layout_constraintRight_toRightOf="parent" />

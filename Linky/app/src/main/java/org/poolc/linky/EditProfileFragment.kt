@@ -15,7 +15,6 @@ import android.os.Handler
 import android.os.Looper
 import android.provider.MediaStore
 import android.provider.Settings
-import android.util.Log
 import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
@@ -26,6 +25,8 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
+import com.google.gson.JsonElement
+import com.google.gson.JsonObject
 import okhttp3.MediaType
 import okhttp3.MultipartBody
 import okhttp3.RequestBody
@@ -37,8 +38,6 @@ import retrofit2.Callback
 import retrofit2.Response
 import java.io.File
 import java.io.FileOutputStream
-import java.net.HttpURLConnection
-import java.net.URL
 import java.util.regex.Pattern
 import kotlin.concurrent.thread
 
@@ -65,10 +64,6 @@ class EditProfileFragment : Fragment() {
         super.onAttach(context)
         mainActivity = context as MainActivity
         app = mainActivity.application as MyApplication
-    }
-
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
     }
 
     override fun onCreateView(
@@ -111,15 +106,9 @@ class EditProfileFragment : Fragment() {
                 }
             }
             else {
-                val builder = AlertDialog.Builder(mainActivity)
-
-                builder.setIcon(R.drawable.ic_baseline_warning_8)
-                builder.setTitle("이미지 변경 실패")
-                builder.setMessage("'파일 및 미디어' 권한이 허용되어있지 않아 이미지 변경에 실패하였습니다.")
-
-                builder.setPositiveButton("확인", null)
-
-                builder.show()
+                val title = "이미지 변경 실패"
+                val message = "'파일 및 미디어' 권한이 허용되어있지 않아 이미지 변경에 실패하였습니다."
+                showDialog(title, message, null)
             }
         }
 
@@ -190,35 +179,96 @@ class EditProfileFragment : Fragment() {
         update()
     }
 
+    private fun showDialog(title:String, message:String, listener:DialogInterface.OnDismissListener?) {
+        val builder = AlertDialog.Builder(mainActivity)
+        builder.setOnDismissListener(listener)
+
+        builder.setIcon(R.drawable.ic_baseline_warning_8)
+        builder.setTitle(title)
+        builder.setMessage(message)
+
+        builder.setPositiveButton("확인", null)
+
+        builder.show()
+    }
+
     fun update() {
         mainActivity.setTopbarTitle("EditProfileFragment")
 
-        thread {
-            val jsonStr = app.getProfile()
-            if(jsonStr != "") {
-                val jsonObj = JSONObject(jsonStr)
-                imageUrl = jsonObj.getString("imageUrl")
+        val call = MyApplication.service.getProfile()
 
-                mainActivity.runOnUiThread {
-                    binding.nicknameTextInput.setText(jsonObj.getString("nickname"))
-                    binding.email.text = jsonObj.getString("email")
+        call.enqueue(object: Callback<JsonElement> {
+            override fun onResponse(call: Call<JsonElement>, response: Response<JsonElement>) {
+                if(response.isSuccessful) {
+                    setProfile(response.body()!!.asJsonObject)
                 }
+                else {
+                    val title = "유저 정보 가져오기 실패"
+                    var message = "서버 문제로 인해 유저 정보를 가져오는데 실패하였습니다."
+                    var listener = DialogInterface.OnDismissListener {
+                        parentFragmentManager.popBackStack()
+                    }
 
-                if (!imageChange && imageUrl != "") {
-                    try {
-                        val url: URL? = URL(imageUrl)
-                        val conn: HttpURLConnection? =
-                            url?.openConnection() as HttpURLConnection
-                        val image = BitmapFactory.decodeStream(conn?.inputStream)
+                    when(response.code()) {
+                        404 -> {
+                            message = "존재하지 않는 유저입니다.\n" +
+                                    "자동 로그아웃됩니다."
+                            listener = DialogInterface.OnDismissListener {
+                                MyApplication.sharedPref.edit().remove("token").apply()
+                                val intent = Intent(mainActivity, LoginRegisterActivity::class.java)
+                                intent.flags = Intent.FLAG_ACTIVITY_CLEAR_TASK or Intent.FLAG_ACTIVITY_NEW_TASK
+                                startActivity(intent)
+                            }
+                        }
+                    }
+
+                    showDialog(title, message, listener)
+                }
+            }
+
+            override fun onFailure(call: Call<JsonElement>, t: Throwable) {
+                val title = "유저 정보 가져오기 실패"
+                val message = "서버와의 통신 문제로 유저 정보를 가져오는데 실패하였습니다.\n" +
+                        "잠시후 다시 시도해주세요."
+                val listener = DialogInterface.OnDismissListener {
+                    parentFragmentManager.popBackStack()
+                }
+                showDialog(title, message, listener)
+            }
+        })
+    }
+
+    private fun setProfile(jsonObj: JsonObject) {
+        if(!jsonObj.isJsonNull) {
+            imageUrl = jsonObj.get("imageUrl").asString
+
+            binding.nicknameTextInput.setText(jsonObj.get("nickname").asString)
+            binding.email.text = jsonObj.get("email").asString
+
+            if (!imageChange && imageUrl != "") {
+                thread {
+                    val image = app.getImageUrl(imageUrl)
+                    if (image != null) {
                         mainActivity.runOnUiThread {
                             binding.editProfileImage.setImageBitmap(image)
                         }
-                    }
-                    catch (e:Exception) {
-                        e.printStackTrace()
+                    } else {
+                        mainActivity.runOnUiThread {
+                            binding.editProfileImage.setImageResource(R.drawable.profile)
+                        }
                     }
                 }
+            } else {
+                binding.editProfileImage.setImageResource(R.drawable.profile)
             }
+        }
+        else {
+            val title = "유저 정보 가져오기 실패"
+            var message = "서버 문제로 인해 유저 정보를 가져오는데 실패하였습니다."
+            var listener = DialogInterface.OnDismissListener {
+                parentFragmentManager.popBackStack()
+            }
+            showDialog(title, message, listener)
         }
     }
 
@@ -226,173 +276,115 @@ class EditProfileFragment : Fragment() {
         val newNicknameTrim = newNickname.trim()
         val pattern = Pattern.compile("^[ㄱ-ㅣ가-힣a-zA-Z\\s]+$")
 
+        val title = "프로필 수정 실패"
+        var message = ""
+        var listener: DialogInterface.OnDismissListener? = null
+
         if(newNicknameTrim == "") {
-            val builder = AlertDialog.Builder(mainActivity)
-            builder.setIcon(R.drawable.ic_baseline_warning_8)
-            builder.setTitle("프로필 수정 실패")
-            builder.setMessage("닉네임은 앞/뒤 공백 없이 1자 이상 입력해주세요.")
-            builder.setPositiveButton("확인") { dialogInterface: DialogInterface, i: Int ->
+            message = "닉네임은 앞/뒤 공백 없이 1자 이상 입력해주세요."
+            listener = DialogInterface.OnDismissListener {
                 binding.nicknameTextInput.setText("")
             }
-            builder.show()
+            showDialog(title, message, listener)
         }
         else if(!pattern.matcher(newNicknameTrim).matches()) {
-            val builder = AlertDialog.Builder(mainActivity)
-            builder.setIcon(R.drawable.ic_baseline_warning_8)
-            builder.setTitle("프로필 수정 실패")
-            builder.setMessage("닉네임은 한글, 영어, 사이 공백만 가능합니다.")
-            builder.setPositiveButton("확인", null)
-            builder.show()
+            message = "닉네임은 한글, 영어, 사이 공백만 가능합니다."
+            showDialog(title, message, listener)
         }
         else {
             if (bitmap != null) {
                 createTempImageFile(mimetype, bitmap!!)
             }
 
-            val email = binding.email.text.toString()
-            val emailBody = RequestBody.create(MediaType.parse("text/plain"), email)
-            val newNicknameBody = RequestBody.create(MediaType.parse("text/plain"), newNicknameTrim)
-            val imageChangeBody = RequestBody.create(MediaType.parse("text/plain"), imageChange.toString())
-            var multipartBody: MultipartBody.Part? = null
+            val body = MultipartBody.Builder()
+                .addFormDataPart("newNickname", newNicknameTrim)
+                .addFormDataPart("imageChange", imageChange.toString())
 
             if(imageFile != null) {
                 val requestFile = RequestBody.create(MediaType.parse("image/*"), imageFile)
 
-                multipartBody = MultipartBody.Part.createFormData(
-                    "newMultipartFile",
-                    imageFile!!.name,
-                    requestFile
-                )
+                body.addFormDataPart("newMultipartFile", imageFile!!.name, requestFile)
             }
 
-            val body = HashMap<String, RequestBody>()
-            body["email"] = emailBody
-            body["newNickname"] = newNicknameBody
-            body["imageChange"] = imageChangeBody
+            val call = MyApplication.service.editProfile(body.build())
 
-            thread {
-                val call = MyApplication.service.editProfile(body, multipartBody)
-
-                call.enqueue(object : Callback<String> {
-                    override fun onResponse(
-                        call: Call<String>,
-                        response: Response<String>
-                    ) {
-                        if(imageFile != null) {
-                            imageFile!!.delete()
-                        }
-
-                        if (response.isSuccessful) {
-                            val jsonObj = JSONObject(response.body())
-                            val imageSuccess = jsonObj.getString("imageSuccess").toBoolean()
-                            if(imageSuccess) {
-                                mainActivity.runOnUiThread {
-                                    val toast = Toast.makeText(
-                                        mainActivity,
-                                        "프로필 수정이 완료되었습니다~!",
-                                        Toast.LENGTH_SHORT
-                                    )
-                                    toast.show()
-                                    mainActivity.onBackPressed()
-                                }
-                            }
-                            else {
-                                mainActivity.runOnUiThread {
-                                    val builder = AlertDialog.Builder(mainActivity)
-
-                                    builder.setMessage("이미지 파일을 가져오는데 실패하여 기존 이미지로 저장됩니다.")
-
-                                    builder.setPositiveButton("확인") { dialogInterface: DialogInterface, i: Int ->
-                                        val toast = Toast.makeText(
-                                            mainActivity,
-                                            "프로필 수정이 완료되었습니다~!",
-                                            Toast.LENGTH_SHORT
-                                        )
-                                        toast.show()
-                                        mainActivity.onBackPressed()
-                                    }
-
-                                    builder.show()
-                                }
-                            }
-                        } else {
-                            var positiveButtonFunc: DialogInterface.OnClickListener? = null
-                            var message = ""
-
-                            when (response.code()) {
-                                401 -> {
-                                    message = "사용자 인증 오류로 인해 자동 로그아웃 됩니다."
-                                    positiveButtonFunc = object : DialogInterface.OnClickListener {
-                                        override fun onClick(dialog: DialogInterface?, which: Int) {
-                                            val editSharedPref = MyApplication.sharedPref.edit()
-                                            editSharedPref.remove("email").apply()
-
-                                            val intent = Intent(mainActivity, LoginRegisterActivity::class.java)
-                                            intent.flags = Intent.FLAG_ACTIVITY_CLEAR_TASK or Intent.FLAG_ACTIVITY_NEW_TASK
-                                            startActivity(intent)
-                                        }
-                                    }
-                                }
-                                404 -> {
-                                    message = "해당 유저가 존재하지 않습니다.\n" +
-                                            "자동 로그아웃 됩니다."
-                                    positiveButtonFunc = object : DialogInterface.OnClickListener {
-                                        override fun onClick(dialog: DialogInterface?, which: Int) {
-                                            val editSharedPref = MyApplication.sharedPref.edit()
-                                            editSharedPref.remove("email").apply()
-
-                                            val intent = Intent(mainActivity, LoginRegisterActivity::class.java)
-                                            intent.flags = Intent.FLAG_ACTIVITY_CLEAR_TASK or Intent.FLAG_ACTIVITY_NEW_TASK
-                                            startActivity(intent)
-                                        }
-                                    }
-                                }
-                                409 -> {
-                                    binding.nicknameTextInput.error = "이미 해당 닉네임이 존재합니다."
-
-                                    message = "이미 해당 닉네임이 존재합니다.\n" +
-                                            "닉네임을 바꿔주세요."
-                                }
-                                else -> {
-                                    message = "서버 문제로 프로필 수정에 실패하였습니다.\n" +
-                                            "잠시후 다시 시도해주세요."
-                                }
-                            }
-
-                            mainActivity.runOnUiThread {
-                                val builder = AlertDialog.Builder(mainActivity)
-
-                                builder.setIcon(R.drawable.ic_baseline_warning_8)
-                                builder.setTitle("프로필 수정 실패")
-                                builder.setMessage(message)
-
-                                builder.setPositiveButton("확인", positiveButtonFunc)
-
-                                builder.show()
-                            }
-                        }
+            call.enqueue(object : Callback<String> {
+                override fun onResponse(
+                    call: Call<String>,
+                    response: Response<String>
+                ) {
+                    if(imageFile != null) {
+                        imageFile!!.delete()
                     }
 
-                    override fun onFailure(call: Call<String>, t: Throwable) {
-                        if(imageFile != null) {
-                            imageFile!!.delete()
+                    if (response.isSuccessful) {
+                        val jsonObj = JSONObject(response.body())
+                        val imageSuccess = jsonObj.getString("imageSuccess").toBoolean()
+                        if(imageSuccess) {
+                            val toast = Toast.makeText(
+                                mainActivity,
+                                "프로필 수정이 완료되었습니다~!",
+                                Toast.LENGTH_SHORT
+                            )
+                            toast.show()
+                            mainActivity.onBackPressed()
+                        }
+                        else {
+                            val title = "이미지 파일 가져오기 실패"
+                            val message = "이미지 파일을 가져오는데 실패하여 기존 이미지로 저장됩니다."
+                            val listener = DialogInterface.OnDismissListener {
+                                val toast = Toast.makeText(
+                                    mainActivity,
+                                    "프로필 수정이 완료되었습니다~!",
+                                    Toast.LENGTH_SHORT
+                                )
+                                toast.show()
+                                mainActivity.onBackPressed()
+                            }
+
+                            showDialog(title, message, listener)
+                        }
+                    } else {
+                        val title = "프로필 수정 실패"
+                        var message = "서버 문제로 인해 프로필 수정에 실패하였습니다."
+                        var listener: DialogInterface.OnDismissListener? = null
+
+                        when (response.code()) {
+                            404 -> {
+                                message = "해당 유저가 존재하지 않습니다.\n" +
+                                        "자동 로그아웃 됩니다."
+                                listener = DialogInterface.OnDismissListener {
+                                    val editSharedPref = MyApplication.sharedPref.edit()
+                                    editSharedPref.remove("email").apply()
+
+                                    val intent = Intent(mainActivity, LoginRegisterActivity::class.java)
+                                    intent.flags = Intent.FLAG_ACTIVITY_CLEAR_TASK or Intent.FLAG_ACTIVITY_NEW_TASK
+                                    startActivity(intent)
+                                }
+                            }
+                            409 -> {
+                                binding.nicknameTextInput.error = "이미 해당 닉네임이 존재합니다."
+
+                                message = "이미 해당 닉네임이 존재합니다."
+                            }
                         }
 
-                        mainActivity.runOnUiThread {
-                            val builder = AlertDialog.Builder(mainActivity)
-
-                            builder.setIcon(R.drawable.ic_baseline_warning_8)
-                            builder.setTitle("프로필 수정 실패")
-                            builder.setMessage("서버 문제로 프로필 수정에 실패하였습니다.\n" +
-                                    "잠시후 다시 시도해주세요.")
-
-                            builder.setPositiveButton("확인", null)
-
-                            builder.show()
-                        }
+                        showDialog(title, message, listener)
                     }
-                })
-            }
+                }
+
+                override fun onFailure(call: Call<String>, t: Throwable) {
+                    if(imageFile != null) {
+                        imageFile!!.delete()
+                    }
+
+                    val title = "프로필 수정 실패"
+                    val message = "서버와의 통신 문제로 프로필 수정에 실패하였습니다.\n" +
+                            "잠시후 다시 시도해주세요."
+
+                    showDialog(title, message, null)
+                }
+            })
         }
     }
 

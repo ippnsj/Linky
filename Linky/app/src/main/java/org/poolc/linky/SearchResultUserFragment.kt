@@ -5,7 +5,6 @@ import android.content.DialogInterface
 import android.content.Intent
 import android.graphics.Rect
 import android.os.Bundle
-import android.util.Log
 import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
@@ -18,6 +17,7 @@ import androidx.recyclerview.widget.RecyclerView
 import com.google.gson.JsonElement
 import com.google.gson.JsonObject
 import org.poolc.linky.databinding.FragmentSearchResultUserBinding
+import org.poolc.linky.viewmodel.SearchViewModel
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
@@ -34,10 +34,6 @@ class SearchResultUserFragment : Fragment(), Observer<String> {
     override fun onAttach(context: Context) {
         super.onAttach(context)
         mainActivity = context as MainActivity
-    }
-
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
     }
 
     override fun onCreateView(
@@ -100,6 +96,19 @@ class SearchResultUserFragment : Fragment(), Observer<String> {
         update()
     }
 
+    private fun showDialog(title:String, message:String, listener:DialogInterface.OnDismissListener?) {
+        val builder = AlertDialog.Builder(mainActivity)
+        builder.setOnDismissListener(listener)
+
+        builder.setIcon(R.drawable.ic_baseline_warning_8)
+        builder.setTitle(title)
+        builder.setMessage(message)
+
+        builder.setPositiveButton("확인", null)
+
+        builder.show()
+    }
+
     fun update() {
         if(model.searchText.value == "") {
             binding.guidetextUserSearch.visibility = View.VISIBLE
@@ -115,10 +124,9 @@ class SearchResultUserFragment : Fragment(), Observer<String> {
     }
 
     private fun getSearchResult() {
-        val email = MyApplication.sharedPref.getString("email", "")
         val keyword = model.searchText.value
 
-        val call = MyApplication.service.searchUser(email!!, keyword!!)
+        val call = MyApplication.service.searchUser(keyword!!)
 
         call.enqueue(object : Callback<JsonElement> {
             override fun onResponse(call: Call<JsonElement>, response: Response<JsonElement>) {
@@ -126,63 +134,19 @@ class SearchResultUserFragment : Fragment(), Observer<String> {
                     setSearchResult(response.body()!!.asJsonObject)
                 }
                 else {
-                    mainActivity.runOnUiThread {
-                        users.clear()
-                        userSearchAdapter.notifyDataSetChanged()
-                    }
-
-                    var message = ""
-                    var positiveButtonFunc: DialogInterface.OnClickListener? = null
-
-                    when(response.code()) {
-                        401 -> {
-                            message = "사용자 인증 오류로 인해 자동 로그아웃 됩니다."
-                            positiveButtonFunc = object : DialogInterface.OnClickListener {
-                                override fun onClick(dialog: DialogInterface?, which: Int) {
-                                    val editSharedPref = MyApplication.sharedPref.edit()
-                                    editSharedPref.remove("email").apply()
-
-                                    val intent = Intent(mainActivity, LoginRegisterActivity::class.java)
-                                    intent.flags = Intent.FLAG_ACTIVITY_CLEAR_TASK or Intent.FLAG_ACTIVITY_NEW_TASK
-                                    startActivity(intent)
-                                }
-                            }
-                        }
-                        else -> {
-                            message = "유저 검색에 실패하였습니다."
-                        }
-                    }
-
-                    mainActivity.runOnUiThread {
-                        val builder = AlertDialog.Builder(mainActivity)
-
-                        builder.setIcon(R.drawable.ic_baseline_warning_8)
-                        builder.setTitle("유저 검색 실패")
-                        builder.setMessage(message)
-
-                        builder.setPositiveButton("확인", positiveButtonFunc)
-
-                        builder.show()
-                    }
+                    users.clear()
+                    userSearchAdapter.notifyDataSetChanged()
                 }
             }
 
             override fun onFailure(call: Call<JsonElement>, t: Throwable) {
-                mainActivity.runOnUiThread {
-                    users.clear()
-                    userSearchAdapter.notifyDataSetChanged()
+                users.clear()
+                userSearchAdapter.notifyDataSetChanged()
 
-                    val builder = AlertDialog.Builder(mainActivity)
-
-                    builder.setIcon(R.drawable.ic_baseline_warning_8)
-                    builder.setTitle("유저 검색 실패")
-                    builder.setMessage("서버 문제로 검색 정보를 가져오는데 실패하였습니다.\n" +
-                            "잠시후 다시 시도해주세요.")
-
-                    builder.setPositiveButton("확인", null)
-
-                    builder.show()
-                }
+                val title = "유저 검색 실패"
+                val message = "서버와의 통신 문제로 검색 정보를 가져오는데 실패하였습니다.\n" +
+                        "잠시후 다시 시도해주세요."
+                showDialog(title, message, null)
             }
         })
     }
@@ -198,7 +162,7 @@ class SearchResultUserFragment : Fragment(), Observer<String> {
                 val email = userObj.get("email").asString
                 val nickname = userObj.get("nickname").asString
                 val imageUrl = userObj.get("imageUrl").asString
-                val isFollowing = userObj.get("isFollowing").asString.toBoolean()
+                val isFollowing = userObj.get("isFollowing").asBoolean
 
                 val user = User(email, nickname, imageUrl, isFollowing)
 

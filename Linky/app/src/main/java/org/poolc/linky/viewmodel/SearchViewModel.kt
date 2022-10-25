@@ -1,4 +1,4 @@
-package org.poolc.linky
+package org.poolc.linky.viewmodel
 
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData

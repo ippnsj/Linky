@@ -21,6 +21,7 @@ import kotlin.concurrent.thread
 
 class LinkyAdapter (private val links:ArrayList<Link>, private val listener:LinkyAdapter.OnItemClickListener, private val isEditMode:Boolean) : RecyclerView.Adapter<LinkyAdapter.ViewHolder>() {
     private lateinit var context: Activity
+    private lateinit var app:MyApplication
 
     public interface OnItemClickListener {
         fun onItemClick(pos:Int)
@@ -29,6 +30,7 @@ class LinkyAdapter (private val links:ArrayList<Link>, private val listener:Link
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
         val binding = LinkyItemBinding.inflate(LayoutInflater.from(parent.context), parent, false)
         context = parent.context as Activity
+        app = context.application as MyApplication
         return ViewHolder(binding)
     }
 
@@ -43,26 +45,19 @@ class LinkyAdapter (private val links:ArrayList<Link>, private val listener:Link
     inner class ViewHolder(val binding : LinkyItemBinding) : RecyclerView.ViewHolder(binding.root) {
         fun bind(pos:Int) {
             with(binding) {
-                var bitmap : Bitmap? = null
-
-                val image = links[pos].getImgUrl()
-                if(image != "null") {
+                val imageUrl = links[pos].getImgUrl()
+                if(imageUrl != "") {
                     thread {
-                        try {
-                            val imageUrl: URL? = URL(image)
-                            val conn: HttpURLConnection? =
-                                imageUrl?.openConnection() as HttpURLConnection
-                            bitmap =
-                                BitmapFactory.decodeStream(conn?.inputStream)
+                        val image = app.getImageUrl(imageUrl)
 
+                        if(image != null) {
                             context.runOnUiThread {
-                                linkyImage.setImageBitmap(bitmap)
+                                linkyImage.setImageBitmap(image)
                             }
-                        } catch (e: Exception) {
+                        } else {
                             context.runOnUiThread {
                                 linkyImage.setImageResource(R.mipmap.linky_logo)
                             }
-                            e.printStackTrace()
                         }
                     }
                 }

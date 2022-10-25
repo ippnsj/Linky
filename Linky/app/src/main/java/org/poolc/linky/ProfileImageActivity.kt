@@ -1,6 +1,5 @@
 package org.poolc.linky
 
-import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.ImageDecoder
 import android.net.Uri
@@ -9,20 +8,21 @@ import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.provider.MediaStore
 import org.poolc.linky.databinding.ActivityProfileImageBinding
-import java.net.HttpURLConnection
-import java.net.URL
 import kotlin.concurrent.thread
 
 class ProfileImageActivity : AppCompatActivity() {
     private lateinit var binding : ActivityProfileImageBinding
+    private lateinit var app:MyApplication
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityProfileImageBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
+        app = application as MyApplication
+
         with(binding) {
-            val imageUrl = intent.getStringExtra("imageUrl")
+            val imageUrl = intent.getStringExtra("imageUrl") ?: ""
             val uri = intent.getParcelableExtra<Uri>("uri")
 
             if(uri != null) {
@@ -47,19 +47,21 @@ class ProfileImageActivity : AppCompatActivity() {
                 }
             } else if (imageUrl != "") {
                 thread {
-                    try {
-                        val url: URL? = URL(imageUrl)
-                        val conn: HttpURLConnection? =
-                            url?.openConnection() as HttpURLConnection
-                        val bitmap = BitmapFactory.decodeStream(conn?.inputStream)
+                    val image = app.getImageUrl(imageUrl)
+                    if(image != null) {
                         runOnUiThread {
-                            profileImageZoomin.setImageBitmap(bitmap)
+                            profileImageZoomin.setImageBitmap(image)
                         }
                     }
-                    catch (e:Exception) {
-                        e.printStackTrace()
+                    else {
+                        runOnUiThread {
+                            profileImageZoomin.setImageResource(R.drawable.profile)
+                        }
                     }
                 }
+            }
+            else {
+                profileImageZoomin.setImageResource(R.drawable.profile)
             }
 
             closeImage.setOnClickListener {

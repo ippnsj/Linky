@@ -25,7 +25,6 @@ import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
 import java.util.regex.Pattern
-import kotlin.concurrent.thread
 import kotlin.math.ceil
 
 class FollowingFragment : Fragment() {
@@ -39,10 +38,6 @@ class FollowingFragment : Fragment() {
         super.onAttach(context)
         mainActivity = context as MainActivity
         app = mainActivity.application as MyApplication
-    }
-
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
     }
 
     override fun onCreateView(
@@ -109,96 +104,64 @@ class FollowingFragment : Fragment() {
         update()
     }
 
+    private fun showDialog(title:String, message:String, listener:DialogInterface.OnDismissListener?) {
+        val builder = AlertDialog.Builder(mainActivity)
+        builder.setOnDismissListener(listener)
+
+        builder.setIcon(R.drawable.ic_baseline_warning_8)
+        builder.setTitle(title)
+        builder.setMessage(message)
+
+        builder.setPositiveButton("확인", null)
+
+        builder.show()
+    }
+
     fun update() {
         mainActivity.setTopbarTitle("FollowingFragment")
 
-        thread {
-            followings.clear()
-            mainActivity.runOnUiThread {
-                binding.totalFollowing.text = "0"
+        followings.clear()
+        binding.totalFollowing.text = "0"
+
+        val call = MyApplication.service.getFollowing()
+
+        call.enqueue(object : Callback<JsonElement> {
+            override fun onResponse(call: Call<JsonElement>, response: Response<JsonElement>) {
+                if(response.isSuccessful) {
+                    setFollowing(response.body()!!.asJsonObject)
+                }
+                else {
+                    val title = "팔로우 정보 업로드 실패"
+                    var message = "서버 문제로 인해 팔로우 정보를 가져오는데 실패하였습니다."
+                    var listener: DialogInterface.OnDismissListener? = null
+
+                    when(response.code()) {
+                        404 -> {
+                            message = "해당 유저가 존재하지 않아 자동 로그아웃 됩니다."
+                            listener = DialogInterface.OnDismissListener {
+                                MyApplication.sharedPref.edit().remove("token").apply()
+
+                                val intent = Intent(mainActivity, LoginRegisterActivity::class.java)
+                                intent.flags = Intent.FLAG_ACTIVITY_CLEAR_TASK or Intent.FLAG_ACTIVITY_NEW_TASK
+                                startActivity(intent)
+                            }
+                        }
+                    }
+
+                    followingAdapter.notifyDataSetChanged()
+                    showDialog(title, message, listener)
+                }
             }
 
-            val email = MyApplication.sharedPref.getString("email", "")
-            val call = MyApplication.service.getFollowing(email!!)
+            override fun onFailure(call: Call<JsonElement>, t: Throwable) {
+                followingAdapter.notifyDataSetChanged()
 
-            call.enqueue(object : Callback<JsonElement> {
-                override fun onResponse(call: Call<JsonElement>, response: Response<JsonElement>) {
-                    if(response.isSuccessful) {
-                        setFollowing(response.body()!!.asJsonObject)
-                    }
-                    else {
-                        var message = ""
-                        var positiveButtonFunc: DialogInterface.OnClickListener? = null
-
-                        when(response.code()) {
-                            401 -> {
-                                message = "사용자 인증 오류로 인해 자동 로그아웃 됩니다."
-                                positiveButtonFunc = object : DialogInterface.OnClickListener {
-                                    override fun onClick(dialog: DialogInterface?, which: Int) {
-                                        val editSharedPref = MyApplication.sharedPref.edit()
-                                        editSharedPref.remove("email").apply()
-
-                                        val intent = Intent(mainActivity, LoginRegisterActivity::class.java)
-                                        intent.flags = Intent.FLAG_ACTIVITY_CLEAR_TASK or Intent.FLAG_ACTIVITY_NEW_TASK
-                                        startActivity(intent)
-                                    }
-                                }
-                            }
-                            404 -> {
-                                message = "해당 유저가 존재하지 않아 자동 로그아웃 됩니다."
-                                positiveButtonFunc = object : DialogInterface.OnClickListener {
-                                    override fun onClick(dialog: DialogInterface?, which: Int) {
-                                        val editSharedPref = MyApplication.sharedPref.edit()
-                                        editSharedPref.remove("email").apply()
-
-                                        val intent = Intent(mainActivity, LoginRegisterActivity::class.java)
-                                        intent.flags = Intent.FLAG_ACTIVITY_CLEAR_TASK or Intent.FLAG_ACTIVITY_NEW_TASK
-                                        startActivity(intent)
-                                    }
-                                }
-                            }
-                            else -> {
-                                mainActivity.runOnUiThread {
-                                    followingAdapter.notifyDataSetChanged()
-                                }
-
-                                message = "서버 문제로 팔로우 정보를 가져오는데 실패하였습니다.\n" +
-                                        "잠시후 다시 시도해주세요."
-                            }
-                        }
-
-                        mainActivity.runOnUiThread {
-                            val builder = AlertDialog.Builder(mainActivity)
-
-                            builder.setIcon(R.drawable.ic_baseline_warning_8)
-                            builder.setTitle("팔로우 정보 업로드 실패")
-                            builder.setMessage(message)
-
-                            builder.setPositiveButton("확인", positiveButtonFunc)
-
-                            builder.show()
-                        }
-                    }
-                }
-
-                override fun onFailure(call: Call<JsonElement>, t: Throwable) {
-                    mainActivity.runOnUiThread {
-                        followingAdapter.notifyDataSetChanged()
-
-                        val builder = AlertDialog.Builder(mainActivity)
-
-                        builder.setIcon(R.drawable.ic_baseline_warning_8)
-                        builder.setTitle("팔로우 정보 업로드 실패")
-                        builder.setMessage("서버 문제로 팔로우 정보를 가져오는데 실패하였습니다.\n" +
-                                "잠시후 다시 시도해주세요.")
-
-                        builder.setPositiveButton("확인", null)
-
-                        builder.show()
-                    }
-                }
-            })
-        }
+                val title = "팔로우 정보 업로드 실패"
+                val message = "서버와의 통신 문제로 팔로우 정보를 가져오는데 실패하였습니다.\n" +
+                        "잠시후 다시 시도해주세요."
+                showDialog(title, message, null)
+            }
+        })
     }
 
     private fun setFollowing(jsonObj: JsonObject) {
@@ -215,9 +178,9 @@ class FollowingFragment : Fragment() {
                 if (!image.isJsonNull) {
                     imageUrl = followingJsonObj.get("imageUrl").asString
                 }
-                val following = followingJsonObj.get("following").asBoolean
+                val isFollowing = followingJsonObj.get("isFollowing").asBoolean
 
-                val follow = User(email, nickname, imageUrl, following)
+                val follow = User(email, nickname, imageUrl, isFollowing)
                 followings.add(follow)
             }
 
@@ -227,16 +190,9 @@ class FollowingFragment : Fragment() {
         else {
             followingAdapter.notifyDataSetChanged()
 
-            val builder = AlertDialog.Builder(mainActivity)
-
-            builder.setIcon(R.drawable.ic_baseline_warning_8)
-            builder.setTitle("팔로우 정보 업로드 실패")
-            builder.setMessage("서버 문제로 팔로우 정보를 가져오는데 실패하였습니다.\n" +
-                    "잠시후 다시 시도해주세요.")
-
-            builder.setPositiveButton("확인", null)
-
-            builder.show()
+            val title = "팔로우 정보 업로드 실패"
+            val message = "서버 문제로 인해 팔로우 정보를 가져오는데 실패하였습니다."
+            showDialog(title, message, null)
         }
     }
 
@@ -300,114 +256,63 @@ class FollowingFragment : Fragment() {
     }
 
     private fun addFollowing(nickname: String) {
-        val email = MyApplication.sharedPref.getString("email", "")
-
         val jsonObj = JSONObject()
-        jsonObj.put("email", email)
         jsonObj.put("followedNickname", nickname)
 
         val body = RequestBody.create(MediaType.parse("application/json; charset=utf-8"), jsonObj.toString())
 
-        thread {
-            val call = MyApplication.service.follow(body)
+        val call = MyApplication.service.follow(body)
 
-            call.enqueue(object : Callback<JsonElement> {
-                override fun onResponse(call: Call<JsonElement>, response: Response<JsonElement>) {
-                    if (response.isSuccessful) {
-                        val toast = Toast.makeText(mainActivity, "팔로우에 성공하였습니다~!", Toast.LENGTH_SHORT)
-                        toast.show()
-                        addNewFollowing(response.body()!!.asJsonObject)
-                    }
-                    else {
-                        var message = ""
-                        var positiveButtonFunc: DialogInterface.OnClickListener? = null
+        call.enqueue(object : Callback<JsonElement> {
+            override fun onResponse(call: Call<JsonElement>, response: Response<JsonElement>) {
+                if (response.isSuccessful) {
+                    val toast = Toast.makeText(mainActivity, "팔로우에 성공하였습니다~!", Toast.LENGTH_SHORT)
+                    toast.show()
+                    addNewFollowing(response.body()!!.asJsonObject)
+                }
+                else {
+                    val title = "팔로우 실패"
+                    var message = "서버 문제로 인해 팔로우에 실패하였습니다."
 
-                        when(response.code()) {
-                            401 -> {
-                                message = "사용자 인증 오류로 인해 자동 로그아웃 됩니다."
-                                positiveButtonFunc = object : DialogInterface.OnClickListener {
-                                    override fun onClick(dialog: DialogInterface?, which: Int) {
-                                        val editSharedPref = MyApplication.sharedPref.edit()
-                                        editSharedPref.remove("email").apply()
-
-                                        val intent = Intent(mainActivity, LoginRegisterActivity::class.java)
-                                        intent.flags = Intent.FLAG_ACTIVITY_CLEAR_TASK or Intent.FLAG_ACTIVITY_NEW_TASK
-                                        startActivity(intent)
-                                    }
-                                }
-                            }
-                            404 -> {
-                                message = "해당 유저가 존재하지 않습니다."
-                            }
-                            409 -> {
-                                message = "이미 해당 유저를 팔로우 중입니다."
-                            }
-                            else -> {
-                                message = "서버 문제로 팔로우에 실패하였습니다.\n" +
-                                        "잠시후 다시 시도해주세요."
-                            }
+                    when(response.code()) {
+                        404 -> {
+                            message = "해당 유저가 존재하지 않습니다."
                         }
-
-                        mainActivity.runOnUiThread {
-                            val builder = AlertDialog.Builder(mainActivity)
-
-                            builder.setIcon(R.drawable.ic_baseline_warning_8)
-                            builder.setTitle("팔로우 실패")
-                            builder.setMessage(message)
-
-                            builder.setPositiveButton("확인", positiveButtonFunc)
-
-                            builder.show()
+                        409 -> {
+                            message = "이미 해당 유저를 팔로우 중입니다."
                         }
                     }
+
+                    showDialog(title, message, null)
                 }
+            }
 
-                override fun onFailure(call: Call<JsonElement>, t: Throwable) {
-                    mainActivity.runOnUiThread {
-                        val builder = AlertDialog.Builder(mainActivity)
-
-                        builder.setIcon(R.drawable.ic_baseline_warning_8)
-                        builder.setTitle("팔로우 실패")
-                        builder.setMessage("서버 문제로 팔로우에 실패하였습니다.\n" +
-                                "잠시후 다시 시도해주세요.")
-
-                        builder.setPositiveButton("확인", null)
-
-                        builder.show()
-                    }
-                }
-            })
-        }
+            override fun onFailure(call: Call<JsonElement>, t: Throwable) {
+                val title = "팔로우 실패"
+                val message = "서버와의 통신 문제로 팔로우에 실패하였습니다.\n" +
+                        "잠시후 다시 시도해주세요."
+                showDialog(title, message, null)
+            }
+        })
     }
 
     private fun addNewFollowing(jsonObj: JsonObject) {
         if(!jsonObj.isJsonNull) {
             val email = jsonObj.get("email").asString
             val nickname = jsonObj.get("nickname").asString
-            val image = jsonObj.get("imageUrl")
-            var imageUrl = ""
-            if (!image.isJsonNull) {
-                imageUrl = jsonObj.get("imageUrl").asString
-            }
-            val following = jsonObj.get("following").asBoolean
+            val imageUrl = jsonObj.get("imageUrl").asString ?: ""
+            val isFollowing = jsonObj.get("isFollowing").asBoolean
 
-            val follow = User(email, nickname, imageUrl, following)
+            val follow = User(email, nickname, imageUrl, isFollowing)
             followings.add(follow)
 
             binding.totalFollowing.text = followings.size.toString()
             followingAdapter.notifyItemInserted(followings.size - 1)
         }
         else {
-            val builder = AlertDialog.Builder(mainActivity)
-
-            builder.setIcon(R.drawable.ic_baseline_warning_8)
-            builder.setTitle("팔로우 정보 업로드 실패")
-            builder.setMessage("서버 문제로 추가된 팔로우 정보를 가져오는데 실패하였습니다.\n" +
-                    "잠시후 다시 시도해주세요.")
-
-            builder.setPositiveButton("확인", null)
-
-            builder.show()
+            val title = "팔로우 정보 업로드 실패"
+            val message = "서버 문제로 인해 추가된 팔로우 정보를 가져오는데 실패하였습니다."
+            showDialog(title, message, null)
         }
     }
 }

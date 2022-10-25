@@ -3,19 +3,17 @@ package org.poolc.linky
 import android.content.Context
 import android.graphics.Color
 import android.os.Bundle
-import android.util.Log
-import android.view.KeyEvent
 import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.widget.SearchView
 import androidx.fragment.app.activityViewModels
 import androidx.viewpager2.adapter.FragmentStateAdapter
 import com.google.android.material.tabs.TabLayout
 import com.google.android.material.tabs.TabLayoutMediator
 import org.poolc.linky.databinding.FragmentSearchBinding
+import org.poolc.linky.viewmodel.SearchViewModel
 
 class SearchFragment : Fragment() {
     private lateinit var binding : FragmentSearchBinding
@@ -88,10 +86,6 @@ class SearchFragment : Fragment() {
         }
 
         return view
-    }
-
-    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-        super.onViewCreated(view, savedInstanceState)
     }
 
     override fun onHiddenChanged(hidden: Boolean) {

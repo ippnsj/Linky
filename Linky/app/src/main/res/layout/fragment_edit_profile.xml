@@ -23,6 +23,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginTop="20dp"
+        android:background="?attr/selectableItemBackground"
         android:text="프로필 사진 변경"
         android:textSize="20sp"
         android:textStyle="bold"

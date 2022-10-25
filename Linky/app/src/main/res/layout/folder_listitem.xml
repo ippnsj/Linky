@@ -8,6 +8,7 @@
         android:id="@+id/folderName"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
+        android:background="?attr/selectableItemBackground"
         android:gravity="center"
         android:paddingTop="20dp"
         android:paddingBottom="20dp"

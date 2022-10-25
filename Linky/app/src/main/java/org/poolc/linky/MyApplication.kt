@@ -1,122 +1,32 @@
 package org.poolc.linky
 
 import android.app.Application
+import android.content.Intent
 import android.content.SharedPreferences
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
+import android.os.Handler
 import android.util.Log
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
-import com.google.gson.JsonElement
-import okhttp3.MultipartBody
-import okhttp3.RequestBody
+import okhttp3.*
 import org.json.JSONArray
 import org.json.JSONObject
-import retrofit2.Call
-import retrofit2.Retrofit
-import retrofit2.converter.gson.GsonConverterFactory
-import retrofit2.converter.scalars.ScalarsConverterFactory
+import org.poolc.linky.retrofit.client.RetrofitClient
+import org.poolc.linky.retrofit.service.RetrofitService
 import retrofit2.http.*
 import java.io.IOException
 import java.net.HttpURLConnection
 import java.net.MalformedURLException
 import java.net.URL
 
-interface RetrofitService {
-    // verify email
-    @GET("/email/valid")
-    fun verifyEmail(
-        @Query("email") email:String
-    ): Call<String>
-
-    // register
-    @Multipart
-    @POST("/member")
-    fun register(
-        @PartMap params: HashMap<String, RequestBody>,
-        @Part multipartFile: MultipartBody.Part?
-    ): Call<String>
-
-    // edit profile
-    @Multipart
-    @PUT("/member/me")
-    fun editProfile(
-        @PartMap params: HashMap<String, RequestBody>,
-        @Part newMultipartFile: MultipartBody.Part?
-    ): Call<String>
-
-    // create link
-    @POST("/link")
-    fun createLink(
-        @Body body: RequestBody
-    ): Call<String>
-
-    // edit link
-    @PUT("/link")
-    fun editLink(
-        @Body body: RequestBody
-    ): Call<String>
-
-    // follow by nickname
-    @POST("/follow/nickname")
-    fun follow(
-        @Body body: RequestBody
-    ): Call<JsonElement>
-
-    // follow by email
-    @POST("/follow/email")
-    fun followByEmail(
-        @Body body: RequestBody
-    ): Call<JsonElement>
-
-    // unfollow by email
-    @HTTP(method="DELETE", hasBody=true, path="/follow/email")
-    fun unfollowByEmail(
-        @Body body: RequestBody
-    ): Call<String>
-
-    // following
-    @GET("/following")
-    fun getFollowing(
-        @Query("email") email: String
-    ): Call<JsonElement>
-
-    // follower
-    @GET("/follower")
-    fun getFollower(
-        @Query("email") email: String
-    ): Call<JsonElement>
-
-    // search folder
-    @GET("/folder/elastic")
-    fun searchFolder(
-        @Query("email") email:String,
-        @Query("keyword") keyword:String,
-        @Query("searchMe") searchMe:String
-    ): Call<JsonElement>
-
-    // search link
-    @GET("/link/elastic")
-    fun searchLink(
-        @Query("email") email:String,
-        @Query("keyword") keyword:String,
-        @Query("searchMe") searchMe:String
-    ): Call<JsonElement>
-
-    // search user
-    @GET("/user/elastic")
-    fun searchUser(
-        @Query("email") email: String,
-        @Query("keyword") keyword: String
-    ): Call<JsonElement>
-
-    // get other user's profile
-    @GET("/member/email")
-    fun getUserProfile(
-        @Query("email") email:String,
-        @Query("otherEmail") otherEmail:String
-    ): Call<JsonElement>
-}
-
 class MyApplication : Application() {
+    init {
+        instance = this
+    }
+
     companion object {
+        lateinit var instance: MyApplication
         lateinit var ip : String
         lateinit var port : String
         lateinit var sharedPref : SharedPreferences
@@ -132,434 +42,38 @@ class MyApplication : Application() {
             getString(R.string.preference_key),
             AppCompatActivity.MODE_PRIVATE
         )
-
-        val retrofit = Retrofit.Builder().baseUrl("http://$ip:$port")
-            .addConverterFactory(ScalarsConverterFactory.create())
-            .addConverterFactory(GsonConverterFactory.create())
-            .build()
-        service = retrofit.create(RetrofitService::class.java)
+        service = RetrofitClient.retrofit.create(RetrofitService::class.java)
 
         super.onCreate()
     }
 
-    // Folder & Link
-    fun createFolder(name:String, path:String) : Int {
-        val url = URL("http://$ip:$port/folder")
-        var conn : HttpURLConnection? = null
-        var responseCode = -1
-
-        try {
-            conn = url.openConnection() as HttpURLConnection
-            conn!!.requestMethod = "POST"
-            conn!!.connectTimeout = 10000
-            conn!!.readTimeout = 100000
-            conn!!.setRequestProperty("Content-Type", "application/json")
-            conn!!.setRequestProperty("Accept", "application/json")
-
-            conn!!.doOutput = true
-
-            val body = JSONObject()
-            body.put("email", sharedPref!!.getString("email", ""))
-            body.put("path", path)
-            body.put("name", name)
-
-            val os = conn!!.outputStream
-            os.write(body.toString().toByteArray())
-            os.flush()
-
-            responseCode =  conn!!.responseCode
-        } catch (e: MalformedURLException) {
-            Log.d("test", "올바르지 않은 URL 주소입니다.")
-        } catch (e: IOException) {
-            Log.d("test", "connection 오류")
-        } finally {
-            conn?.disconnect()
+    fun tokenExpired() {
+        Handler(applicationContext.mainLooper).post {
+            Toast.makeText(applicationContext, "사용자 인증 오류로 인해 자동 로그아웃 되었습니다.", Toast.LENGTH_LONG).show()
+            sharedPref.edit().remove("token").apply()
+            val intent = Intent(applicationContext, LoginRegisterActivity::class.java)
+            intent.flags = Intent.FLAG_ACTIVITY_CLEAR_TASK or Intent.FLAG_ACTIVITY_NEW_TASK
+            startActivity(intent)
         }
-
-        return responseCode
-    }
-
-    fun read(path:String, showLink:Boolean) : String {
-        val email = sharedPref!!.getString("email", "")
-        val paramsUrl = "email=$email&path=$path&showLink=$showLink"
-        val url = URL("http://$ip:$port/folder/me?$paramsUrl")
-        var conn : HttpURLConnection? = null
-        var response : String = ""
-
-        try {
-            conn = url.openConnection() as HttpURLConnection
-            conn!!.requestMethod = "GET"
-            conn!!.connectTimeout = 10000
-            conn!!.readTimeout = 100000
-            conn!!.setRequestProperty("Accept", "application/json")
-
-            conn!!.doInput = true
-
-            if(conn!!.responseCode == 200) {
-                response = conn!!.inputStream.reader().readText()
-            }
-            else if(conn!!.responseCode == 400) {
-                Log.d("test", "Bad request")
-            }
-            else if(conn!!.responseCode == 401) {
-                Log.d("test", "Unauthorized")
-            }
-            else if(conn!!.responseCode == 404) {
-                Log.d("test", "Not Found")
-            }
-        }
-        catch (e: MalformedURLException) {
-            Log.d("test", "올바르지 않은 URL 주소입니다.")
-        } catch (e: IOException) {
-            Log.d("test", "connection 오류")
-        }finally {
-            conn?.disconnect()
-        }
-
-        return response
-    }
-
-    fun readOther(email:String, path:String) : String {
-        val paramsUrl = "email=$email&path=$path"
-        val url = URL("http://$ip:$port/folder?$paramsUrl")
-        var conn : HttpURLConnection? = null
-        var response : String = ""
-
-        try {
-            conn = url.openConnection() as HttpURLConnection
-            conn!!.requestMethod = "GET"
-            conn!!.connectTimeout = 10000
-            conn!!.readTimeout = 100000
-            conn!!.setRequestProperty("Accept", "application/json")
-
-            conn!!.doInput = true
-
-            if(conn!!.responseCode == 200) {
-                response = conn!!.inputStream.reader().readText()
-            }
-            else if(conn!!.responseCode == 401) {
-                Log.d("test", "Unauthorized")
-            }
-            else if(conn!!.responseCode == 404) {
-                Log.d("test", "Not Found")
-            }
-        }
-        catch (e: MalformedURLException) {
-            Log.d("test", "올바르지 않은 URL 주소입니다.")
-        } catch (e: IOException) {
-            Log.d("test", "connection 오류")
-        }finally {
-            conn?.disconnect()
-        }
-
-        return response
-    }
-
-    fun getLinkInfo(path:String, id:String) : String {
-        val email = sharedPref!!.getString("email", "")
-        val paramsUrl = "email=$email&path=$path&id=$id"
-        val url = URL("http://$ip:$port/link?$paramsUrl")
-        var conn : HttpURLConnection? = null
-        var response : String = ""
-
-        try {
-            conn = url.openConnection() as HttpURLConnection
-            conn!!.requestMethod = "GET"
-            conn!!.connectTimeout = 10000
-            conn!!.readTimeout = 100000
-            conn!!.setRequestProperty("Accept", "application/json")
-
-            conn!!.doInput = true
-
-            if(conn!!.responseCode == 200) {
-                response = conn!!.inputStream.reader().readText()
-            }
-            else if(conn!!.responseCode == 400) {
-                Log.d("test", "Bad request")
-            }
-            else if(conn!!.responseCode == 401) {
-                Log.d("test", "Unauthorized")
-            }
-            else if(conn!!.responseCode == 404) {
-                Log.d("test", "Not Found")
-            }
-        }
-        catch (e: MalformedURLException) {
-            Log.d("test", "올바르지 않은 URL 주소입니다.")
-        } catch (e: IOException) {
-            Log.d("test", "connection 오류")
-        }finally {
-            conn?.disconnect()
-        }
-
-        return response
-    }
-
-    fun editFolder(path:String, newName:String) : Int {
-        val url = URL("http://$ip:$port/folder")
-        var conn : HttpURLConnection? = null
-        var responseCode = -1
-
-        try {
-            conn = url.openConnection() as HttpURLConnection
-            conn!!.requestMethod = "PUT"
-            conn!!.connectTimeout = 10000
-            conn!!.readTimeout = 100000
-            conn!!.setRequestProperty("Content-Type", "application/json")
-            conn!!.setRequestProperty("Accept", "application/json")
-
-            conn!!.doOutput = true
-
-            val body = JSONObject()
-            body.put("email", sharedPref!!.getString("email", ""))
-            body.put("path", path)
-            body.put("newName", newName)
-
-            val os = conn!!.outputStream
-            os.write(body.toString().toByteArray())
-            os.flush()
-
-            responseCode =  conn!!.responseCode
-        } catch (e: MalformedURLException) {
-            Log.d("test", "올바르지 않은 URL 주소입니다.")
-        } catch (e: IOException) {
-            Log.d("test", "connection 오류")
-        } finally {
-            conn?.disconnect()
-        }
-
-        return responseCode
-    }
-
-    fun moveFolder(originalPath:ArrayList<String>, modifiedPath:String) : Int {
-        val url = URL("http://$ip:$port/folder/path")
-        var conn : HttpURLConnection? = null
-        var responseCode = -1
-
-        try {
-            conn = url.openConnection() as HttpURLConnection
-            conn!!.requestMethod = "PUT"
-            conn!!.connectTimeout = 10000
-            conn!!.readTimeout = 100000
-            conn!!.setRequestProperty("Content-Type", "application/json")
-            conn!!.setRequestProperty("Accept", "application/json")
-
-            conn!!.doOutput = true
-
-            val originalPathJsonArr = JSONArray(originalPath)
-
-            val body = JSONObject()
-            body.put("email", sharedPref!!.getString("email", ""))
-            body.put("originalPaths", originalPathJsonArr)
-            body.put("modifiedPath", modifiedPath)
-
-            val os = conn!!.outputStream
-            os.write(body.toString().toByteArray())
-            os.flush()
-
-            responseCode =  conn!!.responseCode
-        } catch (e: MalformedURLException) {
-            Log.d("test", "올바르지 않은 URL 주소입니다.")
-        } catch (e: IOException) {
-            Log.d("test", "connection 오류")
-        } finally {
-            conn?.disconnect()
-        }
-
-        return responseCode
-    }
-
-    fun moveLink(originalPath:String, selectedLinks:ArrayList<String>, modifiedPath:String) : Int {
-        val url = URL("http://$ip:$port/link/path")
-        var conn : HttpURLConnection? = null
-        var responseCode = -1
-
-        try {
-            conn = url.openConnection() as HttpURLConnection
-            conn!!.requestMethod = "PUT"
-            conn!!.connectTimeout = 10000
-            conn!!.readTimeout = 100000
-            conn!!.setRequestProperty("Content-Type", "application/json")
-            conn!!.setRequestProperty("Accept", "application/json")
-
-            conn!!.doOutput = true
-
-            val ids = JSONArray(selectedLinks)
-
-            val body = JSONObject()
-            body.put("email", sharedPref!!.getString("email", ""))
-            body.put("originalPath", originalPath)
-            body.put("originalIds", ids)
-            body.put("modifiedPath", modifiedPath)
-
-            val os = conn!!.outputStream
-            os.write(body.toString().toByteArray())
-            os.flush()
-
-            responseCode =  conn!!.responseCode
-        } catch (e: MalformedURLException) {
-            Log.d("test", "올바르지 않은 URL 주소입니다.")
-        } catch (e: IOException) {
-            Log.d("test", "connection 오류")
-        } finally {
-            conn?.disconnect()
-        }
-
-        return responseCode
-    }
-
-    fun deleteFolder(selectedFolders:ArrayList<String>) : Int {
-        val url = URL("http://$ip:$port/folder")
-        var conn : HttpURLConnection? = null
-        var responseCode = -1
-
-        try {
-            conn = url.openConnection() as HttpURLConnection
-            conn!!.requestMethod = "DELETE"
-            conn!!.connectTimeout = 10000
-            conn!!.readTimeout = 100000
-            conn!!.setRequestProperty("Content-Type", "application/json")
-            conn!!.setRequestProperty("Accept", "application/json")
-
-            conn!!.doOutput = true
-
-            val paths = JSONArray(selectedFolders)
-
-            val body = JSONObject()
-            body.put("email", sharedPref!!.getString("email", ""))
-            body.put("paths", paths)
-
-            val os = conn!!.outputStream
-            os.write(body.toString().toByteArray())
-            os.flush()
-
-            responseCode =  conn!!.responseCode
-        } catch (e: MalformedURLException) {
-            Log.d("test", "올바르지 않은 URL 주소입니다.")
-        } catch (e: IOException) {
-            Log.d("test", "connection 오류")
-        } finally {
-            conn?.disconnect()
-        }
-
-        return responseCode
-    }
-
-    fun deleteLink(path:String, selectedLinks:ArrayList<String>) : Int {
-        val url = URL("http://$ip:$port/link")
-        var conn : HttpURLConnection? = null
-        var responseCode = -1
-
-        try {
-            conn = url.openConnection() as HttpURLConnection
-            conn!!.requestMethod = "DELETE"
-            conn!!.connectTimeout = 10000
-            conn!!.readTimeout = 100000
-            conn!!.setRequestProperty("Content-Type", "application/json")
-            conn!!.setRequestProperty("Accept", "application/json")
-
-            conn!!.doOutput = true
-
-            val ids = JSONArray(selectedLinks)
-
-            val body = JSONObject()
-            body.put("email", sharedPref!!.getString("email", ""))
-            body.put("path", path)
-            body.put("ids", ids)
-
-            val os = conn!!.outputStream
-            os.write(body.toString().toByteArray())
-            os.flush()
-
-            responseCode =  conn!!.responseCode
-        } catch (e: MalformedURLException) {
-            Log.d("test", "올바르지 않은 URL 주소입니다.")
-        } catch (e: IOException) {
-            Log.d("test", "connection 오류")
-        } finally {
-            conn?.disconnect()
-        }
-
-        return responseCode
     }
 
     // Member
-    fun getProfile() : String {
-        val email = sharedPref!!.getString("email", "")
-        val paramsUrl = "email=$email"
-        val url = URL("http://$ip:$port/member/me?$paramsUrl")
-        var conn : HttpURLConnection? = null
-        var response : String = ""
+    fun getImageUrl(imageUrl:String) : Bitmap? {
+        var image:Bitmap? = null
 
         try {
-            conn = url.openConnection() as HttpURLConnection
-            conn!!.requestMethod = "GET"
-            conn!!.connectTimeout = 10000
-            conn!!.readTimeout = 100000
-            conn!!.setRequestProperty("Accept", "application/json")
+            val token = sharedPref!!.getString("token", "")
+            val url: URL? = URL(imageUrl)
+            val conn: HttpURLConnection? =
+                url?.openConnection() as HttpURLConnection
+            conn!!.setRequestProperty("X-AUTH-TOKEN", token)
 
-            conn!!.doInput = true
-
-            if(conn!!.responseCode == 200) {
-                response = conn!!.inputStream.reader().readText()
-            }
-            else if(conn!!.responseCode == 400) {
-                Log.d("test", "Bad request")
-            }
-            else if(conn!!.responseCode == 401) {
-                Log.d("test", "Unauthorized")
-            }
-            else if(conn!!.responseCode == 404) {
-                Log.d("test", "Not Found")
-            }
+            image = BitmapFactory.decodeStream(conn?.inputStream)
         }
-        catch (e: MalformedURLException) {
-            Log.d("test", "올바르지 않은 URL 주소입니다.")
-        } catch (e: IOException) {
-            Log.d("test", "connection 오류")
-        }finally {
-            conn?.disconnect()
+        catch (e:Exception) {
+            e.printStackTrace()
         }
 
-        return response
-    }
-
-    fun getFollowPreview() : String {
-        val email = sharedPref!!.getString("email", "")
-        val paramsUrl = "email=$email"
-        val url = URL("http://$ip:$port/follow/small?$paramsUrl")
-        var conn : HttpURLConnection? = null
-        var response : String = ""
-
-        try {
-            conn = url.openConnection() as HttpURLConnection
-            conn!!.requestMethod = "GET"
-            conn!!.connectTimeout = 10000
-            conn!!.readTimeout = 100000
-            conn!!.setRequestProperty("Accept", "application/json")
-
-            conn!!.doInput = true
-
-            if(conn!!.responseCode == 200) {
-                response = conn!!.inputStream.reader().readText()
-            }
-            else if(conn!!.responseCode == 400) {
-                Log.d("test", "Bad request")
-            }
-            else if(conn!!.responseCode == 401) {
-                Log.d("test", "Unauthorized")
-            }else if(conn!!.responseCode == 404) {
-                Log.d("test", "Unauthorized")
-            }
-        }
-        catch (e: MalformedURLException) {
-            Log.d("test", "올바르지 않은 URL 주소입니다.")
-        } catch (e: IOException) {
-            Log.d("test", "connection 오류")
-        }finally {
-            conn?.disconnect()
-        }
-
-        return response
+        return image
     }
 }

@@ -7,7 +7,6 @@ import android.content.Intent
 import android.graphics.Rect
 import android.net.Uri
 import android.os.Bundle
-import android.util.Log
 import android.view.Gravity
 import android.view.LayoutInflater
 import android.view.View
@@ -19,11 +18,18 @@ import androidx.appcompat.app.AlertDialog
 import androidx.core.view.size
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.RecyclerView
+import com.google.gson.JsonElement
+import com.google.gson.JsonObject
+import okhttp3.MediaType
+import okhttp3.RequestBody
+import org.json.JSONArray
 import org.json.JSONObject
 import org.poolc.linky.databinding.AddLinkDialogBinding
 import org.poolc.linky.databinding.DialogInputtext10limitBinding
 import org.poolc.linky.databinding.FragmentLinkyInsideFolderBinding
-import kotlin.concurrent.thread
+import retrofit2.Call
+import retrofit2.Callback
+import retrofit2.Response
 import kotlin.math.ceil
 
 class LinkyInsideFolderFragment : Fragment() {
@@ -235,6 +241,19 @@ class LinkyInsideFolderFragment : Fragment() {
         update()
     }
 
+    private fun showDialog(title:String, message:String, listener:DialogInterface.OnDismissListener?) {
+        val builder = AlertDialog.Builder(mainActivity)
+        builder.setOnDismissListener(listener)
+
+        builder.setIcon(R.drawable.ic_baseline_warning_8)
+        builder.setTitle(title)
+        builder.setMessage(message)
+
+        builder.setPositiveButton("확인", null)
+
+        builder.show()
+    }
+
     fun update() {
         // activity에 path값 넘김
         mainActivity.setPath(path)
@@ -242,23 +261,47 @@ class LinkyInsideFolderFragment : Fragment() {
 
         mainActivity.setTopbarTitle("LinkyInsideFolderFragment")
 
-        thread {
-            val jsonStr = app.read(path, true)
+        folders.clear()
+        links.clear()
 
-            mainActivity.runOnUiThread {
-                if (jsonStr != "") {
-                    setFolders(jsonStr!!)
-                    setLinks(jsonStr!!)
+        val call = MyApplication.service.read(path, "true")
+
+        call.enqueue(object: Callback<JsonElement> {
+            override fun onResponse(call: Call<JsonElement>, response: Response<JsonElement>) {
+                if(response.isSuccessful) {
+                    setFolders(response.body()!!.asJsonObject)
+                    setLinks(response.body()!!.asJsonObject)
                 }
                 else {
-                    folders.clear()
-                    links.clear()
-                }
+                    val title = "폴더 읽어오기 실패"
+                    var message = "서버 문제로 인해 정보를 가져오는데 실패하였습니다."
+                    var listener: DialogInterface.OnDismissListener? = null
 
+                    when(response.code()) {
+                        404 -> {
+                            message = "현재 폴더가 존재하지 않는 폴더입니다."
+                            listener = DialogInterface.OnDismissListener {
+                                requireParentFragment().childFragmentManager.popBackStack()
+                            }
+                        }
+                    }
+
+                    folderSubAdapter.notifyDataSetChanged()
+                    linkySubAdapter.notifyDataSetChanged()
+                    showDialog(title, message, listener)
+                }
+            }
+
+            override fun onFailure(call: Call<JsonElement>, t: Throwable) {
                 folderSubAdapter.notifyDataSetChanged()
                 linkySubAdapter.notifyDataSetChanged()
+
+                val title = "폴더 읽어오기 실패"
+                val message = "서버와의 통신 문제로 정보를 가져오는데 실패하였습니다.\n" +
+                        "잠시후 다시 시도해주세요."
+                showDialog(title, message, null)
             }
-        }
+        })
     }
 
     private fun toggleFab() {
@@ -277,111 +320,99 @@ class LinkyInsideFolderFragment : Fragment() {
         isFabOpen = !isFabOpen
     }
 
-    private fun setFolders(jsonStr:String) {
-        folders.clear()
-        val jsonObj = JSONObject(jsonStr)
-        val foldersArr = jsonObj.getJSONArray("folderInfos")
-        for (idx in 0 until foldersArr.length()) {
-            val folderObj = foldersArr.getJSONObject(idx)
-            val folderName = folderObj.getString("name")
+    private fun setFolders(jsonObj: JsonObject) {
+        if(!jsonObj.isJsonNull) {
+            val foldersArr = jsonObj.getAsJsonArray("folderInfos")
+            for (idx in 0 until foldersArr.size()) {
+                val folderObj = foldersArr.get(idx).asJsonObject
+                val folderName = folderObj.get("name").asString
 
-            val folder = Folder(folderName, false)
-            folders.add(folder)
+                val folder = Folder(folderName, false)
+                folders.add(folder)
+            }
         }
+        else {
+            val title = "폴더 읽어오기 실패"
+            val message = "서버 문제로 인해 정보를 가져오는데 실패하였습니다."
+            showDialog(title, message, null)
+        }
+
+        folderSubAdapter.notifyDataSetChanged()
     }
 
-    private fun setLinks(jsonStr: String) {
-        links.clear()
-        val jsonObj = JSONObject(jsonStr)
-        val linksArr = jsonObj.getJSONArray("linkInfos")
-        for (idx in 0 until linksArr.length()) {
-            val linkObj = linksArr.getJSONObject(idx)
-            val id = linkObj.getString("id")
-            val keywordsArr = linkObj.getJSONArray("keywords")
-            val title = linkObj.getString("name")
-            val imgUrl = linkObj.getString("imageUrl")
-            val url = linkObj.getString("url")
-            val isPublic = linkObj.getString("isPublic")
+    private fun setLinks(jsonObj: JsonObject) {
+        if(!jsonObj.isJsonNull) {
+            val linksArr = jsonObj.getAsJsonArray("linkInfos")
+            for (idx in 0 until linksArr.size()) {
+                val linkObj = linksArr.get(idx).asJsonObject
+                val id = linkObj.get("id").asString
+                val keywords = linkObj.getAsJsonArray("keywords")
+                val keywordsArr = JSONArray()
+                for(keyword in keywords) {
+                    keywordsArr.put(keyword.asString)
+                }
+                val title = linkObj.get("name").asString
+                val imgUrl = linkObj.get("imageUrl").asString
+                val url = linkObj.get("url").asString
+                val isPublic = linkObj.get("isPublic").asString
 
-            val link = Link(id, keywordsArr, title, imgUrl, url, isPublic, false)
-            links.add(link)
+                val link = Link(id, keywordsArr, title, imgUrl, url, isPublic, false)
+                links.add(link)
+            }
         }
+
+        linkySubAdapter.notifyDataSetChanged()
     }
 
     private fun createFolder(folderName:String) {
-        thread {
-            val responseCode = app.createFolder(folderName, path)
+        val jsonObj = JSONObject()
+        jsonObj.put("path", path)
+        jsonObj.put("name", folderName)
 
-            if(responseCode == 200) {
-                mainActivity.runOnUiThread {
+        val body = RequestBody.create(MediaType.parse("application/json; charset=utf-8"), jsonObj.toString())
+
+        val call = MyApplication.service.createFolder(body)
+
+        call.enqueue(object: Callback<Void> {
+            override fun onResponse(call: Call<Void>, response: Response<Void>) {
+                if(response.isSuccessful) {
                     val toast =
                         Toast.makeText(mainActivity, "새 폴더가 추가되었습니다!", Toast.LENGTH_SHORT)
                     toast.setGravity(Gravity.BOTTOM, 0, 0)
                     toast.show()
                     update()
                 }
-            }
-            else {
-                var positiveButtonFunc: DialogInterface.OnClickListener? = null
-                var message = ""
+                else {
+                    val title = "폴더 추가 실패"
+                    var message = "서버 문제로 인해 폴더 추가에 실패하였습니다."
+                    var listener = DialogInterface.OnDismissListener { update() }
 
-                when(responseCode) {
-                    400 -> {
-                        message = "폴더이름이 형식과 맞지 않습니다.\n" +
-                                "폴더이름은 최대 10자만 가능하며, /는 포함될 수 없습니다."
-                        positiveButtonFunc = object : DialogInterface.OnClickListener {
-                            override fun onClick(dialog: DialogInterface?, which: Int) {
-                                update()
+                    when(response.code()) {
+                        400 -> {
+                            message = "폴더이름이 형식과 맞지 않습니다.\n" +
+                                    "폴더이름은 최대 10자만 가능하며, /는 포함될 수 없습니다."
+                        }
+                        404 -> {
+                            message = "현재 폴더가 존재하지 않는 폴더입니다."
+                            listener = DialogInterface.OnDismissListener {
+                                requireParentFragment().childFragmentManager.popBackStack()
                             }
                         }
-                    }
-                    401 -> {
-                        message = "사용자 인증 오류로 인해 자동 로그아웃 됩니다."
-                        positiveButtonFunc = object : DialogInterface.OnClickListener {
-                            override fun onClick(dialog: DialogInterface?, which: Int) {
-                                mainActivity.finishAffinity()
-                                System.exit(0)
-                            }
+                        409 -> {
+                            message = "이미 해당 폴더가 존재합니다."
                         }
                     }
-                    404 -> {
-                        message = "존재하지 않는 폴더입니다."
-                        positiveButtonFunc = object : DialogInterface.OnClickListener {
-                            override fun onClick(dialog: DialogInterface?, which: Int) {
-                                update()
-                            }
-                        }
-                    }
-                    409 -> {
-                        message = "이미 해당 폴더가 존재합니다."
-                        positiveButtonFunc = object : DialogInterface.OnClickListener {
-                            override fun onClick(dialog: DialogInterface?, which: Int) {
-                                update()
-                            }
-                        }
-                    }
-                    else -> {
-                        message = "폴더 추가에 실패하였습니다."
-                        positiveButtonFunc = object : DialogInterface.OnClickListener {
-                            override fun onClick(dialog: DialogInterface?, which: Int) {
-                                update()
-                            }
-                        }
-                    }
-                }
 
-                mainActivity.runOnUiThread {
-                    val builder = AlertDialog.Builder(mainActivity)
-
-                    builder.setIcon(R.drawable.ic_baseline_warning_8)
-                    builder.setTitle("추가 실패")
-                    builder.setMessage(message)
-
-                    builder.setPositiveButton("확인", positiveButtonFunc)
-
-                    builder.show()
+                    showDialog(title, message, listener)
                 }
             }
-        }
+
+            override fun onFailure(call: Call<Void>, t: Throwable) {
+                val title = "폴더 추가 실패"
+                val message = "서버와의 통신 문제로 폴더 추가에 실패하였습니다.\n" +
+                        "잠시후 다시 시도해주세요."
+                showDialog(title, message, null)
+            }
+        })
     }
 }

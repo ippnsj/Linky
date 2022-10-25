@@ -2,30 +2,19 @@ package org.poolc.linky
 
 import android.content.DialogInterface
 import android.content.Intent
-import android.graphics.Paint
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.text.*
-import android.text.style.UnderlineSpan
-import android.util.Log
 import android.util.Patterns
 import android.view.View
 import android.view.inputmethod.EditorInfo
-import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
-import androidx.core.view.ContentInfoCompat
 import androidx.core.widget.doAfterTextChanged
-import org.json.JSONObject
 import org.poolc.linky.databinding.ActivityRegisterBinding
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
-import java.io.IOException
-import java.net.HttpURLConnection
-import java.net.MalformedURLException
-import java.net.URL
 import java.util.regex.Pattern
-import kotlin.concurrent.thread
 
 class RegisterActivity : AppCompatActivity() {
 
@@ -49,6 +38,7 @@ class RegisterActivity : AppCompatActivity() {
                         val email = emailTextInput.text.toString().trim()
                         val password = passwordTextInput.text.toString()
                         val passwordCheck = passwordCheckTextInput.text.toString()
+                        val title = "에러메세지"
 
                         if(verifyEmailAddress(email) && verifyPassword(password) && password == passwordCheck) {
                             if(termsAgree.isSelected) {
@@ -56,12 +46,12 @@ class RegisterActivity : AppCompatActivity() {
                             }
                             else {
                                 val message = "개인정보처리방침 및 서비스 이용약관에 동의해주세요."
-                                showError(message)
+                                showDialog(title, message, null)
                             }
                         }
                         else {
                             val message = "입력값에 에러가 존재합니다."
-                            showError(message)
+                            showDialog(title, message, null)
                         }
                     }
 
@@ -84,13 +74,14 @@ class RegisterActivity : AppCompatActivity() {
                         val email = emailTextInput.text.toString().trim()
                         val password = passwordTextInput.text.toString()
                         val passwordCheck = passwordCheckTextInput.text.toString()
+                        val title = "에러메세지"
 
                         if(verifyEmailAddress(email) && verifyPassword(password) && password == passwordCheck) {
                             // TODO 비밀번호 변경
                         }
                         else {
                             val message = "입력값에 에러가 존재합니다."
-                            showError(message)
+                            showDialog(title, message, null)
                         }
                     }
                 }
@@ -152,6 +143,19 @@ class RegisterActivity : AppCompatActivity() {
         }
     }
 
+    private fun showDialog(title:String, message:String, listener:DialogInterface.OnDismissListener?) {
+        val builder = AlertDialog.Builder(this@RegisterActivity)
+        builder.setOnDismissListener(listener)
+
+        builder.setIcon(R.drawable.ic_baseline_warning_8)
+        builder.setTitle(title)
+        builder.setMessage(message)
+
+        builder.setPositiveButton("확인", null)
+
+        builder.show()
+    }
+
     private fun verifyEmailAddress(email:String) : Boolean {
         if(email.isEmpty()) {
             binding.emailTextInput.nextFocusForwardId = R.id.emailTextInput
@@ -191,64 +195,34 @@ class RegisterActivity : AppCompatActivity() {
     }
 
     private fun goToSetProfile(email:String, password:String) {
-        thread {
-            val call = MyApplication.service.verifyEmail(email)
+        val call = MyApplication.service.verifyEmail(email)
 
-            call.enqueue(object : Callback<String> {
-                override fun onResponse(
-                    call: Call<String>,
-                    response: Response<String>
-                ) {
-                    if (response.isSuccessful) {
-                        val intent = Intent(
-                            this@RegisterActivity,
-                            SetProfileActivity::class.java
-                        )
-                        intent.putExtra("email", email)
-                        intent.putExtra("password", password)
-                        startActivity(intent)
-                    } else {
-                        runOnUiThread {
-                            val builder =
-                                AlertDialog.Builder(this@RegisterActivity)
-
-                            builder.setTitle("이메일 중복")
-                            builder.setMessage("이미 존재하는 이메일입니다.")
-
-                            builder.setPositiveButton("확인", null)
-
-                            builder.show()
-                        }
-                    }
+        call.enqueue(object : Callback<Void> {
+            override fun onResponse(
+                call: Call<Void>,
+                response: Response<Void>
+            ) {
+                if (response.isSuccessful) {
+                    val intent = Intent(
+                        this@RegisterActivity,
+                        SetProfileActivity::class.java
+                    )
+                    intent.putExtra("email", email)
+                    intent.putExtra("password", password)
+                    startActivity(intent)
+                } else {
+                    val title = "이메일 중복"
+                    val message = "이미 존재하는 이메일입니다."
+                    showDialog(title, message, null)
                 }
+            }
 
-                override fun onFailure(call: Call<String>, t: Throwable) {
-                    runOnUiThread {
-                        val builder = AlertDialog.Builder(this@RegisterActivity)
-
-                        builder.setTitle("이메일 중복 확인 실패")
-                        builder.setMessage(
-                            "서버와의 통신 문제로 인해 이메일 중복 확인에 실패하였습니다.\n" +
-                                    "잠시후 다시 시도해주세요."
-                        )
-
-                        builder.setPositiveButton("확인", null)
-
-                        builder.show()
-                    }
-                }
-            })
-        }
-    }
-
-    private fun showError(message:String) {
-        val builder = AlertDialog.Builder(this)
-        builder.setIcon(R.drawable.ic_baseline_warning_8)
-        builder.setTitle("에러메세지")
-        builder.setMessage(message)
-
-        builder.setPositiveButton("확인", null)
-
-        builder.show()
+            override fun onFailure(call: Call<Void>, t: Throwable) {
+                val title = "이메일 중복 확인 실패"
+                val message = "서버와의 통신 문제로 인해 이메일 중복 확인에 실패하였습니다.\n" +
+                        "잠시후 다시 시도해주세요."
+                showDialog(title, message, null)
+            }
+        })
     }
 }

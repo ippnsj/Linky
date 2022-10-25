@@ -104,6 +104,7 @@
                     android:id="@+id/view_all_following"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
+                    android:background="?attr/selectableItemBackground"
                     android:text="모두보기"
                     app:layout_constraintBaseline_toBaselineOf="@id/following_label"
                     app:layout_constraintRight_toRightOf="parent" />
@@ -167,6 +168,7 @@
                     android:id="@+id/view_all_follower"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
+                    android:background="?attr/selectableItemBackground"
                     android:text="모두보기"
                     app:layout_constraintBaseline_toBaselineOf="@id/follower_label"
                     app:layout_constraintRight_toRightOf="parent" />
@@ -219,6 +221,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="15dp"
+                    android:background="?attr/selectableItemBackground"
                     android:text="비밀번호 변경"
                     app:layout_constraintLeft_toLeftOf="parent"
                     app:layout_constraintTop_toBottomOf="@id/account_label" />
@@ -228,6 +231,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="10dp"
+                    android:background="?attr/selectableItemBackground"
                     android:text="로그아웃"
                     app:layout_constraintLeft_toLeftOf="parent"
                     app:layout_constraintTop_toBottomOf="@id/change_password" />
@@ -237,6 +241,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="10dp"
+                    android:background="?attr/selectableItemBackground"
                     android:text="계정탈퇴"
                     app:layout_constraintLeft_toLeftOf="parent"
                     app:layout_constraintTop_toBottomOf="@id/logout" />
@@ -278,6 +283,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="15dp"
+                    android:background="?attr/selectableItemBackground"
                     android:text="문의 / 의견 보내기"
                     app:layout_constraintLeft_toLeftOf="parent"
                     app:layout_constraintTop_toBottomOf="@id/system_label" />
@@ -287,6 +293,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="10dp"
+                    android:background="?attr/selectableItemBackground"
                     android:text="개인정보처리방침 및 서비스 이용약관"
                     app:layout_constraintLeft_toLeftOf="parent"
                     app:layout_constraintTop_toBottomOf="@id/send_comment" />

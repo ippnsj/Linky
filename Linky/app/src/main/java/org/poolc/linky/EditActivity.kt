@@ -13,8 +13,6 @@ import androidx.fragment.app.Fragment
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import org.poolc.linky.databinding.ActivityEditBinding
 import org.poolc.linky.databinding.EditBottomSheetLayoutBinding
-import kotlin.concurrent.thread
-
 
 class EditActivity : AppCompatActivity() {
     private lateinit var binding : ActivityEditBinding
